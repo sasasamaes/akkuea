@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "packageManager": "bun@1.0.25",
-  "workspaces": [
-    "packages/nextjs",
-    "packages/rust"
-  ],
   "scripts": {
     "dev": "bun run dev --parallel",
     "build": "bun run build",
