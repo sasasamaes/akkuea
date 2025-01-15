@@ -1,6 +1,6 @@
-# 🌟 Scaffold Stellar - Next.js Frontend
+# 🌟 Scaffold Stellar - Next.js
 
-This is the frontend package of the Scaffold Stellar project, built with Next.js and modern web technologies.
+This is the web package of the Scaffold Stellar project, built with Next.js and modern web technologies.
 
 ## 🚀 Features
 

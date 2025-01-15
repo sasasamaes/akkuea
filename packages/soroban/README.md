@@ -12,27 +12,13 @@ Welcome to the Soroban smart contracts package! This is where all the blockchain
 ## 📁 Project Structure
 ```
 soroban/
-├── contracts/
-│   ├── token/               # Custom token implementation
-│   │   ├── src/
-│   │   │   ├── lib.rs      # Main contract logic
-│   │   │   └── test.rs     # Contract tests
-│   │   └── Cargo.toml
-│   │
-│   ├── marketplace/        # NFT marketplace contract
-│   │   ├── src/
-│   │   │   ├── lib.rs
-│   │   │   └── test.rs
-│   │   └── Cargo.toml
-│   │
-│   └── vault/             # Secure asset vault contract
-│       ├── src/
-│       │   ├── lib.rs
-│       │   └── test.rs
-│       └── Cargo.toml
-│
-├── scripts/               # Deployment and interaction scripts
-├── Cargo.toml            # Workspace configuration
+├── contracts
+│   └── hello_world
+│       ├── src
+│       │   ├── lib.rs
+│       │   └── test.rs
+│       └── Cargo.toml
+├── Cargo.toml
 └── README.md
 ```
 
