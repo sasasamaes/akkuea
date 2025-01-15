@@ -1,0 +1,28 @@
+{
+  "name": "scaffold-stellar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.0.25",
+  "workspaces": [
+    "packages/nextjs",
+    "packages/rust"
+  ],
+  "scripts": {
+    "dev": "bun run dev --parallel",
+    "build": "bun run build",
+    "start": "bun run start",
+    "lint": "bun run lint",
+    "test": "bun test",
+    "clean": "bun run clean --parallel"
+  },
+  "engines": {
+    "node": ">=20.11.0",
+    "bun": ">=1.0.25"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "bun-types": "^1.0.25",
+    "typescript": "^5.3.3"
+  }
+}
