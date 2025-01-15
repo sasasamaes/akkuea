@@ -12,7 +12,8 @@
     "start": "bun run start",
     "lint": "bun run lint",
     "test": "bun test",
-    "clean": "bun run clean --parallel"
+    "clean": "bun run clean --parallel",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=20.11.0",
