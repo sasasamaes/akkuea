@@ -57,11 +57,13 @@ bun install
 ### 3. Run Development Servers
 
 #### Frontend (Next.js)
+
 ```bash
 bun run dev:frontend
 ```
 
 #### Backend (Rust)
+
 ```bash
 bun run dev:rust
 ```
