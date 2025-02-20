@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as cheerio from "cheerio"; // Librería para parsear HTML
+import * as cheerio from "cheerio"; 
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,7 +10,6 @@ export async function GET(req: NextRequest) {
 
     console.log("Fetching metadata for URL:", url);
 
-    // Hacer una petición al enlace para obtener el HTML
     const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0",
@@ -25,7 +24,6 @@ export async function GET(req: NextRequest) {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // Extraer Open Graph Tags
     const title = $('meta[property="og:title"]').attr("content") || $("title").text();
     const description = $('meta[property="og:description"]').attr("content") || $("meta[name='description']").attr("content") || "No description available";
     const image = $('meta[property="og:image"]').attr("content") || null;
