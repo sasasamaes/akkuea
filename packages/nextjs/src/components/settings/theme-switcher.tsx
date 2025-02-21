@@ -23,12 +23,12 @@ export function ThemeSwitcher() {
         <div className="flex items-center space-x-3">
           {resolvedTheme === "dark" ? (
             <>
-              <Sun className="h-5 w-5 text-primary" />
+              <Sun className="h-5 w-5 text-amber-500" />
               <h3 className="text-lg font-semibold">Light Mode</h3>
             </>
           ) : (
             <>
-              <Moon className="h-5 w-5 text-primary" />
+              <Moon className="h-5 w-5 text-teal-400" />
               <h3 className="text-lg font-semibold">Dark Mode</h3>
             </>
           )}
