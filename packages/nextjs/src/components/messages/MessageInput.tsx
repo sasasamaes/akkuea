@@ -54,7 +54,7 @@ export function MessageInput() {
             url: urls[0],
             title: 'Example Link Title',
             description: 'This is an example link description.',
-            image: 'https://via.placeholder.com/300x200',
+            image: 'https://react.semantic-ui.com/images/image-16by9.png',
           });
         }, 500);
       });
