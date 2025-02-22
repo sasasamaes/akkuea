@@ -5,9 +5,11 @@ import type React from 'react';
 import { useMessages } from '../../store/messaging-store';
 import { Send, Smile, ImageIcon, X } from 'lucide-react';
 import { useRef, useState } from 'react';
+
 import dynamic from 'next/dynamic';
 import type { EmojiClickData } from 'emoji-picker-react';
 import { Avatar } from './Avatar';
+
 import Image from 'next/image';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });

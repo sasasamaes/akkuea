@@ -1,50 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { generateMessageId, getFormattedTime } from '@/lib/utils';
-
-export interface Message {
-  id: string;
-  content: string;
-  sender: string;
-  senderAvatar: string; // Add this line
-  timestamp: string;
-  type: 'received' | 'sent';
-  read: boolean;
-  mediaUrl?: string;
-  linkPreview?: {
-    url: string;
-    title: string;
-    description: string;
-    image: string;
-  };
-}
-
-export interface Conversation {
-  id: string;
-  name: string;
-  avatar: string;
-  lastMessage: string;
-  timestamp: string;
-  unread: boolean;
-  isTyping?: boolean;
-  messages: Message[];
-}
-
-interface MessagesState {
-  conversations: Conversation[];
-  messages: Record<string, Message[]>;
-  selectedConversationId: string | null;
-  addMessage: (
-    conversationId: string,
-    message: Omit<Message, 'id' | 'timestamp' | 'senderAvatar'>
-  ) => void;
-  selectConversation: (conversationId: string) => void;
-  markConversationAsRead: (conversationId: string) => void;
-  setTypingStatus: (conversationId: string, isTyping: boolean) => void;
-  addConversation: (
-    conversation: Omit<Conversation, 'id' | 'timestamp' | 'lastMessage' | 'unread'>
-  ) => void;
-}
+import { MessagesState } from '@/app/Types/messages';
 
 export const useMessages = create<MessagesState>()(
   devtools(

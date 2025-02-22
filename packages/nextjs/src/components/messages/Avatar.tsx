@@ -1,8 +1,5 @@
-interface AvatarProps {
-  name: string;
-  imageUrl?: string;
-  size?: 'sm' | 'md' | 'lg';
-}
+import { AvatarProps } from '@/app/Types/messages';
+import Image from 'next/image';
 
 export function Avatar({ name, imageUrl, size = 'md' }: AvatarProps) {
   const sizeClasses = {
@@ -13,7 +10,7 @@ export function Avatar({ name, imageUrl, size = 'md' }: AvatarProps) {
 
   return (
     <div className={`relative ${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0`}>
-      <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+      <Image src={imageUrl || ""} alt={name} className="w-full h-full object-cover" width={size === 'sm' ? 24 : size === 'md' ? 32 : 40} height={size === 'sm' ? 24 : size === 'md' ? 32 : 40} />
     </div>
   );
 }

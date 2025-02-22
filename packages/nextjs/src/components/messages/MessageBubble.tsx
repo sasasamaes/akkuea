@@ -1,14 +1,13 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import type { Message } from '../../store/messaging-store';
+import type { MessageBubbleProps } from '@/app/Types/messages';
 import { useState } from 'react';
+
 import { Avatar } from './Avatar';
 import Image from 'next/image';
 
-interface MessageBubbleProps {
-  message: Message;
-}
+
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
