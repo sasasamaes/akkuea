@@ -1,22 +1,22 @@
-"use client"
+'use client';
 
-import { useMessages } from "../../store/messaging-store"
-import { MessageBubble } from "./MessageBubble"
-import { useEffect, useRef, useCallback } from "react"
+import { useMessages } from '../../store/messaging-store';
+import { MessageBubble } from './MessageBubble';
+import { useEffect, useRef, useCallback } from 'react';
 
 export function MessageThread() {
-  const { messages, selectedConversationId } = useMessages()
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { messages, selectedConversationId } = useMessages();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const selectedMessages = selectedConversationId ? messages[selectedConversationId] : []
+  const selectedMessages = selectedConversationId ? messages[selectedConversationId] : [];
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
   useEffect(() => {
-    scrollToBottom()
-  }, [scrollToBottom])
+    scrollToBottom();
+  }, [scrollToBottom]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -25,6 +25,5 @@ export function MessageThread() {
       ))}
       <div ref={messagesEndRef} />
     </div>
-  )
+  );
 }
-

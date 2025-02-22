@@ -1,17 +1,17 @@
-import { useMessages } from "../../store/messaging-store"
-import { ConversationItem } from "./ConversationItem"
+import { useMessages } from '../../store/messaging-store';
+import { ConversationItem } from './ConversationItem';
 
 interface ConversationListProps {
-  onSelectConversation: () => void
+  onSelectConversation: () => void;
 }
 
 export function ConversationList({ onSelectConversation }: ConversationListProps) {
-  const { conversations, selectConversation } = useMessages()
+  const { conversations, selectConversation } = useMessages();
 
   const handleSelectConversation = (id: string) => {
-    selectConversation(id)
-    onSelectConversation()
-  }
+    selectConversation(id);
+    onSelectConversation();
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -30,6 +30,5 @@ export function ConversationList({ onSelectConversation }: ConversationListProps
         </div>
       </div>
     </div>
-  )
+  );
 }
-

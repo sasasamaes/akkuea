@@ -1,23 +1,22 @@
-import { cn } from "@/lib/utils"
-import { useMessages } from "../../store/messaging-store"
-import type { Conversation } from "../../store/messaging-store"
-import { Avatar } from "./Avatar"
-
+import { cn } from '@/lib/utils';
+import { useMessages } from '../../store/messaging-store';
+import type { Conversation } from '../../store/messaging-store';
+import { Avatar } from './Avatar';
 
 interface ConversationItemProps {
-  conversation: Conversation
-  onSelect: () => void
+  conversation: Conversation;
+  onSelect: () => void;
 }
 
 export function ConversationItem({ conversation, onSelect }: ConversationItemProps) {
-  const { selectedConversationId } = useMessages()
+  const { selectedConversationId } = useMessages();
 
   return (
     <button
       onClick={onSelect}
       className={cn(
-        "w-full p-4 text-left transition-colors hover:bg-gray-100",
-        selectedConversationId === conversation.id && "bg-gray-100",
+        'w-full p-4 text-left transition-colors hover:bg-gray-100',
+        selectedConversationId === conversation.id && 'bg-gray-100'
       )}
     >
       <div className="flex items-center space-x-3">
@@ -42,5 +41,5 @@ export function ConversationItem({ conversation, onSelect }: ConversationItemPro
         </div>
       </div>
     </button>
-  )
+  );
 }

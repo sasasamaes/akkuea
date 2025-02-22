@@ -1,47 +1,47 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useMessages } from "../../store/messaging-store"
-import { Send, Smile, ImageIcon, X } from "lucide-react"
-import { useRef, useState } from "react"
-import dynamic from "next/dynamic"
-import type { EmojiClickData } from "emoji-picker-react"
-import { Avatar } from "./Avatar"
-import Image from "next/image"
+import { useMessages } from '../../store/messaging-store';
+import { Send, Smile, ImageIcon, X } from 'lucide-react';
+import { useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+import type { EmojiClickData } from 'emoji-picker-react';
+import { Avatar } from './Avatar';
+import Image from 'next/image';
 
-const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false })
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export function MessageInput() {
-  const { selectedConversationId, addMessage, setTypingStatus, conversations } = useMessages()
-  const [newMessage, setNewMessage] = useState("")
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const [mediaFile, setMediaFile] = useState<File | null>(null)
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const emojiPickerRef = useRef<HTMLDivElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { selectedConversationId, addMessage, setTypingStatus, conversations } = useMessages();
+  const [newMessage, setNewMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if ((!newMessage.trim() && !mediaFile) || !selectedConversationId) return
+    e.preventDefault();
+    if ((!newMessage.trim() && !mediaFile) || !selectedConversationId) return;
 
-    let mediaUrl = null
-    let linkPreview = null
+    let mediaUrl = null;
+    let linkPreview = null;
 
     // Handle media upload
     if (mediaFile) {
       // In a real application, you would upload the file to a server here
       // and get back a URL. For this example, we'll use a data URL.
-      mediaUrl = mediaPreview
+      mediaUrl = mediaPreview;
     }
 
     // Simple link detection (you might want to use a more robust solution)
-    const urlRegex = /(https?:\/\/[^\s]+)/g
-    const urls = newMessage.match(urlRegex)
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = newMessage.match(urlRegex);
 
     if (urls && urls.length > 0) {
       // In a real application, you would call an API to get the link preview
@@ -50,97 +50,97 @@ export function MessageInput() {
         setTimeout(() => {
           resolve({
             url: urls[0],
-            title: "Example Link Title",
-            description: "This is an example link description.",
-            image: "https://via.placeholder.com/300x200",
-          })
-        }, 500)
-      })
+            title: 'Example Link Title',
+            description: 'This is an example link description.',
+            image: 'https://via.placeholder.com/300x200',
+          });
+        }, 500);
+      });
     }
 
     addMessage(selectedConversationId, {
       content: newMessage,
-      sender: "You",
-      type: "sent",
+      sender: 'You',
+      type: 'sent',
       read: true,
       mediaUrl,
       linkPreview,
-    })
+    });
 
-    setNewMessage("")
-    setMediaFile(null)
-    setMediaPreview(null)
-    setError(null)
+    setNewMessage('');
+    setMediaFile(null);
+    setMediaPreview(null);
+    setError(null);
 
     // Simulate received message with the selected contact's name
     setTimeout(() => {
-      const selectedConversation = conversations.find((conv) => conv.id === selectedConversationId)
+      const selectedConversation = conversations.find((conv) => conv.id === selectedConversationId);
       if (selectedConversation) {
         addMessage(selectedConversationId, {
           content: `Thanks for your message! This is ${selectedConversation.name} responding.`,
           sender: selectedConversation.name,
-          type: "received",
+          type: 'received',
           read: false,
-        })
+        });
       }
-    }, 1000)
-  }
+    }, 1000);
+  };
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(e.target.value)
+    setNewMessage(e.target.value);
 
     if (selectedConversationId) {
-      setTypingStatus(selectedConversationId, true)
+      setTypingStatus(selectedConversationId, true);
     }
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
+      clearTimeout(typingTimeoutRef.current);
     }
 
     // Set new timeout
     typingTimeoutRef.current = setTimeout(() => {
       if (selectedConversationId) {
-        setTypingStatus(selectedConversationId, false)
+        setTypingStatus(selectedConversationId, false);
       }
-    }, 1000)
-  }
+    }, 1000);
+  };
 
   const handleEmojiClick = (emojiData: EmojiClickData) => {
-    setNewMessage((prev) => prev + emojiData.emoji)
-    setShowEmojiPicker(false)
-  }
+    setNewMessage((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
-        setError("File size exceeds 5MB limit.")
-        return
+        setError('File size exceeds 5MB limit.');
+        return;
       }
 
-      if (!file.type.startsWith("image/")) {
-        setError("Only image files are allowed.")
-        return
+      if (!file.type.startsWith('image/')) {
+        setError('Only image files are allowed.');
+        return;
       }
 
-      setMediaFile(file)
-      const reader = new FileReader()
+      setMediaFile(file);
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setMediaPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-      setError(null)
+        setMediaPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
     }
-  }
+  };
 
   const removeMedia = () => {
-    setMediaFile(null)
-    setMediaPreview(null)
+    setMediaFile(null);
+    setMediaPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   return (
     <div className="p-4 border-t">
@@ -148,7 +148,7 @@ export function MessageInput() {
       {mediaPreview && (
         <div className="mb-2 relative">
           <Image
-            src={mediaPreview || "/placeholder.svg"}
+            src={mediaPreview || '/placeholder.svg'}
             alt="Media preview"
             width={300}
             height={200}
@@ -185,7 +185,13 @@ export function MessageInput() {
             </div>
           )}
         </div>
-        <input type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} className="hidden" />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          ref={fileInputRef}
+          className="hidden"
+        />
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -202,6 +208,5 @@ export function MessageInput() {
         </button>
       </form>
     </div>
-  )
+  );
 }
-
