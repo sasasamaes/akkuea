@@ -29,14 +29,14 @@ export function ConversationItem({ conversation, onSelect }: ConversationItemPro
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500 truncate">
               {conversation.isTyping ? (
-                <span className="text-green-500">Typing...</span>
+                <span className="text-[#00CECE]">Typing...</span>
               ) : conversation.messages.length > 0 ? (
                 conversation.lastMessage
               ) : (
                 <span className="italic">No messages yet</span>
               )}
             </span>
-            {conversation.unread && <span className="w-2 h-2 bg-green-500 rounded-full" />}
+            {conversation.unread && <span className="w-2 h-2 bg-[#00CECE] rounded-full" />}
           </div>
         </div>
       </div>

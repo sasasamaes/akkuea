@@ -23,7 +23,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <div
             className={cn(
               'px-3 py-2 rounded-lg',
-              message.type === 'sent' ? 'bg-green-500 text-white' : 'bg-gray-200'
+              message.type === 'sent' ? 'bg-[#00CECE] text-white' : 'bg-gray-200'
             )}
           >
             {message.mediaUrl && (

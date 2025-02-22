@@ -170,7 +170,7 @@ export function MessageInput() {
             placeholder="Type your message..."
             value={newMessage}
             onChange={handleTyping}
-            className="w-full px-3 py-2 text-sm leading-5 text-gray-900 placeholder-gray-400 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm leading-5 text-gray-900 placeholder-gray-400 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00CECE]-500 focus:border-transparent"
           />
           <button
             type="button"
@@ -201,7 +201,7 @@ export function MessageInput() {
         </button>
         <button
           type="submit"
-          className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-500 border border-transparent rounded-md hover:bg-green-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-500"
+          className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-[#00CECE] border border-transparent rounded-md hover:bg-[#00CECE]-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#00CECE]-500"
         >
           <Send className="h-4 w-4" />
           <span className="sr-only">Send message</span>
