@@ -165,7 +165,6 @@ export function MessageInput() {
         </div>
       )}
       <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-        <Avatar name="You" size="sm" />
         <div className="relative flex-1">
           <input
             type="text"
