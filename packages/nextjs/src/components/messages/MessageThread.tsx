@@ -1,6 +1,6 @@
 'use client';
 
-import { useMessages } from '../../store/messaging-store';
+import { useMessages } from '@/store/messaging-store';
 import { MessageBubble } from './MessageBubble';
 import { useEffect, useRef, useCallback } from 'react';
 

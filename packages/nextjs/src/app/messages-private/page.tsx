@@ -1,8 +1,8 @@
 'use client';
 
-import { ConversationList } from '../../components/messages/ConversationList';
-import { MessageThread } from '../../components/messages/MessageThread';
-import { MessageInput } from '../../components/messages/MessageInput';
+import { ConversationList } from '@/components/messages/ConversationList';
+import { MessageThread } from '@/components/messages/MessageThread';
+import { MessageInput } from '@/components/messages/MessageInput';
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
 

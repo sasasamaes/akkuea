@@ -1,4 +1,4 @@
-import { useMessages } from '../../store/messaging-store';
+import { useMessages } from '@/store/messaging-store';
 import { ConversationItem } from './ConversationItem';
 import { ConversationListProps } from '@/app/Types/messages';
 
