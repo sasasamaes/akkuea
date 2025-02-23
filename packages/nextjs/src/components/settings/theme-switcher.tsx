@@ -1,27 +1,27 @@
-"use client"
+'use client';
 
-import { useTheme } from "next-themes"
-import { useEffect, useState } from "react"
-import { Sun, Moon } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 export function ThemeSwitcher() {
-  const [mounted, setMounted] = useState(false)
-  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   if (!mounted) {
-    return <div className="w-[64px] h-[24px] bg-muted rounded-full" />
+    return <div className="w-[64px] h-[24px] bg-muted rounded-full" />;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          {resolvedTheme === "dark" ? (
+          {resolvedTheme === 'dark' ? (
             <>
               <Sun className="h-5 w-5 text-amber-500" />
               <h3 className="text-lg font-semibold">Light Mode</h3>
@@ -35,14 +35,12 @@ export function ThemeSwitcher() {
         </div>
         <Switch
           id="theme-toggle"
-          checked={resolvedTheme === "dark"}
-          onCheckedChange={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          checked={resolvedTheme === 'dark'}
+          onCheckedChange={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
           className="data-[state=checked]:bg-primary"
         />
       </div>
-      <p className="text-sm text-muted-foreground pl-8">
-        Toggle between light and dark theme
-      </p>
+      <p className="text-sm text-muted-foreground pl-8">Toggle between light and dark theme</p>
     </div>
-  )
+  );
 }

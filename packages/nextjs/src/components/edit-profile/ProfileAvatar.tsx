@@ -1,23 +1,23 @@
-import { useState, useRef } from "react"
-import { User } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { useState, useRef } from 'react';
+import { User } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 export const ProfileAvatar = () => {
-  const [imageUrl, setImageUrl] = useState<string>("/placeholder-user.jpg")
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [imageUrl, setImageUrl] = useState<string>('/placeholder-user.jpg');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file)
-      setImageUrl(url)
+      const url = URL.createObjectURL(file);
+      setImageUrl(url);
     }
-  }
+  };
 
   const handleButtonClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="flex items-center space-x-4">
@@ -38,5 +38,5 @@ export const ProfileAvatar = () => {
         Change Profile Picture
       </Button>
     </div>
-  )
-}
+  );
+};

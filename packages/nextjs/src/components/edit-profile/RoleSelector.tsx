@@ -1,15 +1,15 @@
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface Role {
-  id: string
-  label: string
+  id: string;
+  label: string;
 }
 
 interface RoleSelectorProps {
-  roles: Role[]
-  selectedRoles: string[]
-  onRoleChange: (roleId: string) => void
+  roles: Role[];
+  selectedRoles: string[];
+  onRoleChange: (roleId: string) => void;
 }
 
 export const RoleSelector = ({ roles, selectedRoles, onRoleChange }: RoleSelectorProps) => {
@@ -31,5 +31,5 @@ export const RoleSelector = ({ roles, selectedRoles, onRoleChange }: RoleSelecto
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
