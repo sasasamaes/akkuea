@@ -12,7 +12,7 @@ export interface Message {
     title: string;
     description: string;
     image: string;
-  } | null ;
+  } | null;
 }
 
 export interface MessageBubbleProps {

@@ -4,7 +4,6 @@ import type { ConversationItemProps } from '@/app/Types/messages';
 
 import { Avatar } from './Avatar';
 
-
 export function ConversationItem({ conversation, onSelect }: ConversationItemProps) {
   const { selectedConversationId } = useMessages();
 

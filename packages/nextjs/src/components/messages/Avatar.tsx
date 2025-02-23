@@ -10,7 +10,13 @@ export function Avatar({ name, imageUrl, size = 'md' }: AvatarProps) {
 
   return (
     <div className={`relative ${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0`}>
-      <Image src={imageUrl || '/placeholder.svg'} alt={name} className="w-full h-full object-cover" width={size === 'sm' ? 24 : size === 'md' ? 32 : 40} height={size === 'sm' ? 24 : size === 'md' ? 32 : 40} />
+      <Image
+        src={imageUrl || '/placeholder.svg'}
+        alt={name}
+        className="w-full h-full object-cover"
+        width={size === 'sm' ? 24 : size === 'md' ? 32 : 40}
+        height={size === 'sm' ? 24 : size === 'md' ? 32 : 40}
+      />
     </div>
   );
 }

@@ -7,8 +7,6 @@ import { useState } from 'react';
 import { Avatar } from './Avatar';
 import Image from 'next/image';
 
-
-
 export function MessageBubble({ message }: MessageBubbleProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
