@@ -60,7 +60,6 @@ Desktop.ini
 *.coverdata
 
 #bun
-bun.lockb
 packages/nextjs/bun.lockb
 bun.lock
 packages/nextjs/bun.lock
