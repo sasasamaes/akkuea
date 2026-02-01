@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
   Wallet,
   Building2,
@@ -28,7 +29,7 @@ import {
   Button,
   Badge,
 } from "@/components/ui";
-import { useWallet } from "@/context/WalletContext";
+import { useWallet } from "@/components/auth/hooks";
 import {
   formatCurrency,
   formatPercentage,
@@ -235,7 +236,9 @@ export default function DashboardPage() {
                     Wallet Balance
                   </p>
                   <p className="text-xl font-bold text-white font-mono">
-                    {showBalance ? formatCurrency(balance) : "******"}
+                    {showBalance
+                      ? formatCurrency(parseFloat(balance || "0"))
+                      : "******"}
                   </p>
                 </div>
               </div>
