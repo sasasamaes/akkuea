@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import {
@@ -154,14 +155,13 @@ function InvestModal({ property, isOpen, onClose }: InvestModalProps) {
         {/* Property Summary */}
         <div className="flex gap-4 p-4 bg-[#1a1a1a] border border-[#262626] rounded-lg">
           {/* When we use images from db, we use Image component from next/image */}
-          <div className="relative w-20 h-20 rounded-lg overflow-hidden">
-            <Image
-              src={property.image}
-              alt={property.name}
-              fill
-              className="object-cover"
-            />
-          </div>
+          <Image
+            src={property.image}
+            alt={property.name}
+            width={80}
+            height={80}
+            className="w-20 h-20 rounded-lg object-cover"
+          />
           <div>
             <h3 className="font-semibold text-white">{property.name}</h3>
             <p className="text-sm text-neutral-500">{property.location}</p>
@@ -471,6 +471,7 @@ export default function MarketplacePage() {
                       src={property.image}
                       alt={property.name}
                       fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     {property.featured && (

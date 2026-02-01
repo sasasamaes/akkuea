@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import {
@@ -354,12 +355,13 @@ export default function DashboardPage() {
                       key={property.id}
                       className="p-4 flex items-center gap-4 hover:bg-[#0a0a0a] transition-colors cursor-pointer"
                     >
-                      <div className="w-14 h-14 rounded-lg bg-[#1a1a1a] overflow-hidden flex-shrink-0 relative">
+                      <div className="w-14 h-14 rounded-lg bg-[#1a1a1a] overflow-hidden flex-shrink-0">
                         <Image
                           src={property.image}
                           alt={property.name}
-                          fill
-                          className="object-cover"
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
