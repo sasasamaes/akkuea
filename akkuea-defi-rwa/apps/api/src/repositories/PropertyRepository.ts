@@ -1,196 +1,299 @@
-import type { PropertyInfo } from '@real-estate-defi/shared';
-import type { CreatePropertyDto, UpdatePropertyDto, PropertyFilterDto } from '../dto/property.dto';
-import { matchesFilter } from '../dto/property.dto';
+import { eq, and, gte, lte, gt, sql, type SQL } from 'drizzle-orm';
+import { db } from '../db';
+import {
+  properties,
+  propertyDocuments,
+  type Property,
+  type NewProperty,
+  type PropertyDocument,
+  type NewPropertyDocument,
+} from '../db/schema';
+import { BaseRepository } from './BaseRepository';
 
-export class PropertyRepository {
-  private properties: Map<string, PropertyInfo> = new Map();
-  private idCounter = 1;
+/**
+ * Filter options for querying properties
+ */
+export interface PropertyFilter {
+  ownerId?: string;
+  city?: string;
+  country?: string;
+  propertyType?: 'residential' | 'commercial' | 'industrial' | 'land' | 'mixed';
+  minPricePerShare?: number;
+  maxPricePerShare?: number;
+  minAvailableShares?: number;
+  hasAvailableShares?: boolean;
+  verified?: boolean;
+}
 
+/**
+ * Pagination options
+ */
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+}
+
+/**
+ * Paginated result
+ */
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export class PropertyRepository extends BaseRepository<typeof properties, Property, NewProperty> {
   constructor() {
-    this.seedData();
+    super(properties);
   }
 
-  getAll(filter?: PropertyFilterDto): PropertyInfo[] {
-    let properties = Array.from(this.properties.values());
+  /**
+   * Find property by ID with documents
+   */
+  async findByIdWithDocuments(id: string): Promise<(Property & { documents: PropertyDocument[] }) | undefined> {
+    const property = await this.findById(id);
+    if (!property) return undefined;
 
-    if (filter) {
-      properties = properties.filter((property) => matchesFilter(property, filter));
+    const documents = await db
+      .select()
+      .from(propertyDocuments)
+      .where(eq(propertyDocuments.propertyId, id));
+
+    return { ...property, documents };
+  }
+
+  /**
+   * Find properties by owner ID
+   */
+  async findByOwner(ownerId: string): Promise<Property[]> {
+    return db
+      .select()
+      .from(properties)
+      .where(eq(properties.ownerId, ownerId));
+  }
+
+  /**
+   * Find properties with filters
+   */
+  async findWithFilters(filter: PropertyFilter): Promise<Property[]> {
+    const conditions = this.buildFilterConditions(filter);
+
+    if (conditions.length === 0) {
+      return this.findAll();
     }
 
-    return properties;
+    return db
+      .select()
+      .from(properties)
+      .where(and(...conditions));
   }
 
-  getById(id: string): PropertyInfo | undefined {
-    return this.properties.get(id);
-  }
-
-  create(data: CreatePropertyDto): PropertyInfo {
-    const id = `property_${this.idCounter++}`;
-    
-    const property: PropertyInfo = {
-      id,
-      owner: data.owner,
-      totalShares: data.totalShares,
-      availableShares: data.totalShares,
-      valuePerShare: data.valuePerShare,
-      metadata: data.metadata,
-      location: data.location,
-      documents: data.documents,
-    };
-
-    this.properties.set(id, property);
-    return property;
-  }
-
-  update(id: string, data: UpdatePropertyDto): PropertyInfo | undefined {
-    const existingProperty = this.properties.get(id);
-    
-    if (!existingProperty) {
-      return undefined;
-    }
-
-    const updatedProperty: PropertyInfo = {
-      ...existingProperty,
-      ...(data.owner !== undefined && { owner: data.owner }),
-      ...(data.totalShares !== undefined && { totalShares: data.totalShares }),
-      ...(data.availableShares !== undefined && { availableShares: data.availableShares }),
-      ...(data.valuePerShare !== undefined && { valuePerShare: data.valuePerShare }),
-      ...(data.metadata !== undefined && { metadata: { ...existingProperty.metadata, ...data.metadata } }),
-      ...(data.location !== undefined && { location: data.location }),
-      ...(data.documents !== undefined && { documents: data.documents }),
-    };
-
-    this.properties.set(id, updatedProperty);
-    return updatedProperty;
-  }
-
-  delete(id: string): boolean {
-    return this.properties.delete(id);
-  }
-
-  exists(id: string): boolean {
-    return this.properties.has(id);
-  }
-
-  count(filter?: PropertyFilterDto): number {
-    return this.getAll(filter).length;
-  }
-
-  getPaginated(
-    page: number,
-    limit: number,
-    filter?: PropertyFilterDto,
-  ): { properties: PropertyInfo[]; total: number } {
-    const allProperties = this.getAll(filter);
-    const total = allProperties.length;
+  /**
+   * Find properties with pagination and filters
+   */
+  async findPaginated(
+    options: PaginationOptions,
+    filter?: PropertyFilter
+  ): Promise<PaginatedResult<Property>> {
+    const { page, limit } = options;
     const offset = (page - 1) * limit;
-    const properties = allProperties.slice(offset, offset + limit);
 
-    return { properties, total };
+    const conditions = filter ? this.buildFilterConditions(filter) : [];
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const countResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(properties)
+      .where(whereClause);
+    const total = countResult[0]?.count ?? 0;
+
+    // Get paginated data
+    const data = await db
+      .select()
+      .from(properties)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
-  private seedData(): void {
-    const seedProperties: CreatePropertyDto[] = [
-      {
-        owner: 'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-        totalShares: 1000,
-        valuePerShare: 100,
-        metadata: {
-          name: 'Luxury Villa in Miami',
-          description: 'Beautiful beachfront property with ocean views',
-          propertyType: 'residential',
-          yearBuilt: '2020',
-          squareFeet: '5000',
-        },
-        location: {
-          address: '123 Ocean Drive',
-          city: 'Miami',
-          country: 'USA',
-          coordinates: {
-            lat: 25.7617,
-            lng: -80.1918,
-          },
-        },
-        documents: [
-          {
-            title: 'Property Deed',
-            url: 'https://example.com/deed1.pdf',
-            type: 'deed',
-          },
-          {
-            title: 'Property Appraisal',
-            url: 'https://example.com/appraisal1.pdf',
-            type: 'appraisal',
-          },
-        ],
-      },
-      {
-        owner: 'GYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY',
-        totalShares: 500,
-        valuePerShare: 200,
-        metadata: {
-          name: 'Downtown Office Building',
-          description: 'Modern office space in the heart of the city',
-          propertyType: 'commercial',
-          yearBuilt: '2018',
-          squareFeet: '10000',
-        },
-        location: {
-          address: '456 Main Street',
-          city: 'New York',
-          country: 'USA',
-          coordinates: {
-            lat: 40.7128,
-            lng: -74.006,
-          },
-        },
-        documents: [
-          {
-            title: 'Property Deed',
-            url: 'https://example.com/deed2.pdf',
-            type: 'deed',
-          },
-        ],
-      },
-      {
-        owner: 'GZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ',
-        totalShares: 750,
-        valuePerShare: 150,
-        metadata: {
-          name: 'Mountain Retreat',
-          description: 'Secluded cabin with stunning mountain views',
-          propertyType: 'residential',
-          yearBuilt: '2019',
-          squareFeet: '3000',
-        },
-        location: {
-          address: '789 Mountain Road',
-          city: 'Denver',
-          country: 'USA',
-          coordinates: {
-            lat: 39.7392,
-            lng: -104.9903,
-          },
-        },
-        documents: [
-          {
-            title: 'Property Deed',
-            url: 'https://example.com/deed3.pdf',
-            type: 'deed',
-          },
-          {
-            title: 'Property Inspection',
-            url: 'https://example.com/inspection3.pdf',
-            type: 'inspection',
-          },
-        ],
-      },
-    ];
+  /**
+   * Check if property exists
+   */
+  async exists(id: string): Promise<boolean> {
+    const result = await this.findById(id);
+    return !!result;
+  }
 
-    seedProperties.forEach((propertyData) => {
-      this.create(propertyData);
-    });
+  /**
+   * Update available shares (e.g., after a purchase)
+   */
+  async updateAvailableShares(id: string, newAvailableShares: number): Promise<Property | undefined> {
+    if (newAvailableShares < 0) {
+      throw new Error('Available shares cannot be negative');
+    }
+
+    const results = await db
+      .update(properties)
+      .set({ availableShares: newAvailableShares })
+      .where(eq(properties.id, id))
+      .returning();
+
+    return results[0];
+  }
+
+  /**
+   * Set token address after tokenization
+   */
+  async setTokenAddress(id: string, tokenAddress: string): Promise<Property | undefined> {
+    const results = await db
+      .update(properties)
+      .set({ tokenAddress })
+      .where(eq(properties.id, id))
+      .returning();
+
+    return results[0];
+  }
+
+  /**
+   * Verify a property
+   */
+  async verify(id: string): Promise<Property | undefined> {
+    const results = await db
+      .update(properties)
+      .set({ verified: true })
+      .where(eq(properties.id, id))
+      .returning();
+
+    return results[0];
+  }
+
+  /**
+   * Get count of properties matching filter
+   */
+  async countWithFilter(filter?: PropertyFilter): Promise<number> {
+    const conditions = filter ? this.buildFilterConditions(filter) : [];
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(properties)
+      .where(whereClause);
+
+    return result[0]?.count ?? 0;
+  }
+
+  /**
+   * Add a document to a property
+   */
+  async addDocument(document: NewPropertyDocument): Promise<PropertyDocument> {
+    const results = await db
+      .insert(propertyDocuments)
+      .values(document)
+      .returning();
+
+    const result = results[0];
+    if (!result) {
+      throw new Error('Failed to create document');
+    }
+    return result;
+  }
+
+  /**
+   * Get documents for a property
+   */
+  async getDocuments(propertyId: string): Promise<PropertyDocument[]> {
+    return db
+      .select()
+      .from(propertyDocuments)
+      .where(eq(propertyDocuments.propertyId, propertyId));
+  }
+
+  /**
+   * Delete a document
+   */
+  async deleteDocument(documentId: string): Promise<boolean> {
+    const results = await db
+      .delete(propertyDocuments)
+      .where(eq(propertyDocuments.id, documentId))
+      .returning();
+
+    return results.length > 0;
+  }
+
+  /**
+   * Verify a document
+   */
+  async verifyDocument(documentId: string): Promise<PropertyDocument | undefined> {
+    const results = await db
+      .update(propertyDocuments)
+      .set({ verified: true })
+      .where(eq(propertyDocuments.id, documentId))
+      .returning();
+
+    return results[0];
+  }
+
+  /**
+   * Build SQL conditions from filter object
+   */
+  private buildFilterConditions(filter: PropertyFilter): SQL[] {
+    const conditions: SQL[] = [];
+
+    if (filter.ownerId) {
+      conditions.push(eq(properties.ownerId, filter.ownerId));
+    }
+
+    if (filter.propertyType) {
+      conditions.push(eq(properties.propertyType, filter.propertyType));
+    }
+
+    if (filter.verified !== undefined) {
+      conditions.push(eq(properties.verified, filter.verified));
+    }
+
+    if (filter.minPricePerShare !== undefined) {
+      conditions.push(gte(properties.pricePerShare, filter.minPricePerShare.toString()));
+    }
+
+    if (filter.maxPricePerShare !== undefined) {
+      conditions.push(lte(properties.pricePerShare, filter.maxPricePerShare.toString()));
+    }
+
+    if (filter.minAvailableShares !== undefined) {
+      conditions.push(gte(properties.availableShares, filter.minAvailableShares));
+    }
+
+    if (filter.hasAvailableShares) {
+      conditions.push(gt(properties.availableShares, 0));
+    }
+
+    // JSON field filtering for location
+    if (filter.city) {
+      conditions.push(sql`${properties.location}->>'city' = ${filter.city}`);
+    }
+
+    if (filter.country) {
+      conditions.push(sql`${properties.location}->>'country' = ${filter.country}`);
+    }
+
+    return conditions;
   }
 }
 
+// Export singleton instance
 export const propertyRepository = new PropertyRepository();

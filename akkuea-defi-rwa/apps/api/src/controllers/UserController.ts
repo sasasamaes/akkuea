@@ -1,6 +1,5 @@
 import type { Context } from 'elysia';
 import type { User, Transaction, PropertyInfo } from '@real-estate-defi/shared';
-import { z } from 'zod';
 import { userRepository } from '../repositories/UserRepository';
 import { ApiError } from '../errors/ApiError';
 import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
@@ -25,7 +24,7 @@ export class UserController {
 
     if (!validationResult.success) {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid user data', {
-        errors: z.treeifyError(validationResult.error),
+        errors: validationResult.error.format(),
       });
     }
 
@@ -137,7 +136,7 @@ export class UserController {
 
     if (!validationResult.success) {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid update data', {
-        errors: z.treeifyError(validationResult.error),
+        errors: validationResult.error.format(),
       });
     }
 

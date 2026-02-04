@@ -7,6 +7,7 @@ export enum ErrorCode {
   INTERNAL_ERROR = "E1001",
   SERVICE_UNAVAILABLE = "E1002",
   TIMEOUT = "E1003",
+  NOT_IMPLEMENTED = "E1004",
 
   // Validation errors (2xxx)
   VALIDATION_ERROR = "E2000",
@@ -58,6 +59,7 @@ export const errorCodeToStatus: Record<ErrorCode, number> = {
   [ErrorCode.INTERNAL_ERROR]: 500,
   [ErrorCode.SERVICE_UNAVAILABLE]: 503,
   [ErrorCode.TIMEOUT]: 504,
+  [ErrorCode.NOT_IMPLEMENTED]: 501,
 
   [ErrorCode.VALIDATION_ERROR]: 400,
   [ErrorCode.INVALID_INPUT]: 400,

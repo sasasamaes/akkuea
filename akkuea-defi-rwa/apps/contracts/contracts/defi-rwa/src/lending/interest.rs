@@ -38,20 +38,36 @@ impl Default for InterestRateModel {
 
 impl InterestRateModel {
     /// Calculate borrow rate based on utilization
+    /// Uses checked arithmetic to prevent overflow
     pub fn calculate_borrow_rate(&self, utilization: i128) -> i128 {
         if utilization <= self.optimal_utilization {
             // Below optimal: base + utilization * slope1 / optimal
-            self.base_rate + (utilization * self.slope1) / self.optimal_utilization
+            let slope_component = utilization
+                .checked_mul(self.slope1)
+                .expect("Borrow rate overflow: utilization * slope1")
+                / self.optimal_utilization;
+            self.base_rate
+                .checked_add(slope_component)
+                .expect("Borrow rate overflow: base + slope_component")
         } else {
             // Above optimal: rate_at_optimal + (utilization - optimal) * slope2 / (1 - optimal)
-            let rate_at_optimal = self.base_rate + self.slope1;
+            let rate_at_optimal = self.base_rate
+                .checked_add(self.slope1)
+                .expect("Borrow rate overflow: base + slope1");
             let excess_utilization = utilization - self.optimal_utilization;
             let remaining = PRECISION - self.optimal_utilization;
-            rate_at_optimal + (excess_utilization * self.slope2) / remaining
+            let excess_component = excess_utilization
+                .checked_mul(self.slope2)
+                .expect("Borrow rate overflow: excess * slope2")
+                / remaining;
+            rate_at_optimal
+                .checked_add(excess_component)
+                .expect("Borrow rate overflow: rate_at_optimal + excess_component")
         }
     }
 
     /// Calculate supply rate based on borrow rate and utilization
+    /// Uses checked arithmetic to prevent overflow
     pub fn calculate_supply_rate(
         &self,
         borrow_rate: i128,
@@ -59,8 +75,15 @@ impl InterestRateModel {
         reserve_factor: i128,
     ) -> i128 {
         // supply_rate = borrow_rate * utilization * (1 - reserve_factor)
-        let effective_rate = (borrow_rate * utilization) / PRECISION;
-        (effective_rate * (PRECISION - reserve_factor)) / PRECISION
+        let effective_rate = borrow_rate
+            .checked_mul(utilization)
+            .expect("Supply rate overflow: borrow_rate * utilization")
+            / PRECISION;
+        let factor = PRECISION - reserve_factor;
+        effective_rate
+            .checked_mul(factor)
+            .expect("Supply rate overflow: effective_rate * factor")
+            / PRECISION
     }
 }
 
@@ -110,6 +133,7 @@ impl InterestStorage {
     }
 
     /// Calculate new interest index based on time elapsed
+    /// Uses checked arithmetic to prevent overflow
     pub fn calculate_new_index(current_index: i128, borrow_rate: i128, time_elapsed: u64) -> i128 {
         if time_elapsed == 0 {
             return current_index;
@@ -119,7 +143,18 @@ impl InterestStorage {
         let rate_per_second = borrow_rate / (SECONDS_PER_YEAR as i128);
 
         // Calculate accumulated interest: index * (1 + rate * time)
-        let interest_factor = PRECISION + (rate_per_second * (time_elapsed as i128));
-        (current_index * interest_factor) / PRECISION
+        // Using checked arithmetic to prevent overflow
+        let rate_times_time = rate_per_second
+            .checked_mul(time_elapsed as i128)
+            .expect("Interest calculation overflow: rate * time");
+
+        let interest_factor = PRECISION
+            .checked_add(rate_times_time)
+            .expect("Interest calculation overflow: 1 + rate*time");
+
+        current_index
+            .checked_mul(interest_factor)
+            .expect("Interest calculation overflow: index * factor")
+            / PRECISION
     }
 }

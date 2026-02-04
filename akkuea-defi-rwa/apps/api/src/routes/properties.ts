@@ -79,6 +79,9 @@ const createPropertyRoute = new Elysia()
   .post('/', async ({ validatedBody, headers, set }) => {
     try {
       const userAddress = headers['x-user-address'] as string | undefined;
+      if (!userAddress) {
+        throw new UnauthorizedError('User address is required for authentication');
+      }
       return await PropertyController.createProperty(
         validatedBody!,
         userAddress,

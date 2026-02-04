@@ -21,7 +21,7 @@ export class ValidationError extends AppError {
 
   static fromFields(fieldErrors: FieldError[]): ValidationError {
     const message =
-      fieldErrors.length === 1
+      fieldErrors.length === 1 && fieldErrors[0]
         ? fieldErrors[0].message
         : `Validation failed for ${fieldErrors.length} fields`;
     return new ValidationError(message, fieldErrors);
@@ -128,5 +128,19 @@ export class RateLimitError extends AppError {
     super(ErrorCode.RATE_LIMITED, message, { retryAfter });
     this.name = "RateLimitError";
     this.retryAfter = retryAfter;
+  }
+}
+
+/**
+ * Not implemented error - for features that are planned but not yet available
+ */
+export class NotImplementedError extends AppError {
+  public readonly feature: string;
+
+  constructor(feature: string) {
+    const message = `${feature} is not yet implemented`;
+    super(ErrorCode.NOT_IMPLEMENTED, message, { feature });
+    this.name = "NotImplementedError";
+    this.feature = feature;
   }
 }

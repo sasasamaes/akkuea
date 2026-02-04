@@ -2,6 +2,15 @@ use soroban_sdk::{contracttype, Address, Env, String};
 
 use super::keys::StorageKey;
 
+/// TTL bump amounts for property storage (in ledgers)
+/// Approximately 1 day = 17280 ledgers (5 second ledger time)
+pub mod property_bump {
+    /// TTL bump for persistent storage (~30 days)
+    pub const PERSISTENT_BUMP: u32 = 518_400;
+    /// Threshold before extending TTL (~7 days)
+    pub const PERSISTENT_THRESHOLD: u32 = 120_960;
+}
+
 /// Property metadata stored on-chain
 ///
 /// This structure contains all essential information about a tokenized property.
@@ -38,17 +47,20 @@ pub struct PropertyMetadata {
 }
 
 impl PropertyMetadata {
-    /// Creates a new property metadata instance
+    /// Creates a new property metadata instance with validation
     ///
     /// # Arguments
     /// * `property_id` - Unique property identifier
     /// * `owner` - Address of the property owner
-    /// * `name` - Property name
+    /// * `name` - Property name (must not be empty)
     /// * `description` - Property description
-    /// * `location` - Physical location
-    /// * `valuation` - Total property valuation
-    /// * `total_shares` - Number of shares to create
+    /// * `location` - Physical location (must not be empty)
+    /// * `valuation` - Total property valuation (must be positive)
+    /// * `total_shares` - Number of shares to create (must be positive)
     /// * `created_at` - Registration timestamp
+    ///
+    /// # Panics
+    /// Panics if validation fails
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         property_id: u64,
@@ -60,6 +72,14 @@ impl PropertyMetadata {
         total_shares: u64,
         created_at: u64,
     ) -> Self {
+        // Validation
+        if valuation <= 0 {
+            panic!("Property valuation must be positive");
+        }
+        if total_shares == 0 {
+            panic!("Total shares must be greater than zero");
+        }
+
         Self {
             property_id,
             owner,
@@ -73,16 +93,22 @@ impl PropertyMetadata {
         }
     }
 
-    /// Stores the property metadata in contract storage
+    /// Stores the property metadata in persistent storage with TTL management
     ///
     /// # Arguments
     /// * `env` - Soroban environment
     pub fn save(&self, env: &Env) {
         let key = StorageKey::Property(self.property_id);
-        env.storage().instance().set(&key, self);
+        env.storage().persistent().set(&key, self);
+        // Extend TTL to ensure data persists
+        env.storage().persistent().extend_ttl(
+            &key,
+            property_bump::PERSISTENT_THRESHOLD,
+            property_bump::PERSISTENT_BUMP,
+        );
     }
 
-    /// Retrieves property metadata from storage
+    /// Retrieves property metadata from storage and extends TTL if found
     ///
     /// # Arguments
     /// * `env` - Soroban environment
@@ -92,7 +118,28 @@ impl PropertyMetadata {
     /// * `Option<PropertyMetadata>` - Property metadata if found, None otherwise
     pub fn load(env: &Env, property_id: u64) -> Option<PropertyMetadata> {
         let key = StorageKey::Property(property_id);
-        env.storage().instance().get(&key)
+        let result: Option<PropertyMetadata> = env.storage().persistent().get(&key);
+
+        // Extend TTL on access to keep frequently used data alive
+        if result.is_some() {
+            env.storage().persistent().extend_ttl(
+                &key,
+                property_bump::PERSISTENT_THRESHOLD,
+                property_bump::PERSISTENT_BUMP,
+            );
+        }
+
+        result
+    }
+
+    /// Checks if a property exists without loading full data
+    ///
+    /// # Arguments
+    /// * `env` - Soroban environment
+    /// * `property_id` - ID of the property to check
+    pub fn exists(env: &Env, property_id: u64) -> bool {
+        let key = StorageKey::Property(property_id);
+        env.storage().persistent().has(&key)
     }
 
     /// Updates the active status of the property
@@ -112,6 +159,6 @@ impl PropertyMetadata {
     /// * `property_id` - ID of the property to remove
     pub fn remove(env: &Env, property_id: u64) {
         let key = StorageKey::Property(property_id);
-        env.storage().instance().remove(&key);
+        env.storage().persistent().remove(&key);
     }
 }

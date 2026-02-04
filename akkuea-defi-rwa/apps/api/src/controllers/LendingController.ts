@@ -1,5 +1,5 @@
 import type { LendingPool, DepositPosition, BorrowPosition } from '@real-estate-defi/shared';
-import { logger } from '../utils/logger';
+import { logger } from '../services/logger';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 
 export class LendingController {

@@ -4,15 +4,21 @@ import { LoggerService } from './logger';
 describe('LoggerService', () => {
     let logSpy: ReturnType<typeof spyOn>;
     let errorSpy: ReturnType<typeof spyOn>;
+    let warnSpy: ReturnType<typeof spyOn>;
+    let debugSpy: ReturnType<typeof spyOn>;
 
     beforeEach(() => {
         logSpy = spyOn(console, 'log').mockImplementation(() => {});
         errorSpy = spyOn(console, 'error').mockImplementation(() => {});
+        warnSpy = spyOn(console, 'warn').mockImplementation(() => {});
+        debugSpy = spyOn(console, 'debug').mockImplementation(() => {});
     });
 
     afterEach(() => {
         logSpy.mockRestore();
         errorSpy.mockRestore();
+        warnSpy.mockRestore();
+        debugSpy.mockRestore();
     });
 
     it('should log info messages when level is info', () => {
@@ -34,17 +40,17 @@ describe('LoggerService', () => {
         const logger = new LoggerService('info');
         logger.debug('debug message');
 
-        expect(logSpy).not.toHaveBeenCalled();
+        expect(debugSpy).not.toHaveBeenCalled();
     });
 
     it('should log debug messages when level is debug', () => {
         const logger = new LoggerService('debug');
         logger.debug('debug message');
 
-        expect(logSpy).toHaveBeenCalled();
+        expect(debugSpy).toHaveBeenCalled();
 
         const output = JSON.parse(
-            logSpy.mock.calls[0][0] as string
+            debugSpy.mock.calls[0][0] as string
         );
 
         expect(output.level).toBe('debug');
@@ -55,7 +61,7 @@ describe('LoggerService', () => {
         logger.warn('warn message');
         logger.error('error message');
 
-        expect(logSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy).toHaveBeenCalledTimes(1);
         expect(errorSpy).toHaveBeenCalledTimes(1);
     });
 
