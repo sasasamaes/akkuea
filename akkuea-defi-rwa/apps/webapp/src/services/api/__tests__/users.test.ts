@@ -3,6 +3,9 @@ import { userApi } from "../users";
 import { setupMockFetch, wrapFetchMock } from "./helpers";
 import type { KycDocument, Transaction, User } from "@real-estate-defi/shared";
 
+// Valid Stellar address for tests
+const VALID_STELLAR_ADDRESS = "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+
 describe("User API", () => {
   beforeEach(() => {
     global.fetch = wrapFetchMock(
@@ -15,11 +18,15 @@ describe("User API", () => {
   describe("getByWallet", () => {
     it("fetches user by wallet address", async () => {
       const mockUser: User = {
-        address: "0xwallet...",
+        id: "550e8400-e29b-41d4-a716-446655440001",
+        walletAddress: VALID_STELLAR_ADDRESS,
         email: "user@example.com",
+        displayName: "Test User",
         kycStatus: "pending",
-        reputation: 0,
-        createdAt: new Date(),
+        kycTier: "none",
+        kycDocuments: [],
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -28,10 +35,10 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getByWallet("0xwallet...");
+      const result = await userApi.getByWallet(VALID_STELLAR_ADDRESS);
 
       expect(result).toEqual(mockUser);
-      expect(calls[0].url).toBe("http://localhost:3001/users/0xwallet...");
+      expect(calls[0].url).toBe(`http://localhost:3001/users/${VALID_STELLAR_ADDRESS}`);
       expect(calls[0].options.method).toBe("GET");
     });
   });
@@ -39,18 +46,22 @@ describe("User API", () => {
   describe("connectWallet", () => {
     it("connects wallet and returns token", async () => {
       const connectPayload = {
-        signature: "0xsig...",
+        signature: "0xsig123456",
         message: "Connect wallet message",
       };
 
       const mockResponse: { token: string; user: User } = {
         token: "auth-token-123",
         user: {
-          address: "0xwallet...",
+          id: "550e8400-e29b-41d4-a716-446655440001",
+          walletAddress: VALID_STELLAR_ADDRESS,
           email: "user@example.com",
+          displayName: "Test User",
           kycStatus: "pending",
-          reputation: 0,
-          createdAt: new Date(),
+          kycTier: "none",
+          kycDocuments: [],
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
         },
       };
 
@@ -60,11 +71,11 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.connectWallet("0xwallet...", connectPayload);
+      const result = await userApi.connectWallet(VALID_STELLAR_ADDRESS, connectPayload);
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
-        "http://localhost:3001/users/0xwallet.../wallet",
+        `http://localhost:3001/users/${VALID_STELLAR_ADDRESS}/wallet`,
       );
       expect(calls[0].options.method).toBe("POST");
       expect(JSON.parse(calls[0].options.body as string)).toEqual(
@@ -77,24 +88,26 @@ describe("User API", () => {
     it("fetches user transactions", async () => {
       const mockTransactions: Transaction[] = [
         {
-          id: "tx1",
+          id: "550e8400-e29b-41d4-a716-446655440010",
           type: "deposit",
-          amount: 1000,
-          from: "0xfrom",
-          to: "0xto",
-          timestamp: new Date(),
-          txHash: "0xtxhash1",
+          hash: "abc123def456abc123def456abc123def456abc123def456abc123def456abcd",
+          from: VALID_STELLAR_ADDRESS,
+          to: VALID_STELLAR_ADDRESS,
+          amount: "1000",
+          asset: "USDC",
           status: "confirmed",
+          timestamp: "2024-01-15T10:00:00Z",
         },
         {
-          id: "tx2",
+          id: "550e8400-e29b-41d4-a716-446655440011",
           type: "borrow",
-          amount: 500,
-          from: "0xfrom",
-          to: "0xto",
-          timestamp: new Date(),
-          txHash: "0xtxhash2",
+          hash: "def456abc123def456abc123def456abc123def456abc123def456abc123defg",
+          from: VALID_STELLAR_ADDRESS,
+          to: VALID_STELLAR_ADDRESS,
+          amount: "500",
+          asset: "USDC",
           status: "pending",
+          timestamp: "2024-01-15T12:00:00Z",
         },
       ];
 
@@ -104,11 +117,11 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getTransactions("0xwallet...");
+      const result = await userApi.getTransactions(VALID_STELLAR_ADDRESS);
 
       expect(result).toEqual(mockTransactions);
       expect(calls[0].url).toBe(
-        "http://localhost:3001/users/0xwallet.../transactions",
+        `http://localhost:3001/users/${VALID_STELLAR_ADDRESS}/transactions`,
       );
       expect(calls[0].options.method).toBe("GET");
     });
@@ -118,11 +131,11 @@ describe("User API", () => {
     it("fetches user portfolio", async () => {
       const mockPortfolio = {
         properties: [
-          { propertyId: "prop1", shares: 10 },
-          { propertyId: "prop2", shares: 5 },
+          { propertyId: "550e8400-e29b-41d4-a716-446655440001", shares: 10 },
+          { propertyId: "550e8400-e29b-41d4-a716-446655440002", shares: 5 },
         ],
-        deposits: [{ poolId: "pool1", amount: 1000 }],
-        borrows: [{ poolId: "pool1", amount: 500 }],
+        deposits: [{ poolId: "550e8400-e29b-41d4-a716-446655440010", amount: 1000 }],
+        borrows: [{ poolId: "550e8400-e29b-41d4-a716-446655440010", amount: 500 }],
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -131,11 +144,11 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getPortfolio("0xwallet...");
+      const result = await userApi.getPortfolio(VALID_STELLAR_ADDRESS);
 
       expect(result).toEqual(mockPortfolio);
       expect(calls[0].url).toBe(
-        "http://localhost:3001/users/0xwallet.../portfolio",
+        `http://localhost:3001/users/${VALID_STELLAR_ADDRESS}/portfolio`,
       );
       expect(calls[0].options.method).toBe("GET");
     });
@@ -144,8 +157,8 @@ describe("User API", () => {
   describe("getKycStatus", () => {
     it("fetches KYC status", async () => {
       const mockKycStatus = {
-        status: "verified",
-        tier: "tier1",
+        status: "approved",
+        tier: "verified",
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -154,10 +167,10 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getKycStatus("user123");
+      const result = await userApi.getKycStatus("550e8400-e29b-41d4-a716-446655440001");
 
       expect(result).toEqual(mockKycStatus);
-      expect(calls[0].url).toBe("http://localhost:3001/kyc/status/user123");
+      expect(calls[0].url).toBe("http://localhost:3001/kyc/status/550e8400-e29b-41d4-a716-446655440001");
       expect(calls[0].options.method).toBe("GET");
     });
   });
@@ -165,7 +178,7 @@ describe("User API", () => {
   describe("submitKyc", () => {
     it("submits KYC for verification", async () => {
       const submitPayload = {
-        userId: "user123",
+        userId: "550e8400-e29b-41d4-a716-446655440001",
         documents: [
           {
             type: "passport" as const,
@@ -200,13 +213,14 @@ describe("User API", () => {
     it("fetches user KYC documents", async () => {
       const mockDocuments: KycDocument[] = [
         {
-          id: "doc1",
-          userId: "user123",
-          documentType: "passport",
-          documentUrl: "https://example.com/doc.pdf",
-          status: "verified",
-          submittedAt: new Date(),
-          verifiedAt: new Date(),
+          id: "550e8400-e29b-41d4-a716-446655440020",
+          userId: "550e8400-e29b-41d4-a716-446655440001",
+          type: "passport",
+          fileName: "passport.pdf",
+          fileUrl: "https://example.com/doc.pdf",
+          status: "approved",
+          uploadedAt: "2024-01-10T08:00:00Z",
+          reviewedAt: "2024-01-12T10:00:00Z",
         },
       ];
 
@@ -216,10 +230,10 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getKycDocuments("user123");
+      const result = await userApi.getKycDocuments("550e8400-e29b-41d4-a716-446655440001");
 
       expect(result).toEqual(mockDocuments);
-      expect(calls[0].url).toBe("http://localhost:3001/kyc/documents/user123");
+      expect(calls[0].url).toBe("http://localhost:3001/kyc/documents/550e8400-e29b-41d4-a716-446655440001");
       expect(calls[0].options.method).toBe("GET");
     });
   });
