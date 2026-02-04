@@ -8,7 +8,8 @@ import type {
 } from "@real-estate-defi/shared";
 
 // Valid Stellar address for tests
-const VALID_STELLAR_ADDRESS = "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+const VALID_STELLAR_ADDRESS =
+  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
 
 describe("Lending API", () => {
   beforeEach(() => {
@@ -104,10 +105,14 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.getPool("550e8400-e29b-41d4-a716-446655440001");
+      const result = await lendingApi.getPool(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
 
       expect(result).toEqual(mockPool);
-      expect(calls[0].url).toBe("http://localhost:3001/lending/pools/550e8400-e29b-41d4-a716-446655440001");
+      expect(calls[0].url).toBe(
+        "http://localhost:3001/lending/pools/550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(calls[0].options.method).toBe("GET");
     });
   });
@@ -142,7 +147,10 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.deposit("550e8400-e29b-41d4-a716-446655440001", depositPayload);
+      const result = await lendingApi.deposit(
+        "550e8400-e29b-41d4-a716-446655440001",
+        depositPayload,
+      );
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -189,7 +197,10 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.borrow("550e8400-e29b-41d4-a716-446655440001", borrowPayload);
+      const result = await lendingApi.borrow(
+        "550e8400-e29b-41d4-a716-446655440001",
+        borrowPayload,
+      );
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -233,7 +244,10 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.getUserDeposits("550e8400-e29b-41d4-a716-446655440001", VALID_STELLAR_ADDRESS);
+      const result = await lendingApi.getUserDeposits(
+        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_STELLAR_ADDRESS,
+      );
 
       expect(result).toEqual(mockDeposits);
       expect(calls[0].url).toBe(
@@ -266,7 +280,10 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.getUserBorrows("550e8400-e29b-41d4-a716-446655440001", VALID_STELLAR_ADDRESS);
+      const result = await lendingApi.getUserBorrows(
+        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_STELLAR_ADDRESS,
+      );
 
       expect(result).toEqual(mockBorrows);
       expect(calls[0].url).toBe(

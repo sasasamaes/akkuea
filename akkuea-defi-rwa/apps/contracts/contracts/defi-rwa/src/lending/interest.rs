@@ -51,7 +51,8 @@ impl InterestRateModel {
                 .expect("Borrow rate overflow: base + slope_component")
         } else {
             // Above optimal: rate_at_optimal + (utilization - optimal) * slope2 / (1 - optimal)
-            let rate_at_optimal = self.base_rate
+            let rate_at_optimal = self
+                .base_rate
                 .checked_add(self.slope1)
                 .expect("Borrow rate overflow: base + slope1");
             let excess_utilization = utilization - self.optimal_utilization;

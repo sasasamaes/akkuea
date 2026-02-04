@@ -4,7 +4,8 @@ import { setupMockFetch, wrapFetchMock } from "./helpers";
 import type { PropertyInfo, ShareOwnership } from "@real-estate-defi/shared";
 
 // Valid Stellar address for tests
-const VALID_STELLAR_ADDRESS = "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+const VALID_STELLAR_ADDRESS =
+  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
 
 describe("Property API", () => {
   beforeEach(() => {
@@ -164,10 +165,14 @@ describe("Property API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await propertyApi.getById("550e8400-e29b-41d4-a716-446655440001");
+      const result = await propertyApi.getById(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
 
       expect(result).toEqual(mockProperty);
-      expect(calls[0].url).toBe("http://localhost:3001/properties/550e8400-e29b-41d4-a716-446655440001");
+      expect(calls[0].url).toBe(
+        "http://localhost:3001/properties/550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(calls[0].options.method).toBe("GET");
     });
   });
@@ -237,7 +242,9 @@ describe("Property API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await propertyApi.tokenize("550e8400-e29b-41d4-a716-446655440001");
+      const result = await propertyApi.tokenize(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -260,7 +267,10 @@ describe("Property API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await propertyApi.buyShares("550e8400-e29b-41d4-a716-446655440001", 50);
+      const result = await propertyApi.buyShares(
+        "550e8400-e29b-41d4-a716-446655440001",
+        50,
+      );
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -289,7 +299,10 @@ describe("Property API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await propertyApi.getShares("550e8400-e29b-41d4-a716-446655440001", VALID_STELLAR_ADDRESS);
+      const result = await propertyApi.getShares(
+        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_STELLAR_ADDRESS,
+      );
 
       expect(result).toEqual(mockShareOwnership);
       expect(calls[0].url).toBe(
@@ -306,7 +319,10 @@ describe("Property API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await propertyApi.getShares("550e8400-e29b-41d4-a716-446655440001", VALID_STELLAR_ADDRESS);
+      const result = await propertyApi.getShares(
+        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_STELLAR_ADDRESS,
+      );
 
       expect(result).toBeNull();
     });

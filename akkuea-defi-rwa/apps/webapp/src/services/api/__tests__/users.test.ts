@@ -4,7 +4,8 @@ import { setupMockFetch, wrapFetchMock } from "./helpers";
 import type { KycDocument, Transaction, User } from "@real-estate-defi/shared";
 
 // Valid Stellar address for tests
-const VALID_STELLAR_ADDRESS = "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+const VALID_STELLAR_ADDRESS =
+  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
 
 describe("User API", () => {
   beforeEach(() => {
@@ -38,7 +39,9 @@ describe("User API", () => {
       const result = await userApi.getByWallet(VALID_STELLAR_ADDRESS);
 
       expect(result).toEqual(mockUser);
-      expect(calls[0].url).toBe(`http://localhost:3001/users/${VALID_STELLAR_ADDRESS}`);
+      expect(calls[0].url).toBe(
+        `http://localhost:3001/users/${VALID_STELLAR_ADDRESS}`,
+      );
       expect(calls[0].options.method).toBe("GET");
     });
   });
@@ -71,7 +74,10 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.connectWallet(VALID_STELLAR_ADDRESS, connectPayload);
+      const result = await userApi.connectWallet(
+        VALID_STELLAR_ADDRESS,
+        connectPayload,
+      );
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -134,8 +140,12 @@ describe("User API", () => {
           { propertyId: "550e8400-e29b-41d4-a716-446655440001", shares: 10 },
           { propertyId: "550e8400-e29b-41d4-a716-446655440002", shares: 5 },
         ],
-        deposits: [{ poolId: "550e8400-e29b-41d4-a716-446655440010", amount: 1000 }],
-        borrows: [{ poolId: "550e8400-e29b-41d4-a716-446655440010", amount: 500 }],
+        deposits: [
+          { poolId: "550e8400-e29b-41d4-a716-446655440010", amount: 1000 },
+        ],
+        borrows: [
+          { poolId: "550e8400-e29b-41d4-a716-446655440010", amount: 500 },
+        ],
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -167,10 +177,14 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getKycStatus("550e8400-e29b-41d4-a716-446655440001");
+      const result = await userApi.getKycStatus(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
 
       expect(result).toEqual(mockKycStatus);
-      expect(calls[0].url).toBe("http://localhost:3001/kyc/status/550e8400-e29b-41d4-a716-446655440001");
+      expect(calls[0].url).toBe(
+        "http://localhost:3001/kyc/status/550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(calls[0].options.method).toBe("GET");
     });
   });
@@ -230,10 +244,14 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getKycDocuments("550e8400-e29b-41d4-a716-446655440001");
+      const result = await userApi.getKycDocuments(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
 
       expect(result).toEqual(mockDocuments);
-      expect(calls[0].url).toBe("http://localhost:3001/kyc/documents/550e8400-e29b-41d4-a716-446655440001");
+      expect(calls[0].url).toBe(
+        "http://localhost:3001/kyc/documents/550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(calls[0].options.method).toBe("GET");
     });
   });
