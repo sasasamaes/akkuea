@@ -276,11 +276,12 @@ export function matchesFilter(property: PropertyInfo, filter: PropertyFilterDto)
     return false;
   }
 
-  if (filter.minValuePerShare !== undefined && property.valuePerShare < filter.minValuePerShare) {
+  const pricePerShare = parseFloat(property.pricePerShare);
+  if (filter.minValuePerShare !== undefined && pricePerShare < filter.minValuePerShare) {
     return false;
   }
 
-  if (filter.maxValuePerShare !== undefined && property.valuePerShare > filter.maxValuePerShare) {
+  if (filter.maxValuePerShare !== undefined && pricePerShare > filter.maxValuePerShare) {
     return false;
   }
 

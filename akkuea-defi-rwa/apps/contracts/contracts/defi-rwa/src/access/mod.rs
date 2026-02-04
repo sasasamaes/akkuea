@@ -12,11 +12,11 @@ pub fn require_role(env: &Env, caller: &Address, role: &Role) {
     }
 }
 
-pub fn required_admin_or_role(env: &Env, caller: &Address, role: &Role) {
-    let is_admin = RoleStorage::has_role(env, caller, role);
+pub fn require_admin_or_role(env: &Env, caller: &Address, role: &Role) {
+    let is_admin = AdminControl::is_admin(env, caller);
     let has_role = RoleStorage::has_role(env, caller, role);
 
-    if !is_admin || !has_role {
+    if !is_admin && !has_role {
         panic!("Caller is not authorized")
     }
 }
@@ -25,7 +25,7 @@ pub fn require_active_and_authorized(env: &Env, address: &Address, role: Option<
     PauseControl::require_not_paused(env);
 
     match role {
-        Some(r) => required_admin_or_role(env, address, r),
-        _ => AdminControl::require_admin(env, address),
+        Some(r) => require_admin_or_role(env, address, r),
+        None => AdminControl::require_admin(env, address),
     }
 }

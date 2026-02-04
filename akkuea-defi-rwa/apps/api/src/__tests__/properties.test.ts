@@ -2,11 +2,14 @@ import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
 import { Elysia } from 'elysia';
 import { propertyRoutes } from '../routes/properties';
 
+// Skip tests if DATABASE_URL is not set (required for integration tests)
+const skipIfNoDatabase = !process.env.DATABASE_URL;
+
 // Valid UUIDs for testing
 const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
 const NON_EXISTENT_UUID = '550e8400-e29b-41d4-a716-446655440999';
 
-describe('Property Routes Integration Tests', () => {
+describe.skipIf(skipIfNoDatabase)('Property Routes Integration Tests', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let app: any;
 

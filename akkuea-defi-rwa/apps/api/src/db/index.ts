@@ -2,28 +2,62 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
-const connectionString = process.env.DATABASE_URL;
+// Lazy initialization to avoid module load-time errors in tests
+let client: ReturnType<typeof postgres> | null = null;
+let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
-if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is required');
+function getPoolConfig() {
+  return {
+    max: parseInt(process.env.DATABASE_POOL_MAX || '10'),
+    idle_timeout: 20,
+    connect_timeout: 10,
+    // In production, always validate SSL certificates to prevent MITM attacks
+    // In development, allow self-signed certificates if DATABASE_SSL is set
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: true }
+        : process.env.DATABASE_SSL === 'true'
+          ? { rejectUnauthorized: false }
+          : false,
+  };
 }
 
-// Connection pool configuration
-const poolConfig = {
-  max: parseInt(process.env.DATABASE_POOL_MAX || '10'),
-  idle_timeout: 20,
-  connect_timeout: 10,
-  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
-};
+function getDb() {
+  if (!dbInstance) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
+    client = postgres(connectionString, getPoolConfig());
+    dbInstance = drizzle(client, { schema });
+  }
+  return dbInstance;
+}
 
-// Create postgres connection
-const client = postgres(connectionString, poolConfig);
+function getClient() {
+  if (!client) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
+    client = postgres(connectionString, getPoolConfig());
+    dbInstance = drizzle(client, { schema });
+  }
+  return client;
+}
 
-// Create drizzle instance with schema
-export const db = drizzle(client, { schema });
+// Proxy that only initializes the database when accessed
+export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+  get(_, prop) {
+    const instance = getDb();
+    const value = instance[prop as keyof typeof instance];
+    // Bind functions to preserve 'this' context
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+});
 
-// Export client for raw queries if needed
-export { client };
+// Export client getter for raw queries if needed
+export { getClient as client };
 
 // Health check function
 export async function checkDatabaseHealth(): Promise<{
@@ -33,7 +67,8 @@ export async function checkDatabaseHealth(): Promise<{
 }> {
   const start = Date.now();
   try {
-    await client`SELECT 1`;
+    const conn = getClient();
+    await conn`SELECT 1`;
     return {
       healthy: true,
       latency: Date.now() - start,
@@ -49,5 +84,9 @@ export async function checkDatabaseHealth(): Promise<{
 
 // Graceful shutdown
 export async function closeDatabaseConnection(): Promise<void> {
-  await client.end();
+  if (client) {
+    await client.end();
+    client = null;
+    dbInstance = null;
+  }
 }

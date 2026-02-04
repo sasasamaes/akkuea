@@ -80,16 +80,27 @@ export function PageLoader({ message = "Loading..." }: PageLoaderProps) {
   );
 }
 
-interface SkeletonProps {
+/**
+ * Simple animated skeleton for basic loading states
+ * For more complex skeletons (cards, tables, etc.), use components from Skeleton.tsx
+ */
+interface AnimatedSkeletonProps {
   className?: string;
 }
 
-export function Skeleton({ className }: SkeletonProps) {
+export function AnimatedSkeleton({ className }: AnimatedSkeletonProps) {
   return (
     <motion.div
       className={cn("bg-zinc-800 rounded-lg", className)}
       animate={{ opacity: [0.5, 1, 0.5] }}
       transition={{ duration: 1.5, repeat: Infinity }}
+      role="status"
+      aria-label="Loading..."
     />
   );
 }
+
+/**
+ * @deprecated Use AnimatedSkeleton instead, or import Skeleton from './Skeleton'
+ */
+export const Skeleton = AnimatedSkeleton;

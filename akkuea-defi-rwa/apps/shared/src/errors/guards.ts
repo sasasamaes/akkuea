@@ -1,4 +1,5 @@
-import { AppError, SerializedError } from "./AppError";
+import { AppError } from "./AppError";
+import type { SerializedError } from "./AppError";
 import {
   ValidationError,
   NotFoundError,
@@ -6,6 +7,7 @@ import {
   AuthorizationError,
   BlockchainError,
   RateLimitError,
+  NotImplementedError,
 } from "./types";
 import { ErrorCode } from "./codes";
 
@@ -60,6 +62,15 @@ export function isBlockchainError(error: unknown): error is BlockchainError {
  */
 export function isRateLimitError(error: unknown): error is RateLimitError {
   return error instanceof RateLimitError;
+}
+
+/**
+ * Check if value is a NotImplementedError
+ */
+export function isNotImplementedError(
+  error: unknown,
+): error is NotImplementedError {
+  return error instanceof NotImplementedError;
 }
 
 /**

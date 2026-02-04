@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import app from '../src';
+import app from '../src/app';
 
 describe('Validation Middleware', () => {
   it('should reject invalid body on POST /properties', async () => {
@@ -16,7 +16,7 @@ describe('Validation Middleware', () => {
       code: string;
       details: {
         source: string;
-        errors: Record<string, any>;
+        errors: Record<string, unknown>;
       };
     };
     expect(body.code).toBe('VALIDATION_ERROR');
@@ -35,7 +35,7 @@ describe('Validation Middleware', () => {
       code: string;
       details: {
         source: string;
-        errors: Record<string, any>;
+        errors: Record<string, unknown>;
       };
     };
     expect(body.code).toBe('VALIDATION_ERROR');
@@ -53,7 +53,7 @@ describe('Validation Middleware', () => {
       code: string;
       details: {
         source: string;
-        errors: Record<string, any>;
+        errors: Record<string, unknown>;
       };
     };
     expect(body.code).toBe('VALIDATION_ERROR');

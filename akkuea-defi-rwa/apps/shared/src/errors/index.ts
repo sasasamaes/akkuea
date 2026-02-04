@@ -15,6 +15,7 @@ export {
   BlockchainError,
   NetworkError,
   RateLimitError,
+  NotImplementedError,
   type FieldError,
 } from "./types";
 
@@ -27,6 +28,7 @@ export {
   isAuthorizationError,
   isBlockchainError,
   isRateLimitError,
+  isNotImplementedError,
   hasErrorCode,
   isSerializedError,
   toAppError,
