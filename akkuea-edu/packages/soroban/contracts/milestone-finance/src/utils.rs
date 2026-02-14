@@ -298,14 +298,15 @@ pub fn calculate_max_vote_weight_from_power(voting_power: u32) -> u32 {
     x
 }
 
-/// Get voting threshold based on project category
+/// Get voting threshold based on project category.
+/// Thresholds are calibrated for Soroban's 65536-byte instance storage limit.
 pub fn get_voting_category_threshold(category: &str) -> u32 {
     match category {
-        "STEM" => 1000,
-        "RESEARCH" => 1200,
-        "ARTS" => 800,
-        "COMMUNITY" => 500,
-        _ => 500, // Default to Community threshold
+        "STEM" => 100,
+        "RESEARCH" => 120,
+        "ARTS" => 80,
+        "COMMUNITY" => 50,
+        _ => 50, // Default to Community threshold
     }
 }
 

@@ -4,3 +4,10 @@ target
 # Local settings
 .soroban
 .stellar
+.env
+.qodo
+
+# Soroban test snapshots
+test_snapshots/
+*.snap
+*.wasm

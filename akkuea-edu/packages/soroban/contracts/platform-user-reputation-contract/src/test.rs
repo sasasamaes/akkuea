@@ -14,9 +14,10 @@ fn register_contract(env: &Env) -> Address {
 }
 
 fn setup_ledger_time(env: &Env, timestamp: u64) {
+    let current_ledger = env.ledger().get();
     env.ledger().set(LedgerInfo {
         timestamp,
-        protocol_version: 22,
+        protocol_version: current_ledger.protocol_version,
         sequence_number: env.ledger().sequence(),
         network_id: Default::default(),
         base_reserve: 10,

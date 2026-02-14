@@ -498,7 +498,7 @@ fn test_property_registration_event() {
 
     // Check ONLY count
     let events = env.events().all();
-    assert_eq!(events.len(), 1);
+    assert_eq!(events.events().len(), 1);
 }
 
 #[test]
@@ -515,7 +515,7 @@ fn test_share_transfer_event() {
     });
 
     let events = env.events().all();
-    assert_eq!(events.len(), 1);
+    assert_eq!(events.events().len(), 1);
 }
 
 #[test]
@@ -538,7 +538,7 @@ fn test_deposit_event() {
     });
 
     let events = env.events().all();
-    assert_eq!(events.len(), 1);
+    assert_eq!(events.events().len(), 1);
 }
 
 #[test]
@@ -563,5 +563,5 @@ fn test_borrow_event() {
     });
 
     let events = env.events().all();
-    assert_eq!(events.len(), 1);
+    assert_eq!(events.events().len(), 1);
 }
