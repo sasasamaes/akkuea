@@ -834,7 +834,7 @@ fn test_create_voting_period_stem() {
     assert_eq!(period.project_id, project_id);
     assert_eq!(period.start_time, start_time);
     assert_eq!(period.end_time, end_time);
-    assert_eq!(period.threshold, 1000); // STEM threshold
+    assert_eq!(period.threshold, 100); // STEM threshold
     assert_eq!(period.category, ProjectCategory::STEM);
 }
 
@@ -852,11 +852,11 @@ fn test_create_voting_period_all_categories() {
 
     // Test STEM category
     client.create_voting_period(&admin, &1, &start_time, &end_time, &ProjectCategory::STEM);
-    assert_eq!(client.get_voting_period_details(&1).threshold, 1000);
+    assert_eq!(client.get_voting_period_details(&1).threshold, 100);
 
     // Test Arts category
     client.create_voting_period(&admin, &2, &start_time, &end_time, &ProjectCategory::ARTS);
-    assert_eq!(client.get_voting_period_details(&2).threshold, 800);
+    assert_eq!(client.get_voting_period_details(&2).threshold, 80);
 
     // Test Community category
     client.create_voting_period(
@@ -866,7 +866,7 @@ fn test_create_voting_period_all_categories() {
         &end_time,
         &ProjectCategory::COMMUNITY,
     );
-    assert_eq!(client.get_voting_period_details(&3).threshold, 500);
+    assert_eq!(client.get_voting_period_details(&3).threshold, 50);
 
     // Test Research category
     client.create_voting_period(
@@ -876,7 +876,7 @@ fn test_create_voting_period_all_categories() {
         &end_time,
         &ProjectCategory::RESEARCH,
     );
-    assert_eq!(client.get_voting_period_details(&4).threshold, 1200);
+    assert_eq!(client.get_voting_period_details(&4).threshold, 120);
 }
 
 #[test]
@@ -1156,9 +1156,9 @@ fn test_close_voting_period_approved() {
 
     env.mock_all_auths();
 
-    // Create many voters with high reputation
+    // Create voters with high reputation (20 voters × weight 3 = 60 > COMMUNITY threshold 50)
     let mut voters = Vec::new(&env);
-    for i in 0..200 {
+    for i in 0..20 {
         let voter = Address::generate(&env);
         let name = String::from_str(&env, "Voter");
         client.initialize_user(&voter, &name);
@@ -1171,7 +1171,7 @@ fn test_close_voting_period_approved() {
         voters.push_back(voter);
     }
 
-    // Create voting period with Community threshold (500)
+    // Create voting period with Community threshold (50)
     let start_time = env.ledger().timestamp();
     let end_time = env.ledger().timestamp() + 1000;
     client.create_voting_period(
@@ -1217,7 +1217,7 @@ fn test_close_voting_period_rejected() {
     client.initialize_user(&voter, &voter_name);
     client.update_reputation(&admin, &voter, &1, &true);
 
-    // Create voting period with STEM threshold (1000)
+    // Create voting period with STEM threshold (100)
     let project_id = 1u64;
     let start_time = env.ledger().timestamp();
     let end_time = env.ledger().timestamp() + 1000;

@@ -4,6 +4,11 @@ members = [
   "contracts/*",
   "contracts/review-system",
 ]
+# educational-nft is excluded: depends on stellar-* v0.4.0 packages (OpenZeppelin)
+# which are incompatible with soroban-sdk v25. Pending upstream release.
+exclude = [
+  "contracts/educational-nft",
+]
 
 [workspace.dependencies]
 soroban-sdk = { version = "25.0.1", features = ["alloc"] }
