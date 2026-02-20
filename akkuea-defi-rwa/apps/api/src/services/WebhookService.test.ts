@@ -5,7 +5,7 @@ import { logger } from './logger';
 import { createHmac } from 'crypto';
 
 describe('WebhookService', () => {
-    const WEBHOOK_SECRET = 'default-secret-for-dev';
+    const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'default-secret-for-dev';
 
     beforeEach(() => {
         // Mock logger to avoid noisy output
