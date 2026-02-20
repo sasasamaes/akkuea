@@ -4,7 +4,7 @@ import type {
   Transaction,
   LendingPool,
 } from "../types";
-import { StrKey } from "stellar-sdk";
+import { StrKey } from "@stellar/stellar-sdk";
 
 export class ValidationService {
   static validatePropertyInfo(property: Partial<PropertyInfo>): {
