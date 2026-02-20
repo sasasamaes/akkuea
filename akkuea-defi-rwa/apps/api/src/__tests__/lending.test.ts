@@ -295,21 +295,22 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     testUserId = user.id;
   });
 
-  // afterAll - cleanup disabled to inspect data in DB
-  // afterAll(async () => {
-  //   const { db } = await import('../db');
-  //   const { depositPositions, borrowPositions, lendingPools } = await import('../db/schema');
-  //   const { users } = await import('../db/schema');
-  //   const { eq } = await import('drizzle-orm');
-  //   if (testPoolId) {
-  //     await db.delete(depositPositions).where(eq(depositPositions.poolId, testPoolId));
-  //     await db.delete(borrowPositions).where(eq(borrowPositions.poolId, testPoolId));
-  //     await db.delete(lendingPools).where(eq(lendingPools.id, testPoolId));
-  //   }
-  //   if (testUserId) {
-  //     await db.delete(users).where(eq(users.id, testUserId));
-  //   }
-  // });
+  afterAll(async () => {
+    // Clean up test data in correct order (FK constraints)
+    const { db } = await import('../db');
+    const { depositPositions, borrowPositions, lendingPools } = await import('../db/schema');
+    const { users } = await import('../db/schema');
+    const { eq } = await import('drizzle-orm');
+
+    if (testPoolId) {
+      await db.delete(depositPositions).where(eq(depositPositions.poolId, testPoolId));
+      await db.delete(borrowPositions).where(eq(borrowPositions.poolId, testPoolId));
+      await db.delete(lendingPools).where(eq(lendingPools.id, testPoolId));
+    }
+    if (testUserId) {
+      await db.delete(users).where(eq(users.id, testUserId));
+    }
+  });
 
   it('should return paginated pools from database', async () => {
     const response = await app.handle(
