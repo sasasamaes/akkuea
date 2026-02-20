@@ -14,7 +14,15 @@ const DOCUMENT_TYPE_MAP = {
 
 type DocTypeApi = 'passport' | 'id_card' | 'proof_of_address' | 'other';
 
-function toDbDocumentType(type: string): 'passport' | 'national_id' | 'drivers_license' | 'proof_of_address' | 'bank_statement' | 'tax_document' {
+function toDbDocumentType(
+  type: string,
+):
+  | 'passport'
+  | 'national_id'
+  | 'drivers_license'
+  | 'proof_of_address'
+  | 'bank_statement'
+  | 'tax_document' {
   const mapped = DOCUMENT_TYPE_MAP[type as DocTypeApi];
   if (mapped) return mapped;
   if (['drivers_license', 'bank_statement', 'tax_document'].includes(type)) {
@@ -86,7 +94,7 @@ export class KYCController {
     userId: string,
     documentType: string,
     file: { name: string; type: string; size: number; arrayBuffer: () => Promise<ArrayBuffer> },
-    storage: StorageService = storageService
+    storage: StorageService = storageService,
   ): Promise<{ documentId: string; submissionId: string }> {
     try {
       const user = await userRepository.findById(userId);
@@ -168,7 +176,7 @@ export class KYCController {
 
   static async verifyDocument(
     documentId: string,
-    data: { verified: boolean; notes?: string }
+    data: { verified: boolean; notes?: string },
   ): Promise<{ success: boolean }> {
     try {
       const doc = await kycRepository.findById(documentId);
@@ -196,7 +204,9 @@ export class KYCController {
     }
   }
 
-  static async getUserDocuments(userId: string): Promise<(KycDocument & { documentUrl: string })[]> {
+  static async getUserDocuments(
+    userId: string,
+  ): Promise<(KycDocument & { documentUrl: string })[]> {
     try {
       const user = await userRepository.findById(userId);
       if (!user) {
@@ -213,7 +223,9 @@ export class KYCController {
   /**
    * Serve document file by ID (REQ-009 URL for frontend).
    */
-  static async getDocumentFile(documentId: string): Promise<{ buffer: Buffer; contentType: string; fileName: string }> {
+  static async getDocumentFile(
+    documentId: string,
+  ): Promise<{ buffer: Buffer; contentType: string; fileName: string }> {
     try {
       const doc = await kycRepository.findById(documentId);
       if (!doc) {

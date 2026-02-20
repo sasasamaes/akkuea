@@ -5,12 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { ApiError } from '../errors/ApiError';
 
 const ALLOWED_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png']);
-const ALLOWED_MIME_TYPES = new Set([
-  'application/pdf',
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-]);
+const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']);
 
 export type StoredFile = {
   storedFileName: string;
@@ -27,7 +22,8 @@ export class StorageService {
   private readonly baseDir: string;
 
   constructor(baseDir?: string) {
-    this.baseDir = baseDir ?? process.env.KYC_UPLOAD_DIR ?? path.join(process.cwd(), 'uploads', 'kyc');
+    this.baseDir =
+      baseDir ?? process.env.KYC_UPLOAD_DIR ?? path.join(process.cwd(), 'uploads', 'kyc');
   }
 
   /**
@@ -36,7 +32,7 @@ export class StorageService {
    */
   static isAllowedFileType(
     filename: string,
-    mimeType?: string
+    mimeType?: string,
   ): { allowed: boolean; error?: string } {
     const ext = path.extname(filename).toLowerCase();
     if (!ALLOWED_EXTENSIONS.has(ext)) {
@@ -71,7 +67,7 @@ export class StorageService {
     buffer: Buffer,
     userId: string,
     extension: string,
-    documentId?: string
+    documentId?: string,
   ): Promise<StoredFile> {
     const ext = extension.startsWith('.') ? extension : `.${extension}`;
     if (!ALLOWED_EXTENSIONS.has(ext.toLowerCase())) {

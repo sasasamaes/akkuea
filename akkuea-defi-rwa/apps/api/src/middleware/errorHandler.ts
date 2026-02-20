@@ -15,7 +15,12 @@ function isApiErrorLike(e: unknown): e is { statusCode: number; code: string; me
 export const errorHandler = new Elysia().onError(({ error, code, set }) => {
   // Handle custom ApiError instances (including duck-typed for cross-module tests)
   if (error instanceof ApiError || isApiErrorLike(error)) {
-    const err = error as { statusCode: number; code: string; message: string; details?: Record<string, unknown> };
+    const err = error as {
+      statusCode: number;
+      code: string;
+      message: string;
+      details?: Record<string, unknown>;
+    };
     set.status = err.statusCode;
     return {
       success: false,

@@ -2,7 +2,16 @@ import { Elysia } from 'elysia';
 import { KYCController } from '../controllers/KYCController';
 import { ApiError } from '../errors/ApiError';
 
-const DOCUMENT_TYPES = ['passport', 'id_card', 'proof_of_address', 'other', 'national_id', 'drivers_license', 'bank_statement', 'tax_document'] as const;
+const DOCUMENT_TYPES = [
+  'passport',
+  'id_card',
+  'proof_of_address',
+  'other',
+  'national_id',
+  'drivers_license',
+  'bank_statement',
+  'tax_document',
+] as const;
 
 function isApiErrorLike(e: unknown): e is { statusCode: number; code: string; message: string } {
   return (
@@ -47,7 +56,11 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
         const contentType = request.headers.get('content-type') ?? '';
         if (!contentType.includes('multipart/form-data')) {
           set.status = 400;
-          return { success: false, error: 'BAD_REQUEST', message: 'Content-Type must be multipart/form-data' };
+          return {
+            success: false,
+            error: 'BAD_REQUEST',
+            message: 'Content-Type must be multipart/form-data',
+          };
         }
 
         const formData = await request.formData();
@@ -63,12 +76,13 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
           set.status = 400;
           return { success: false, error: 'BAD_REQUEST', message: 'documentType is required' };
         }
-        if (!DOCUMENT_TYPES.includes(documentType as typeof DOCUMENT_TYPES[number])) {
+        if (!DOCUMENT_TYPES.includes(documentType as (typeof DOCUMENT_TYPES)[number])) {
           set.status = 400;
           return {
             success: false,
             error: 'BAD_REQUEST',
-            message: 'documentType must be one of: passport, id_card, proof_of_address, other, national_id, drivers_license, bank_statement, tax_document',
+            message:
+              'documentType must be one of: passport, id_card, proof_of_address, other, national_id, drivers_license, bank_statement, tax_document',
           };
         }
 
@@ -127,7 +141,7 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
           }
         },
       ],
-    }
+    },
   )
   .post('/submit', async ({ body, set }) => {
     try {
@@ -146,7 +160,10 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
   })
   .post('/verify/:documentId', async ({ params: { documentId }, body, set }) => {
     try {
-      return await KYCController.verifyDocument(documentId, body as { verified: boolean; notes?: string });
+      return await KYCController.verifyDocument(
+        documentId,
+        body as { verified: boolean; notes?: string },
+      );
     } catch (error) {
       return handleKycError(error, set);
     }

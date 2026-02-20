@@ -49,7 +49,7 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
    */
   async updateProfile(
     id: string,
-    data: { email?: string; displayName?: string }
+    data: { email?: string; displayName?: string },
   ): Promise<User | undefined> {
     const updateData: Partial<NewUser> = {
       updatedAt: new Date(),

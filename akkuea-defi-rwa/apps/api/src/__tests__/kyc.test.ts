@@ -20,7 +20,11 @@ describe('KYC Routes', () => {
         new Request(`http://localhost/kyc/status/${NON_EXISTENT_USER_ID}`),
       );
       expect(response.status).toBe(404);
-      const body = (await response.json()) as { success?: boolean; error?: string; message?: string };
+      const body = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        message?: string;
+      };
       expect(body.error).toBe('NOT_FOUND');
       expect(body.message).toContain('User not found');
     });

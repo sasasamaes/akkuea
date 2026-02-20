@@ -1,11 +1,6 @@
 import { eq, and, asc } from 'drizzle-orm';
 import { db } from '../db';
-import {
-  kycDocuments,
-  users,
-  type KycDocument,
-  type NewKycDocument,
-} from '../db/schema/users';
+import { kycDocuments, users, type KycDocument, type NewKycDocument } from '../db/schema/users';
 
 type DocumentType =
   | 'passport'
@@ -30,10 +25,7 @@ export class KYCRepository {
       .orderBy(asc(kycDocuments.uploadedAt));
   }
 
-  async findByUserIdAndType(
-    userId: string,
-    type: DocumentType
-  ): Promise<KycDocument | undefined> {
+  async findByUserIdAndType(userId: string, type: DocumentType): Promise<KycDocument | undefined> {
     const results = await db
       .select()
       .from(kycDocuments)
@@ -51,7 +43,9 @@ export class KYCRepository {
 
   async update(
     id: string,
-    data: Partial<Pick<KycDocument, 'status' | 'rejectionReason' | 'reviewedAt' | 'fileName' | 'fileUrl'>>
+    data: Partial<
+      Pick<KycDocument, 'status' | 'rejectionReason' | 'reviewedAt' | 'fileName' | 'fileUrl'>
+    >,
   ): Promise<KycDocument | undefined> {
     const results = await db
       .update(kycDocuments)
@@ -64,11 +58,11 @@ export class KYCRepository {
   async updateStatus(
     documentId: string,
     status: DocumentStatus,
-    rejectionReason?: string
+    rejectionReason?: string,
   ): Promise<KycDocument | undefined> {
     return this.update(documentId, {
       status,
-      rejectionReason: status === 'rejected' ? rejectionReason ?? null : null,
+      rejectionReason: status === 'rejected' ? (rejectionReason ?? null) : null,
       reviewedAt: new Date(),
     });
   }
@@ -83,7 +77,7 @@ export class KYCRepository {
    */
   async updateUserKycStatus(
     userId: string,
-    status: 'not_started' | 'pending' | 'approved' | 'rejected' | 'expired'
+    status: 'not_started' | 'pending' | 'approved' | 'rejected' | 'expired',
   ): Promise<void> {
     await db
       .update(users)
@@ -91,8 +85,14 @@ export class KYCRepository {
       .where(eq(users.id, userId));
   }
 
-  async getUserKycStatus(userId: string): Promise<'not_started' | 'pending' | 'approved' | 'rejected' | 'expired' | undefined> {
-    const results = await db.select({ kycStatus: users.kycStatus }).from(users).where(eq(users.id, userId)).limit(1);
+  async getUserKycStatus(
+    userId: string,
+  ): Promise<'not_started' | 'pending' | 'approved' | 'rejected' | 'expired' | undefined> {
+    const results = await db
+      .select({ kycStatus: users.kycStatus })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     return results[0]?.kycStatus;
   }
 }
