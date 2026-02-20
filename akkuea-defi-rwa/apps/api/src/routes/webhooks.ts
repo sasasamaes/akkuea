@@ -1,11 +1,12 @@
 import { Elysia, t } from 'elysia';
 import { webhookController } from '../controllers/WebhookController';
+import type { WebhookPayload } from '../services/WebhookService';
 
 export const webhookRoutes = new Elysia({ prefix: '/webhooks' })
     .post(
         '/transactions',
         async ({ body, headers }) => {
-            return await webhookController.handleTransactionWebhook({ body: body as any, headers });
+            return await webhookController.handleTransactionWebhook({ body: body as WebhookPayload, headers });
         },
         {
             body: t.Object({

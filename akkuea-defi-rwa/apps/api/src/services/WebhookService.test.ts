@@ -1,6 +1,7 @@
 import { describe, expect, it, spyOn, beforeEach } from 'bun:test';
 import { webhookService, type WebhookPayload } from './WebhookService';
 import { transactionRepository } from '../repositories/TransactionRepository';
+import type { Transaction } from '../db/schema/transactions';
 import { logger } from './logger';
 import { createHmac } from 'crypto';
 
@@ -38,8 +39,8 @@ describe('WebhookService', () => {
             const txHash = 'a'.repeat(64);
             const mockTx = { id: 'uuid-1', hash: txHash, status: 'pending' };
 
-            const findSpy = spyOn(transactionRepository, 'findByHash').mockResolvedValue(mockTx as any);
-            const updateSpy = spyOn(transactionRepository, 'updateStatus').mockResolvedValue({ ...mockTx, status: 'confirmed' } as any);
+            const findSpy = spyOn(transactionRepository, 'findByHash').mockResolvedValue(mockTx as unknown as Transaction);
+            const updateSpy = spyOn(transactionRepository, 'updateStatus').mockResolvedValue({ ...mockTx, status: 'confirmed' } as unknown as Transaction);
 
             const payload: WebhookPayload = {
                 transactionHash: txHash,
@@ -68,7 +69,7 @@ describe('WebhookService', () => {
             const txHash = 'a'.repeat(64);
             const mockTx = { id: 'uuid-1', hash: txHash, status: 'confirmed' };
 
-            spyOn(transactionRepository, 'findByHash').mockResolvedValue(mockTx as any);
+            spyOn(transactionRepository, 'findByHash').mockResolvedValue(mockTx as unknown as Transaction);
 
             const payload: WebhookPayload = {
                 transactionHash: txHash,

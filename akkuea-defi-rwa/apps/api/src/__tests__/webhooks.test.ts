@@ -3,36 +3,37 @@ import { Elysia } from 'elysia';
 import { webhookRoutes } from '../routes/webhooks';
 import { createHmac } from 'crypto';
 import { db } from '../db';
-import { transactions, users } from '../db/schema';
+import { transactions, users, type Transaction, type User } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import type { WebhookPayload } from '../services/WebhookService';
 
 // Skip tests if DATABASE_URL is not set
 const skipIfNoDatabase = !process.env.DATABASE_URL;
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'default-secret-for-dev';
 
-function generateSignature(payload: any): string {
+function generateSignature(payload: WebhookPayload): string {
     const hmac = createHmac('sha256', WEBHOOK_SECRET);
     return hmac.update(JSON.stringify(payload)).digest('hex');
 }
 
 describe.skipIf(skipIfNoDatabase)('Webhook Routes Integration Tests', () => {
-    let app: any;
-    let testUser: any;
-    let testTx: any;
+    let app: unknown;
+    let testUser: User;
+    let testTx: Transaction;
 
     beforeAll(async () => {
         app = new Elysia().use(webhookRoutes);
 
         // Create a test user
-        const [user] = await db.insert(users).values({
+        const userResults = await db.insert(users).values({
             walletAddress: 'G' + 'A'.repeat(55),
             email: 'webhook-test@example.com',
         }).returning();
-        testUser = user;
+        testUser = userResults[0]!;
 
         // Create a pending transaction
-        const [tx] = await db.insert(transactions).values({
+        const txResults = await db.insert(transactions).values({
             type: 'deposit',
             hash: 'a'.repeat(64),
             fromUserId: testUser.id,
@@ -40,7 +41,7 @@ describe.skipIf(skipIfNoDatabase)('Webhook Routes Integration Tests', () => {
             asset: 'native',
             status: 'pending',
         }).returning();
-        testTx = tx;
+        testTx = txResults[0]!;
     });
 
     afterAll(async () => {
@@ -55,13 +56,13 @@ describe.skipIf(skipIfNoDatabase)('Webhook Routes Integration Tests', () => {
 
     describe('POST /webhooks/transactions', () => {
         it('should update transaction status to confirmed', async () => {
-            const payload = {
-                transactionHash: testTx.hash,
+            const payload: WebhookPayload = {
+                transactionHash: testTx.hash as string,
                 status: 'confirmed',
             };
             const signature = generateSignature(payload);
 
-            const response = await app.handle(
+            const response = await (app as Elysia).handle(
                 new Request('http://localhost:3001/webhooks/transactions', {
                     method: 'POST',
                     headers: {
@@ -83,12 +84,12 @@ describe.skipIf(skipIfNoDatabase)('Webhook Routes Integration Tests', () => {
         });
 
         it('should return 400 for invalid signature', async () => {
-            const payload = {
-                transactionHash: testTx.hash,
+            const payload: WebhookPayload = {
+                transactionHash: testTx.hash as string,
                 status: 'confirmed',
             };
 
-            const response = await app.handle(
+            const response = await (app as Elysia).handle(
                 new Request('http://localhost:3001/webhooks/transactions', {
                     method: 'POST',
                     headers: {
@@ -106,13 +107,13 @@ describe.skipIf(skipIfNoDatabase)('Webhook Routes Integration Tests', () => {
             // First confirm it
             await db.update(transactions).set({ status: 'confirmed' }).where(eq(transactions.id, testTx.id));
 
-            const payload = {
-                transactionHash: testTx.hash,
+            const payload: WebhookPayload = {
+                transactionHash: testTx.hash as string,
                 status: 'confirmed',
             };
             const signature = generateSignature(payload);
 
-            const response = await app.handle(
+            const response = await (app as Elysia).handle(
                 new Request('http://localhost:3001/webhooks/transactions', {
                     method: 'POST',
                     headers: {
@@ -127,13 +128,13 @@ describe.skipIf(skipIfNoDatabase)('Webhook Routes Integration Tests', () => {
         });
 
         it('should return 404 for unknown transaction hash', async () => {
-            const payload = {
+            const payload: WebhookPayload = {
                 transactionHash: 'b'.repeat(64),
                 status: 'confirmed',
             };
             const signature = generateSignature(payload);
 
-            const response = await app.handle(
+            const response = await (app as Elysia).handle(
                 new Request('http://localhost:3001/webhooks/transactions', {
                     method: 'POST',
                     headers: {
@@ -148,3 +149,4 @@ describe.skipIf(skipIfNoDatabase)('Webhook Routes Integration Tests', () => {
         });
     });
 });
+
