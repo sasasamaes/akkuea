@@ -15,7 +15,10 @@ function isApiErrorLike(e: unknown): e is { statusCode: number; code: string; me
   );
 }
 
-function handleKycError(error: unknown, set: { status: number }) {
+/** Accepts Elysia's set object; we only assign numeric status codes. */
+type SetStatus = { status?: number | string };
+
+function handleKycError(error: unknown, set: SetStatus) {
   if (error instanceof ApiError || isApiErrorLike(error)) {
     const err = error as { statusCode: number; code: string; message: string };
     set.status = err.statusCode;
@@ -74,11 +77,12 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
           return { success: false, error: 'BAD_REQUEST', message: 'file is required' };
         }
 
+        const fileItem = file as File;
         const result = await KYCController.uploadDocument(userId, documentType, {
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          arrayBuffer: () => file.arrayBuffer(),
+          name: fileItem.name,
+          type: fileItem.type,
+          size: fileItem.size,
+          arrayBuffer: () => fileItem.arrayBuffer(),
         });
 
         set.status = 200;
@@ -90,13 +94,19 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
     {
       beforeHandle: [
         async ({ request, set }) => {
-          const key = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+          const forwarded = request.headers.get('x-forwarded-for');
+          const key = forwarded?.split(',')[0]?.trim() ?? 'unknown';
           const windowMs = 60 * 1000;
           const max = 10;
-          const store = (globalThis as any).__kycUploadRateLimit ?? new Map<string, { count: number; resetAt: number }>();
-          (globalThis as any).__kycUploadRateLimit = store;
+          type RateLimitEntry = { count: number; resetAt: number };
+          const globalStore = globalThis as typeof globalThis & {
+            __kycUploadRateLimit?: Map<string, RateLimitEntry>;
+          };
+          const store: Map<string, RateLimitEntry> =
+            globalStore.__kycUploadRateLimit ?? new Map<string, RateLimitEntry>();
+          globalStore.__kycUploadRateLimit = store;
           const now = Date.now();
-          let entry = store.get(key);
+          const entry = store.get(key);
           if (!entry) {
             store.set(key, { count: 1, resetAt: now + windowMs });
             return;
@@ -163,7 +173,7 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
     } catch (error) {
       const body = handleKycError(error, set);
       return new Response(JSON.stringify(body), {
-        status: set.status,
+        status: typeof set.status === 'number' ? set.status : 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }

@@ -17,7 +17,9 @@ type DocTypeApi = 'passport' | 'id_card' | 'proof_of_address' | 'other';
 function toDbDocumentType(type: string): 'passport' | 'national_id' | 'drivers_license' | 'proof_of_address' | 'bank_statement' | 'tax_document' {
   const mapped = DOCUMENT_TYPE_MAP[type as DocTypeApi];
   if (mapped) return mapped;
-  if (['drivers_license', 'bank_statement', 'tax_document'].includes(type)) return type as any;
+  if (['drivers_license', 'bank_statement', 'tax_document'].includes(type)) {
+    return type as 'drivers_license' | 'bank_statement' | 'tax_document';
+  }
   return 'proof_of_address';
 }
 
