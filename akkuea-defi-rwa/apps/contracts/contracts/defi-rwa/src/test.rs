@@ -590,7 +590,7 @@ fn setup_purchase_test() -> (Address, Env, Address, Address, Address, u64) {
     let token_admin_client = StellarAssetClient::new(&env, &payment_token);
 
     // Mint tokens to buyer for testing
-    token_admin_client.mint(&buyer, &10_000_000_000_0000i128); // $10M with 7 decimals
+    token_admin_client.mint(&buyer, &100_000_000_000_000_i128); // $10M with 7 decimals
 
     let property_id = 1u64;
 
@@ -606,7 +606,7 @@ fn setup_purchase_test() -> (Address, Env, Address, Address, Address, u64) {
         String::from_str(&env, "Test Property"),
         String::from_str(&env, "A test property"),
         String::from_str(&env, "123 Test St"),
-        1_000_000_000_0000, // $1M with 7 decimals
+        10_000_000_000_000, // $1M with 7 decimals
         100_000u64,         // 100k total shares
         env.ledger().timestamp(),
     );
@@ -796,7 +796,7 @@ fn test_purchase_nonexistent_property() {
         let payment_token = stellar_asset.address();
 
         let token_admin_client = StellarAssetClient::new(&env, &payment_token);
-        token_admin_client.mint(&buyer, &10_000_000_000_0000i128);
+        token_admin_client.mint(&buyer, &100_000_000_000_000_i128);
 
         env.as_contract(&contract_id, || {
             AdminControl::initialize(&env, &admin);
