@@ -31,6 +31,10 @@ pub enum StorageKey {
     /// Property counter to generate unique property IDs
     /// Single instance per contract
     PropertyCounter,
+
+    /// Allowance tracking for approved spenders
+    /// Key: Allowance(property_id, owner_address, spender_address)
+    Allowance(u64, Address, Address),
 }
 
 impl StorageKey {
@@ -44,6 +48,7 @@ impl StorageKey {
             StorageKey::TotalShares(_) => Symbol::new(&soroban_sdk::Env::default(), "TotShrs"),
             StorageKey::Admin => Symbol::new(&soroban_sdk::Env::default(), "Admin"),
             StorageKey::PropertyCounter => Symbol::new(&soroban_sdk::Env::default(), "PropCnt"),
+            StorageKey::Allowance(_, _, _) => Symbol::new(&soroban_sdk::Env::default(), "Allow"),
         }
     }
 }

@@ -565,3 +565,120 @@ fn test_borrow_event() {
     let events = env.events().all();
     assert_eq!(events.events().len(), 1);
 }
+
+// =========================================================================
+// Token Requirement Tests (REQ-010)
+// =========================================================================
+
+use crate::{PropertyTokenContract, PropertyTokenContractClient};
+
+fn setup_token_test<'a>() -> (Env, PropertyTokenContractClient<'a>, Address) {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(PropertyTokenContract, ());
+    let client = PropertyTokenContractClient::new(&env, &contract_id);
+    let admin = Address::generate(&env);
+
+    env.as_contract(&contract_id, || {
+        AdminControl::initialize(&env, &admin);
+    });
+
+    (env, client, admin)
+}
+
+#[test]
+fn test_mint_and_query_balance() {
+    let (env, client, admin) = setup_token_test();
+    let recipient = Address::generate(&env);
+    let property_id = 1;
+
+    client.mint_shares(&admin, &property_id, &recipient, &1000);
+
+    assert_eq!(client.get_balance(&property_id, &recipient), 1000);
+    assert_eq!(client.get_total_shares(&property_id), 1000);
+}
+
+#[test]
+#[should_panic(expected = "Caller not admin")]
+fn test_unauthorized_mint_panics() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(PropertyTokenContract, ());
+    let client = PropertyTokenContractClient::new(&env, &contract_id);
+
+    let fake_admin = Address::generate(&env);
+    let recipient = Address::generate(&env);
+
+    client.mint_shares(&fake_admin, &1, &recipient, &1000);
+}
+
+#[test]
+fn test_burn_shares() {
+    let (env, client, admin) = setup_token_test();
+    let owner = Address::generate(&env);
+    let property_id = 1;
+
+    client.mint_shares(&admin, &property_id, &owner, &1000);
+    client.burn_shares(&owner, &property_id, &400);
+
+    assert_eq!(client.get_balance(&property_id, &owner), 600);
+    assert_eq!(client.get_total_shares(&property_id), 600);
+}
+
+#[test]
+#[should_panic(expected = "Insufficient share balance")]
+fn test_burn_more_than_balance_panics() {
+    let (env, client, admin) = setup_token_test();
+    let owner = Address::generate(&env);
+
+    client.mint_shares(&admin, &1, &owner, &500);
+    client.burn_shares(&owner, &1, &600); // Exceeds balance
+}
+
+#[test]
+fn test_transfer_shares() {
+    let (env, client, admin) = setup_token_test();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+    let property_id = 1;
+
+    client.mint_shares(&admin, &property_id, &from, &1000);
+    client.transfer_shares(&from, &to, &property_id, &300);
+
+    assert_eq!(client.get_balance(&property_id, &from), 700);
+    assert_eq!(client.get_balance(&property_id, &to), 300);
+}
+
+#[test]
+#[should_panic]
+fn test_transfer_without_auth() {
+    let env = Env::default();
+    // Intentionally NOT calling env.mock_all_auths()
+    let contract_id = env.register(PropertyTokenContract, ());
+    let client = PropertyTokenContractClient::new(&env, &contract_id);
+
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    client.transfer_shares(&from, &to, &1, &100);
+}
+
+#[test]
+fn test_approve_and_transfer_from() {
+    let (env, client, admin) = setup_token_test();
+    let owner = Address::generate(&env);
+    let spender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let property_id = 1;
+
+    client.mint_shares(&admin, &property_id, &owner, &1000);
+
+    client.approve(&owner, &spender, &property_id, &400);
+    assert_eq!(client.get_allowance(&property_id, &owner, &spender), 400);
+
+    client.transfer_from(&spender, &owner, &recipient, &property_id, &250);
+
+    assert_eq!(client.get_balance(&property_id, &owner), 750);
+    assert_eq!(client.get_balance(&property_id, &recipient), 250);
+    assert_eq!(client.get_allowance(&property_id, &owner, &spender), 150);
+}
