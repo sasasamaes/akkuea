@@ -56,7 +56,9 @@ impl StorageKey {
             StorageKey::TotalShares(_) => Symbol::new(&soroban_sdk::Env::default(), "TotShrs"),
             StorageKey::Admin => Symbol::new(&soroban_sdk::Env::default(), "Admin"),
             StorageKey::PropertyCounter => Symbol::new(&soroban_sdk::Env::default(), "PropCnt"),
-            StorageKey::AvailableShares(_) => Symbol::new(&soroban_sdk::Env::default(), "AvailShrs"),
+            StorageKey::AvailableShares(_) => {
+                Symbol::new(&soroban_sdk::Env::default(), "AvailShrs")
+            }
             StorageKey::PricePerShare(_) => Symbol::new(&soroban_sdk::Env::default(), "PriceShr"),
             StorageKey::PropertyVerified(_) => Symbol::new(&soroban_sdk::Env::default(), "PropVer"),
         }

@@ -1,6 +1,6 @@
 use super::access::{AdminControl, PauseControl};
 use super::*;
-use soroban_sdk::{testutils::Address as _, testutils::Events, Address, Env, String, token};
+use soroban_sdk::{testutils::Address as _, testutils::Events, token, Address, Env, String};
 use token::StellarAssetClient;
 
 // Created this contract just for testing storage
@@ -575,24 +575,23 @@ fn setup_purchase_test() -> (Address, Env, Address, Address, Address, u64) {
     let env = Env::default();
     // Mock all auths for testing
     env.mock_all_auths();
-    
+
     let contract_id = env.register(PropertyTokenContract, ());
     let admin = Address::generate(&env);
     let property_owner = Address::generate(&env);
     let buyer = Address::generate(&env);
-    
+
     // Create a test token using register_stellar_asset_contract_v2
     let token_admin = Address::generate(&env);
     let stellar_asset = env.register_stellar_asset_contract_v2(token_admin.clone());
     let payment_token = stellar_asset.address();
-    
-    // Create token client and admin client for minting
-    let token_client = token::Client::new(&env, &payment_token);
+
+    // Create token admin client for minting
     let token_admin_client = StellarAssetClient::new(&env, &payment_token);
-    
+
     // Mint tokens to buyer for testing
     token_admin_client.mint(&buyer, &10_000_000_000_0000i128); // $10M with 7 decimals
-    
+
     let property_id = 1u64;
 
     // Initialize admin
@@ -622,7 +621,14 @@ fn setup_purchase_test() -> (Address, Env, Address, Address, Address, u64) {
         storage::property::set_verified(&env, property_id, true);
     });
 
-    (contract_id, env, property_owner, buyer, payment_token, property_id)
+    (
+        contract_id,
+        env,
+        property_owner,
+        buyer,
+        payment_token,
+        property_id,
+    )
 }
 
 #[test]
@@ -660,10 +666,7 @@ fn test_purchase_shares_happy_path() {
     let final_buyer_shares = env.as_contract(&contract_id, || {
         storage::shares::get_balance(&env, property_id, &buyer)
     });
-    assert_eq!(
-        final_buyer_shares,
-        initial_buyer_shares + purchase_amount
-    );
+    assert_eq!(final_buyer_shares, initial_buyer_shares + purchase_amount);
 
     // Verify available shares decreased
     let final_available_shares = env.as_contract(&contract_id, || {
@@ -782,16 +785,16 @@ fn test_purchase_nonexistent_property() {
     let (contract_id, env, _property_owner, buyer, payment_token) = {
         let env = Env::default();
         env.mock_all_auths();
-        
+
         let contract_id = env.register(PropertyTokenContract, ());
         let admin = Address::generate(&env);
         let property_owner = Address::generate(&env);
         let buyer = Address::generate(&env);
         let token_admin = Address::generate(&env);
-        
+
         let stellar_asset = env.register_stellar_asset_contract_v2(token_admin.clone());
         let payment_token = stellar_asset.address();
-        
+
         let token_admin_client = StellarAssetClient::new(&env, &payment_token);
         token_admin_client.mint(&buyer, &10_000_000_000_0000i128);
 
@@ -843,9 +846,7 @@ fn test_purchase_when_contract_paused() {
     let (contract_id, env, _property_owner, buyer, payment_token, property_id) =
         setup_purchase_test();
 
-    let admin = env.as_contract(&contract_id, || {
-        AdminControl::get_admin(&env).unwrap()
-    });
+    let admin = env.as_contract(&contract_id, || AdminControl::get_admin(&env).unwrap());
 
     // Pause contract
     env.as_contract(&contract_id, || {

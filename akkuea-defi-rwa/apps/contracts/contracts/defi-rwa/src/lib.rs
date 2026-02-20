@@ -100,12 +100,6 @@ impl PropertyTokenContract {
 
         let mut buffer = itoa::Buffer::new();
         let property_id_str = String::from_str(&env, buffer.format(property_id));
-        PropertyEvents::share_purchase(
-            &env,
-            property_id_str,
-            buyer,
-            amount as i128,
-            total_cost,
-        );
+        PropertyEvents::share_purchase(&env, property_id_str, buyer, amount as i128, total_cost);
     }
 }
