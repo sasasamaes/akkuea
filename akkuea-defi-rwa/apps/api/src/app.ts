@@ -4,6 +4,7 @@ import { propertyRoutes } from './routes/properties';
 import { lendingRoutes } from './routes/lending';
 import { userRoutes } from './routes/users';
 import { kycRoutes } from './routes/kyc';
+import { webhookRoutes } from './routes/webhooks';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware';
 
@@ -18,6 +19,7 @@ const app = new Elysia()
   .use(propertyRoutes)
   .use(lendingRoutes)
   .use(userRoutes)
-  .use(kycRoutes);
+  .use(kycRoutes)
+  .use(webhookRoutes);
 
 export default app;
