@@ -1,5 +1,5 @@
 {
-  "name": "real-estate-defi-platform",
+  "name": "l-estate-defi-platform",
   "version": "1.0.0",
   "description": "Real Estate Tokenization and DeFi Lending Platform on Stellar",
   "private": true,
@@ -34,11 +34,14 @@
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^1.9.5",
+    "@hookform/resolvers": "^5.2.2",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "eslint": "^9.39.2",
+    "react-hook-form": "^7.71.2",
     "soroban-client": "^1.0.1",
-    "stellar-sdk": "^13.3.0"
+    "stellar-sdk": "^13.3.0",
+    "zod": "^4.3.6"
   },
   "engines": {
     "node": ">=18.0.0"

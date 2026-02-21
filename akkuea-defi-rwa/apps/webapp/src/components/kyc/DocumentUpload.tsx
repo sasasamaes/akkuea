@@ -2,21 +2,22 @@
 
 import { useState, DragEvent, ChangeEvent } from "react";
 
-type FileDropzoneProps = {
+type DocumentUploadProps = {
   label?: string;
   accept?: string;
   multiple?: boolean;
   onFilesChange?: (files: File[]) => void;
 };
 
-export default function FileDropzone({
-  label = "Drag & drop files here",
+export default function DocumentUpload({
+  label,
   accept,
   multiple = false,
   onFilesChange,
-}: FileDropzoneProps) {
+}: DocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({})
 
   const handleFiles = (fileList: FileList | null) => {
     if (!fileList) return;
@@ -65,8 +66,10 @@ export default function FileDropzone({
           id={label}
           onChange={handleChange}
         />
-        <label htmlFor={label} className="cursor-pointer block">
+        <label htmlFor={label} className="cursor-pointer flex flex-col gap-2 text-xs ">
           {label}
+          <span>Or</span>
+         <span  > Drag and Drop file here</span>
         </label>
       </div>
 

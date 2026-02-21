@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react";
-import DragDropUpload from "../ui/FileDropzone";
-import FileDropzone from "../ui/FileDropzone";
+import DocumentUpload from "./DocumentUpload";
+
 
 
 
@@ -18,19 +18,19 @@ export default function StepTwo() {
             <h2 className="text-[#ff3e00] font-semibold text-xl md:text-2xl  " >Upload Documents</h2>
 
 
-            <div className=" w-full grid grid-cols-1  place-items-center justify-center justify-items-center gap-7 " >
+            <div className=" w-full grid grid-cols- md:grid-cols-2  place-items-center justify-center justify-items-center gap-7 " >
 
-                <FileDropzone
-                    label="Upload Profile Image"
+                <DocumentUpload
+                    label="Click to upload National ID card"
                     accept="image/*"
                     multiple={false}
                     onFilesChange={(files) => setProfileImage(files)}
                 />
 
-                <FileDropzone
-                    label="Upload Documents"
+                <DocumentUpload
+                    label="Click to upload selfie"
                     accept=".pdf,.doc,.docx"
-                    multiple={true}
+                    multiple={false}
                     onFilesChange={(files) => setDocuments(files)}
                 />
 
