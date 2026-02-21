@@ -18,6 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   Wallet,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
 import {
@@ -29,107 +31,23 @@ import {
   Badge,
   Input,
   Modal,
-  Toggle,
 } from "@/components/ui";
 import { useWallet } from "@/components/auth/hooks";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Form, FormInput } from "@/components/forms";
-import {
-  createLendingActionSchema,
-  type LendingActionFormValues,
-} from "@/schemas/forms";
 import {
   pageTransition,
   staggerContainer,
   staggerItem,
   fadeInUp,
 } from "@/lib/animations";
+import type { LendingPool } from "@real-estate-defi/shared";
+import { useLendingPools } from "@/hooks/useLendingPools";
+import { useHealthFactor } from "@/hooks/useHealthFactor";
+import { PoolActionModal, type PoolAction } from "@/components/lending/PoolActionModal";
 
-// Mock lending pools data
-const lendingPools = [
-  {
-    id: 1,
-    name: "USDC Stable Pool",
-    asset: "USDC",
-    totalLiquidity: 5000000,
-    utilization: 72,
-    supplyAPY: 5.2,
-    borrowAPY: 7.8,
-    collateralFactor: 75,
-    available: 1400000,
-    yourDeposit: 25000,
-    yourBorrow: 0,
-    icon: "💵",
-  },
-  {
-    id: 2,
-    name: "XLM Native Pool",
-    asset: "XLM",
-    totalLiquidity: 2000000,
-    utilization: 65,
-    supplyAPY: 4.5,
-    borrowAPY: 6.5,
-    collateralFactor: 70,
-    available: 700000,
-    yourDeposit: 0,
-    yourBorrow: 5000,
-    icon: "⭐",
-  },
-  {
-    id: 3,
-    name: "RWA Collateral Pool",
-    asset: "RWA",
-    totalLiquidity: 10000000,
-    utilization: 45,
-    supplyAPY: 8.5,
-    borrowAPY: 12.0,
-    collateralFactor: 60,
-    available: 5500000,
-    yourDeposit: 50000,
-    yourBorrow: 0,
-    icon: "🏢",
-  },
-];
-
-// Mock audit logs
-const auditLogs = [
-  {
-    id: 1,
-    action: "Deposit",
-    pool: "USDC Stable Pool",
-    amount: 10000,
-    timestamp: "2025-01-15 14:32:00",
-    txHash: "0x1234...5678",
-    status: "completed",
-  },
-  {
-    id: 2,
-    action: "Borrow",
-    pool: "XLM Native Pool",
-    amount: 5000,
-    timestamp: "2025-01-14 09:15:00",
-    txHash: "0xabcd...efgh",
-    status: "completed",
-  },
-  {
-    id: 3,
-    action: "Repay",
-    pool: "XLM Native Pool",
-    amount: 2500,
-    timestamp: "2025-01-12 18:45:00",
-    txHash: "0x9876...5432",
-    status: "completed",
-  },
-  {
-    id: 4,
-    action: "Withdraw",
-    pool: "RWA Collateral Pool",
-    amount: 15000,
-    timestamp: "2025-01-10 11:20:00",
-    txHash: "0xijkl...mnop",
-    status: "completed",
-  },
-];
+// ---------------------------------------------------------------------------
+// Yield Calculator (retained, unchanged)
+// ---------------------------------------------------------------------------
 
 interface YieldCalculatorProps {
   isOpen: boolean;
@@ -146,17 +64,10 @@ function YieldCalculator({ isOpen, onClose }: YieldCalculatorProps) {
     const rate = parseFloat(apy) / 100 || 0;
     const months = parseFloat(duration) || 0;
     const years = months / 12;
-
-    // Compound interest calculation
     const finalAmount = principal * Math.pow(1 + rate, years);
     const interest = finalAmount - principal;
-    const monthlyYield = interest / months;
-
-    return {
-      finalAmount,
-      interest,
-      monthlyYield,
-    };
+    const monthlyYield = months > 0 ? interest / months : 0;
+    return { finalAmount, interest, monthlyYield };
   }, [amount, duration, apy]);
 
   return (
@@ -168,21 +79,24 @@ function YieldCalculator({ isOpen, onClose }: YieldCalculatorProps) {
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            leftIcon={<DollarSign className="w-4 h-4" />}
+            leftIcon={<DollarSign className="w-4 h-4" aria-hidden="true" />}
+            aria-label="Investment amount"
           />
           <Input
             label="Duration (months)"
             type="number"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            leftIcon={<Clock className="w-4 h-4" />}
+            leftIcon={<Clock className="w-4 h-4" aria-hidden="true" />}
+            aria-label="Duration in months"
           />
           <Input
             label="APY (%)"
             type="number"
             value={apy}
             onChange={(e) => setApy(e.target.value)}
-            leftIcon={<Percent className="w-4 h-4" />}
+            leftIcon={<Percent className="w-4 h-4" aria-hidden="true" />}
+            aria-label="Annual percentage yield"
           />
         </div>
 
@@ -224,186 +138,195 @@ function YieldCalculator({ isOpen, onClose }: YieldCalculatorProps) {
   );
 }
 
-interface PoolActionModalProps {
-  pool: (typeof lendingPools)[0] | null;
-  action: "supply" | "borrow" | "withdraw" | "repay";
-  isOpen: boolean;
-  onClose: () => void;
-}
+// ---------------------------------------------------------------------------
+// Skeleton — shown while pools are loading
+// ---------------------------------------------------------------------------
 
-function PoolActionModal({
-  pool,
-  action,
-  isOpen,
-  onClose,
-}: PoolActionModalProps) {
-  if (!pool) return null;
-
-  const actionConfig = {
-    supply: {
-      title: "Supply to Pool",
-      description: "Earn interest by supplying liquidity",
-      buttonText: "Supply",
-      apy: pool.supplyAPY,
-    },
-    borrow: {
-      title: "Borrow from Pool",
-      description: "Borrow against your collateral",
-      buttonText: "Borrow",
-      apy: pool.borrowAPY,
-    },
-    withdraw: {
-      title: "Withdraw",
-      description: "Withdraw your deposited funds",
-      buttonText: "Withdraw",
-      apy: pool.supplyAPY,
-    },
-    repay: {
-      title: "Repay Loan",
-      description: "Repay your outstanding loan",
-      buttonText: "Repay",
-      apy: pool.borrowAPY,
-    },
-  };
-
-  const config = actionConfig[action];
-  const maxAmount =
-    action === "supply" || action === "borrow"
-      ? pool.available
-      : action === "withdraw"
-        ? pool.yourDeposit
-        : pool.yourBorrow;
-
+function PoolRowSkeleton() {
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={config.title}
-      description={config.description}
+    <div
+      className="p-4 animate-pulse"
+      role="status"
+      aria-label="Loading pool data"
     >
-      <Form
-        schema={createLendingActionSchema({
-          maxAmount,
-          asset: pool.asset,
-        })}
-        defaultValues={{ amount: "", zkPrivacy: false }}
-        successMessage="Transaction submitted."
-        onSubmit={async () => {
-          // Simulate an async on-chain call
-          await new Promise((resolve) => setTimeout(resolve, 1200));
-          // Keep success visible briefly, then close
-          setTimeout(() => onClose(), 600);
-        }}
-      >
-        {({ watch, setValue, formState }) => {
-          const zkPrivacy = watch("zkPrivacy");
-          return (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 p-4 bg-[#1a1a1a] border border-[#262626] rounded-lg">
-                <span className="text-3xl">{pool.icon}</span>
-                <div>
-                  <p className="font-semibold text-white">{pool.name}</p>
-                  <p className="text-xs text-neutral-500">{pool.asset}</p>
-                </div>
-                <Badge variant="success" className="ml-auto">
-                  {config.apy}% APY
-                </Badge>
-              </div>
-
-              <FormInput<LendingActionFormValues>
-                name="amount"
-                label={`Amount (${pool.asset})`}
-                type="number"
-                placeholder="0.00"
-                leftIcon={<Coins className="w-4 h-4" />}
-                hint={`Available: ${formatCurrency(maxAmount)}`}
-                disabled={formState.isSubmitting}
-              />
-
-              {/* ZK Privacy Toggle */}
-              <div className="p-4 bg-[#0a0a0a] border border-[#262626] rounded-lg">
-                <Toggle
-                  enabled={zkPrivacy}
-                  onChange={(v) => setValue("zkPrivacy", v)}
-                  label="Enable ZK Privacy"
-                  description="Hide transaction details using zero-knowledge proofs"
-                />
-                {zkPrivacy && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="mt-3 flex items-start gap-2 text-sm text-blue-400"
-                  >
-                    <Shield className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs">
-                      Your transaction amount and balance will be hidden from
-                      public view. Only you can see the full details.
-                    </span>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Summary */}
-              <div className="p-4 bg-[#0a0a0a] border border-[#262626] rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-500">Transaction Fee</span>
-                  <span className="text-white font-mono">~0.001 XLM</span>
-                </div>
-                {zkPrivacy && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500">ZK Proof Fee</span>
-                    <span className="text-white font-mono">~0.01 XLM</span>
-                  </div>
-                )}
-              </div>
-
-              <Button
-                className="w-full"
-                size="lg"
-                isSecure
-                type="submit"
-                isLoading={formState.isSubmitting}
-                disabled={!formState.isValid}
-              >
-                {config.buttonText}
-              </Button>
+      <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+        <div className="flex items-center gap-4 lg:w-1/4">
+          <div className="w-10 h-10 bg-[#262626] rounded-lg" />
+          <div className="space-y-2">
+            <div className="h-3 bg-[#262626] rounded w-28" />
+            <div className="h-2 bg-[#262626] rounded w-12" />
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-4 flex-1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-1">
+              <div className="h-2 bg-[#262626] rounded w-16" />
+              <div className="h-3 bg-[#262626] rounded w-20" />
             </div>
-          );
-        }}
-      </Form>
-    </Modal>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <div className="h-7 w-16 bg-[#262626] rounded" />
+          <div className="h-7 w-16 bg-[#262626] rounded" />
+        </div>
+      </div>
+    </div>
   );
 }
 
+function StatCardSkeleton() {
+  return (
+    <div className="p-4 animate-pulse" role="status" aria-label="Loading stat">
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <div className="h-2 bg-[#262626] rounded w-24" />
+          <div className="h-5 bg-[#262626] rounded w-20" />
+          <div className="h-2 bg-[#262626] rounded w-16" />
+        </div>
+        <div className="w-8 h-8 bg-[#262626] rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
+
 export default function LendingPage() {
-  const { isConnected, connect, isConnecting } = useWallet();
-  const [selectedPool, setSelectedPool] = useState<
-    (typeof lendingPools)[0] | null
-  >(null);
-  const [actionType, setActionType] = useState<
-    "supply" | "borrow" | "withdraw" | "repay"
-  >("supply");
+  const { isConnected, connect, isConnecting, address } = useWallet();
+
+  const { pools, userPositions, isLoading, error, refetch } =
+    useLendingPools(isConnected ? address : null);
+
+  // Flatten all borrow positions across all pools for health factor computation
+  const allBorrows = useMemo(
+    () =>
+      Object.values(userPositions).flatMap((pos) => pos.borrows),
+    [userPositions],
+  );
+
+  const { healthFactor, status: hfStatus } = useHealthFactor(allBorrows);
+
+  // Aggregate stats from real pool data + user positions
+  const totalDeposited = useMemo(
+    () =>
+      Object.values(userPositions).reduce(
+        (acc, pos) =>
+          acc +
+          pos.deposits.reduce((s, d) => s + parseFloat(d.amount), 0),
+        0,
+      ),
+    [userPositions],
+  );
+
+  const totalBorrowed = useMemo(
+    () =>
+      Object.values(userPositions).reduce(
+        (acc, pos) =>
+          acc +
+          pos.borrows.reduce(
+            (s, b) =>
+              s + parseFloat(b.principal) + parseFloat(b.accruedInterest),
+            0,
+          ),
+        0,
+      ),
+    [userPositions],
+  );
+
+  /** Average supply APY across all active pools — computed dynamically */
+  const avgSupplyAPY = useMemo(() => {
+    const activePools = pools.filter((p) => p.isActive && !p.isPaused);
+    if (activePools.length === 0) return null;
+    const avg =
+      activePools.reduce((s, p) => s + p.supplyAPY, 0) / activePools.length;
+    return avg.toFixed(1);
+  }, [pools]);
+
+  /** Average borrow APR across active pools — for Total Borrowed card */
+  const avgBorrowAPY = useMemo(() => {
+    const activePools = pools.filter((p) => p.isActive && !p.isPaused);
+    if (activePools.length === 0) return null;
+    const avg =
+      activePools.reduce((s, p) => s + p.borrowAPY, 0) / activePools.length;
+    return avg.toFixed(1);
+  }, [pools]);
+
+  // Modal state
+  const [selectedPool, setSelectedPool] = useState<LendingPool | null>(null);
+  const [actionType, setActionType] = useState<PoolAction>("supply");
   const [showCalculator, setShowCalculator] = useState(false);
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const [hideBalances, setHideBalances] = useState(false);
 
-  const totalDeposited = lendingPools.reduce(
-    (acc, pool) => acc + pool.yourDeposit,
-    0,
-  );
-  const totalBorrowed = lendingPools.reduce(
-    (acc, pool) => acc + pool.yourBorrow,
-    0,
-  );
-
-  const openPoolAction = (
-    pool: (typeof lendingPools)[0],
-    action: "supply" | "borrow" | "withdraw" | "repay",
-  ) => {
+  const openPoolAction = (pool: LendingPool, action: PoolAction) => {
     setSelectedPool(pool);
     setActionType(action);
   };
 
+  // -------------------------------------------------------------------------
+  // Health factor display helpers
+  // -------------------------------------------------------------------------
+  const hfColor =
+    hfStatus === "safe"
+      ? "text-[#00ff88]"
+      : hfStatus === "warning"
+        ? "text-amber-400"
+        : hfStatus === "critical"
+          ? "text-red-500"
+          : "text-neutral-500";
+
+  const hfBg =
+    hfStatus === "safe"
+      ? "bg-[#00ff88]/10 border-[#00ff88]/20"
+      : hfStatus === "warning"
+        ? "bg-amber-500/10 border-amber-500/20"
+        : hfStatus === "critical"
+          ? "bg-red-500/10 border-red-500/20"
+          : "bg-[#1a1a1a] border-[#262626]";
+
+  const hfLabel =
+    hfStatus === "safe"
+      ? "Safe (>1.5)"
+      : hfStatus === "warning"
+        ? "Warning (>1.1)"
+        : hfStatus === "critical"
+          ? "At Risk (<1.1)"
+          : "No active borrows";
+
+  const hfDisplayValue =
+    hfStatus === "none"
+      ? "—"
+      : isFinite(healthFactor)
+        ? healthFactor.toFixed(2)
+        : "∞";
+
+  // -------------------------------------------------------------------------
+  // Helper: user's total deposit / borrow amount in a specific pool
+  // -------------------------------------------------------------------------
+  function poolUserDeposit(poolId: string): number {
+    return (
+      userPositions[poolId]?.deposits.reduce(
+        (s, d) => s + parseFloat(d.amount),
+        0,
+      ) ?? 0
+    );
+  }
+
+  function poolUserBorrow(poolId: string): number {
+    return (
+      userPositions[poolId]?.borrows.reduce(
+        (s, b) =>
+          s + parseFloat(b.principal) + parseFloat(b.accruedInterest),
+        0,
+      ) ?? 0
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Wallet gate
+  // -------------------------------------------------------------------------
   if (!isConnected) {
     return (
       <motion.div
@@ -421,7 +344,7 @@ export default function LendingPage() {
             className="flex flex-col items-center justify-center min-h-[60vh] text-center"
           >
             <div className="w-16 h-16 rounded-lg bg-[#1a1a1a] border border-[#262626] flex items-center justify-center mb-6">
-              <Wallet className="w-8 h-8 text-neutral-500" />
+              <Wallet className="w-8 h-8 text-neutral-500" aria-hidden="true" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-3">DeFi Lending</h1>
             <p className="text-sm text-neutral-500 max-w-md mb-8">
@@ -433,8 +356,9 @@ export default function LendingPage() {
               size="lg"
               onClick={connect}
               isLoading={isConnecting}
-              leftIcon={<Wallet className="w-4 h-4" />}
+              leftIcon={<Wallet className="w-4 h-4" aria-hidden="true" />}
               isSecure
+              aria-label="Connect your wallet to access DeFi Lending"
             >
               Connect Wallet
             </Button>
@@ -445,6 +369,9 @@ export default function LendingPage() {
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Connected view
+  // -------------------------------------------------------------------------
   return (
     <motion.div
       variants={pageTransition}
@@ -460,7 +387,9 @@ export default function LendingPage() {
           animate="visible"
           className="space-y-8"
         >
-          {/* Header */}
+          {/* ----------------------------------------------------------------
+              Header
+          ---------------------------------------------------------------- */}
           <motion.div
             variants={staggerItem}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
@@ -479,10 +408,13 @@ export default function LendingPage() {
                 onClick={() => setHideBalances(!hideBalances)}
                 leftIcon={
                   hideBalances ? (
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4" aria-hidden="true" />
                   ) : (
-                    <EyeOff className="w-4 h-4" />
+                    <EyeOff className="w-4 h-4" aria-hidden="true" />
                   )
+                }
+                aria-label={
+                  hideBalances ? "Show balances" : "Hide balances"
                 }
               >
                 {hideBalances ? "Show" : "Hide"}
@@ -491,241 +423,369 @@ export default function LendingPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCalculator(true)}
-                leftIcon={<Calculator className="w-4 h-4" />}
+                leftIcon={<Calculator className="w-4 h-4" aria-hidden="true" />}
+                aria-label="Open yield calculator"
               >
                 Calculator
               </Button>
             </div>
           </motion.div>
 
-          {/* Overview Stats */}
+          {/* ----------------------------------------------------------------
+              Error Banner
+          ---------------------------------------------------------------- */}
+          {error && (
+            <motion.div variants={staggerItem}>
+              <div
+                role="alert"
+                className="flex items-center justify-between gap-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertCircle
+                    className="w-4 h-4 text-red-400 flex-shrink-0"
+                    aria-hidden="true"
+                  />
+                  <p className="text-sm text-red-400">{error}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refetch}
+                  leftIcon={
+                    <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+                  }
+                  aria-label="Retry loading lending pools"
+                >
+                  Retry
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ----------------------------------------------------------------
+              Overview Stats
+          ---------------------------------------------------------------- */}
           <motion.div
             variants={staggerItem}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
           >
-            <Card>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-neutral-500 uppercase tracking-wider">
-                    Total Supplied
-                  </p>
-                  <p className="text-xl font-bold text-white mt-1 font-mono">
-                    {hideBalances ? "••••••" : formatCurrency(totalDeposited)}
-                  </p>
-                  <p className="text-xs text-[#00ff88] mt-1">+5.8% avg APY</p>
-                </div>
-                <div className="p-2 rounded-lg bg-[#00ff88]/10 border border-[#00ff88]/20">
-                  <TrendingUp className="w-4 h-4 text-[#00ff88]" />
-                </div>
-              </div>
-            </Card>
+            {/* Total Supplied */}
+            {isLoading ? (
+              <>
+                <Card><StatCardSkeleton /></Card>
+                <Card><StatCardSkeleton /></Card>
+                <Card><StatCardSkeleton /></Card>
+                <Card><StatCardSkeleton /></Card>
+              </>
+            ) : (
+              <>
+                <Card>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs text-neutral-500 uppercase tracking-wider">
+                        Total Supplied
+                      </p>
+                      <p className="text-xl font-bold text-white mt-1 font-mono">
+                        {hideBalances
+                          ? "••••••"
+                          : formatCurrency(totalDeposited)}
+                      </p>
+                      {avgSupplyAPY !== null && (
+                        <p className="text-xs text-[#00ff88] mt-1">
+                          +{avgSupplyAPY}% avg APY
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-2 rounded-lg bg-[#00ff88]/10 border border-[#00ff88]/20">
+                      <TrendingUp
+                        className="w-4 h-4 text-[#00ff88]"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
+                </Card>
 
-            <Card>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-neutral-500 uppercase tracking-wider">
-                    Total Borrowed
-                  </p>
-                  <p className="text-xl font-bold text-white mt-1 font-mono">
-                    {hideBalances ? "••••••" : formatCurrency(totalBorrowed)}
-                  </p>
-                  <p className="text-xs text-amber-400 mt-1">6.5% APR</p>
-                </div>
-                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <Landmark className="w-4 h-4 text-amber-400" />
-                </div>
-              </div>
-            </Card>
+                <Card>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs text-neutral-500 uppercase tracking-wider">
+                        Total Borrowed
+                      </p>
+                      <p className="text-xl font-bold text-white mt-1 font-mono">
+                        {hideBalances
+                          ? "••••••"
+                          : formatCurrency(totalBorrowed)}
+                      </p>
+                      {avgBorrowAPY !== null && (
+                        <p className="text-xs text-amber-400 mt-1">
+                          {avgBorrowAPY}% APR
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <Landmark
+                        className="w-4 h-4 text-amber-400"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
+                </Card>
 
-            <Card>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-neutral-500 uppercase tracking-wider">
-                    Net Worth
-                  </p>
-                  <p className="text-xl font-bold text-white mt-1 font-mono">
-                    {hideBalances
-                      ? "••••••"
-                      : formatCurrency(totalDeposited - totalBorrowed)}
-                  </p>
-                  <p className="text-xs text-neutral-600 mt-1 font-mono">
-                    Deposits - Borrows
-                  </p>
-                </div>
-                <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <DollarSign className="w-4 h-4 text-blue-400" />
-                </div>
-              </div>
-            </Card>
+                <Card>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs text-neutral-500 uppercase tracking-wider">
+                        Net Worth
+                      </p>
+                      <p className="text-xl font-bold text-white mt-1 font-mono">
+                        {hideBalances
+                          ? "••••••"
+                          : formatCurrency(totalDeposited - totalBorrowed)}
+                      </p>
+                      <p className="text-xs text-neutral-600 mt-1 font-mono">
+                        Deposits − Borrows
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <DollarSign
+                        className="w-4 h-4 text-blue-400"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
+                </Card>
 
-            <Card>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-neutral-500 uppercase tracking-wider">
-                    Health Factor
-                  </p>
-                  <p className="text-xl font-bold text-[#00ff88] mt-1 font-mono">
-                    2.45
-                  </p>
-                  <p className="text-xs text-neutral-600 mt-1 font-mono">
-                    Safe (&gt;1.5)
-                  </p>
-                </div>
-                <div className="p-2 rounded-lg bg-[#00ff88]/10 border border-[#00ff88]/20">
-                  <Shield className="w-4 h-4 text-[#00ff88]" />
-                </div>
-              </div>
-            </Card>
+                <Card>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs text-neutral-500 uppercase tracking-wider">
+                        Health Factor
+                      </p>
+                      <p
+                        className={`text-xl font-bold mt-1 font-mono ${hfColor}`}
+                        aria-label={`Health factor: ${hfDisplayValue}. Status: ${hfLabel}`}
+                      >
+                        {hfDisplayValue}
+                      </p>
+                      <p className="text-xs text-neutral-600 mt-1 font-mono">
+                        {hfLabel}
+                      </p>
+                    </div>
+                    <div className={`p-2 rounded-lg border ${hfBg}`}>
+                      <Shield
+                        className={`w-4 h-4 ${hfColor}`}
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              </>
+            )}
           </motion.div>
 
-          {/* Lending Pools */}
+          {/* ----------------------------------------------------------------
+              Lending Pools Table
+          ---------------------------------------------------------------- */}
           <motion.div variants={staggerItem}>
             <Card noPadding>
               <CardHeader className="p-4 border-b border-[#262626]">
                 <div className="flex items-center justify-between">
                   <CardTitle>Lending Pools</CardTitle>
-                  <Badge variant="info" dot>
-                    3 Active Pools
-                  </Badge>
+                  {!isLoading && (
+                    <Badge variant="info" dot>
+                      {pools.filter((p) => p.isActive).length} Active Pool
+                      {pools.filter((p) => p.isActive).length !== 1 ? "s" : ""}
+                    </Badge>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="divide-y divide-[#1a1a1a]">
-                {lendingPools.map((pool) => (
-                  <div
-                    key={pool.id}
-                    className="p-4 hover:bg-[#0a0a0a] transition-colors"
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                      {/* Pool Info */}
-                      <div className="flex items-center gap-4 lg:w-1/4">
-                        <span className="text-3xl">{pool.icon}</span>
-                        <div>
-                          <h3 className="text-sm font-semibold text-white">
-                            {pool.name}
-                          </h3>
-                          <p className="text-xs text-neutral-500 font-mono">
-                            {pool.asset}
-                          </p>
-                        </div>
-                      </div>
+                {isLoading ? (
+                  // Loading skeletons
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <PoolRowSkeleton key={i} />
+                  ))
+                ) : pools.length === 0 && !error ? (
+                  // Empty state
+                  <div className="py-12 text-center text-neutral-500">
+                    <Coins
+                      className="w-8 h-8 mx-auto mb-3 opacity-40"
+                      aria-hidden="true"
+                    />
+                    <p className="text-sm">No lending pools available.</p>
+                  </div>
+                ) : (
+                  pools
+                    .filter((pool) => pool.isActive)
+                    .map((pool) => {
+                      const deposit = poolUserDeposit(pool.id);
+                      const borrow = poolUserBorrow(pool.id);
+                      const available = parseFloat(pool.availableLiquidity);
 
-                      {/* Stats */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:flex-1">
-                        <div>
-                          <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
-                            Total Liquidity
-                          </p>
-                          <p className="text-sm font-medium text-white font-mono">
-                            {formatCurrency(pool.totalLiquidity)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
-                            Supply APY
-                          </p>
-                          <p className="text-sm font-medium text-[#00ff88] font-mono">
-                            {pool.supplyAPY}%
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
-                            Borrow APY
-                          </p>
-                          <p className="text-sm font-medium text-amber-400 font-mono">
-                            {pool.borrowAPY}%
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
-                            Utilization
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1 bg-[#262626] rounded-full overflow-hidden">
+                      return (
+                        <div
+                          key={pool.id}
+                          className="p-4 hover:bg-[#0a0a0a] transition-colors"
+                        >
+                          <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                            {/* Pool identity */}
+                            <div className="flex items-center gap-4 lg:w-1/4">
                               <div
-                                className="h-full bg-gradient-to-r from-[#ff3e00] to-[#00ff88]"
-                                style={{ width: `${pool.utilization}%` }}
-                              />
+                                className="w-10 h-10 rounded-lg bg-[#262626] flex items-center justify-center flex-shrink-0"
+                                aria-label={pool.asset}
+                              >
+                                <Coins
+                                  className="w-5 h-5 text-neutral-300"
+                                  aria-hidden="true"
+                                />
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-semibold text-white">
+                                  {pool.name}
+                                </h3>
+                                <p className="text-xs text-neutral-500 font-mono">
+                                  {pool.asset}
+                                </p>
+                              </div>
                             </div>
-                            <span className="text-xs text-white font-mono">
-                              {pool.utilization}%
-                            </span>
+
+                            {/* Stats */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:flex-1">
+                              <div>
+                                <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
+                                  Total Liquidity
+                                </p>
+                                <p className="text-sm font-medium text-white font-mono">
+                                  {formatCurrency(
+                                    parseFloat(pool.totalDeposits),
+                                  )}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
+                                  Supply APY
+                                </p>
+                                <p className="text-sm font-medium text-[#00ff88] font-mono">
+                                  {pool.supplyAPY}%
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
+                                  Borrow APY
+                                </p>
+                                <p className="text-sm font-medium text-amber-400 font-mono">
+                                  {pool.borrowAPY}%
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-neutral-600 mb-1 uppercase tracking-wider">
+                                  Utilization
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-1 bg-[#262626] rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-[#ff3e00] to-[#00ff88]"
+                                      style={{
+                                        width: `${pool.utilizationRate}%`,
+                                      }}
+                                      role="presentation"
+                                    />
+                                  </div>
+                                  <span className="text-xs text-white font-mono">
+                                    {pool.utilizationRate.toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* User position (shown only when non-zero) */}
+                            {(deposit > 0 || borrow > 0) && (
+                              <div className="p-3 bg-[#0a0a0a] border border-[#262626] rounded-lg lg:w-48">
+                                <p className="text-[10px] text-neutral-600 mb-2 uppercase tracking-wider">
+                                  Your Position
+                                </p>
+                                {deposit > 0 && (
+                                  <p className="text-xs text-white font-mono">
+                                    Supplied:{" "}
+                                    {hideBalances
+                                      ? "••••"
+                                      : formatCurrency(deposit)}
+                                  </p>
+                                )}
+                                {borrow > 0 && (
+                                  <p className="text-xs text-amber-400 font-mono">
+                                    Borrowed:{" "}
+                                    {hideBalances
+                                      ? "••••"
+                                      : formatCurrency(borrow)}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Action buttons */}
+                            <div className="flex flex-wrap gap-2 lg:w-auto">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => openPoolAction(pool, "supply")}
+                                aria-label={`Supply to ${pool.name}`}
+                                disabled={pool.isPaused || available <= 0}
+                              >
+                                Supply
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openPoolAction(pool, "borrow")}
+                                aria-label={`Borrow from ${pool.name}`}
+                                disabled={pool.isPaused || available <= 0}
+                              >
+                                Borrow
+                              </Button>
+                              {deposit > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    openPoolAction(pool, "withdraw")
+                                  }
+                                  aria-label={`Withdraw from ${pool.name}`}
+                                >
+                                  Withdraw
+                                </Button>
+                              )}
+                              {borrow > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openPoolAction(pool, "repay")}
+                                  aria-label={`Repay loan in ${pool.name}`}
+                                >
+                                  Repay
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Your Position */}
-                      {(pool.yourDeposit > 0 || pool.yourBorrow > 0) && (
-                        <div className="p-3 bg-[#0a0a0a] border border-[#262626] rounded-lg lg:w-48">
-                          <p className="text-[10px] text-neutral-600 mb-2 uppercase tracking-wider">
-                            Your Position
-                          </p>
-                          {pool.yourDeposit > 0 && (
-                            <p className="text-xs text-white font-mono">
-                              Supplied:{" "}
-                              {hideBalances
-                                ? "••••"
-                                : formatCurrency(pool.yourDeposit)}
-                            </p>
-                          )}
-                          {pool.yourBorrow > 0 && (
-                            <p className="text-xs text-amber-400 font-mono">
-                              Borrowed:{" "}
-                              {hideBalances
-                                ? "••••"
-                                : formatCurrency(pool.yourBorrow)}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex flex-wrap gap-2 lg:w-auto">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => openPoolAction(pool, "supply")}
-                        >
-                          Supply
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openPoolAction(pool, "borrow")}
-                        >
-                          Borrow
-                        </Button>
-                        {pool.yourDeposit > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openPoolAction(pool, "withdraw")}
-                          >
-                            Withdraw
-                          </Button>
-                        )}
-                        {pool.yourBorrow > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openPoolAction(pool, "repay")}
-                          >
-                            Repay
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                      );
+                    })
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* ZK Privacy Info */}
+          {/* ----------------------------------------------------------------
+              ZK Privacy Info Banner
+          ---------------------------------------------------------------- */}
           <motion.div variants={staggerItem}>
             <Card variant="gradient">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <Shield className="w-5 h-5 text-blue-400" />
+                  <Shield
+                    className="w-5 h-5 text-blue-400"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-white mb-2">
@@ -752,92 +812,161 @@ export default function LendingPage() {
             </Card>
           </motion.div>
 
-          {/* Audit Logs */}
+          {/* ----------------------------------------------------------------
+              Audit Logs (collapsible)
+          ---------------------------------------------------------------- */}
           <motion.div variants={staggerItem}>
             <Card noPadding>
               <CardHeader className="p-4 border-b border-[#262626]">
                 <button
                   onClick={() => setShowAuditLogs(!showAuditLogs)}
                   className="w-full flex items-center justify-between cursor-pointer"
+                  aria-expanded={showAuditLogs}
+                  aria-controls="audit-logs-panel"
                 >
                   <div className="flex items-center gap-3">
-                    <FileText className="w-4 h-4 text-neutral-500" />
+                    <FileText
+                      className="w-4 h-4 text-neutral-500"
+                      aria-hidden="true"
+                    />
                     <CardTitle>Audit Logs</CardTitle>
                   </div>
                   {showAuditLogs ? (
-                    <ChevronUp className="w-4 h-4 text-neutral-500" />
+                    <ChevronUp
+                      className="w-4 h-4 text-neutral-500"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-neutral-500" />
+                    <ChevronDown
+                      className="w-4 h-4 text-neutral-500"
+                      aria-hidden="true"
+                    />
                   )}
                 </button>
               </CardHeader>
               <AnimatePresence>
                 {showAuditLogs && (
                   <motion.div
+                    id="audit-logs-panel"
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <CardContent className="divide-y divide-[#1a1a1a]">
-                      {auditLogs.map((log) => (
-                        <div
-                          key={log.id}
-                          className="p-4 flex items-center gap-4"
-                        >
-                          <div
-                            className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center",
-                              log.action === "Deposit" ||
-                                log.action === "Supply"
-                                ? "bg-[#00ff88]/10"
-                                : log.action === "Borrow"
-                                  ? "bg-amber-500/10"
-                                  : "bg-[#1a1a1a]",
-                            )}
-                          >
-                            {log.status === "completed" ? (
-                              <CheckCircle2
-                                className={cn(
-                                  "w-4 h-4",
-                                  log.action === "Deposit" ||
-                                    log.action === "Supply"
-                                    ? "text-[#00ff88]"
-                                    : log.action === "Borrow"
-                                      ? "text-amber-400"
-                                      : "text-neutral-500",
-                                )}
-                              />
-                            ) : (
-                              <Clock className="w-4 h-4 text-neutral-500" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-white">
-                                {log.action}
-                              </span>
-                              <Badge variant="outline" className="text-[10px]">
-                                {log.pool}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-neutral-500 font-mono">
-                              {log.timestamp}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium text-white font-mono">
-                              {formatCurrency(log.amount)}
-                            </p>
-                            <a
-                              href="#"
-                              className="text-[10px] text-[#ff3e00] hover:underline font-mono cursor-pointer"
-                            >
-                              {log.txHash}
-                            </a>
-                          </div>
+                    <CardContent>
+                      {isLoading ? (
+                        <div className="py-8 text-center">
+                          <p className="text-xs text-neutral-500">
+                            Loading transaction history…
+                          </p>
                         </div>
-                      ))}
+                      ) : allBorrows.length === 0 &&
+                        Object.values(userPositions).every(
+                          (p) => p.deposits.length === 0,
+                        ) ? (
+                        <div className="py-8 text-center text-neutral-500">
+                          <p className="text-sm">
+                            No transaction history yet.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-[#1a1a1a]">
+                          {/* Deposit log entries */}
+                          {Object.entries(userPositions).flatMap(
+                            ([poolId, pos]) =>
+                              pos.deposits.map((dep) => {
+                                const pool = pools.find(
+                                  (p) => p.id === poolId,
+                                );
+                                return (
+                                  <div
+                                    key={dep.id}
+                                    className="p-4 flex items-center gap-4"
+                                  >
+                                    <div className="w-10 h-10 rounded-full bg-[#00ff88]/10 flex items-center justify-center flex-shrink-0">
+                                      <CheckCircle2
+                                        className="w-4 h-4 text-[#00ff88]"
+                                        aria-hidden="true"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-white">
+                                          Deposit
+                                        </span>
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[10px]"
+                                        >
+                                          {pool?.name ?? poolId}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-xs text-neutral-500 font-mono">
+                                        {new Date(
+                                          dep.depositedAt,
+                                        ).toLocaleString()}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm font-medium text-white font-mono">
+                                        {formatCurrency(
+                                          parseFloat(dep.amount),
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              }),
+                          )}
+                          {/* Borrow log entries */}
+                          {Object.entries(userPositions).flatMap(
+                            ([poolId, pos]) =>
+                              pos.borrows.map((borrow) => {
+                                const pool = pools.find(
+                                  (p) => p.id === poolId,
+                                );
+                                return (
+                                  <div
+                                    key={borrow.id}
+                                    className="p-4 flex items-center gap-4"
+                                  >
+                                    <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                                      <CheckCircle2
+                                        className="w-4 h-4 text-amber-400"
+                                        aria-hidden="true"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-white">
+                                          Borrow
+                                        </span>
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[10px]"
+                                        >
+                                          {pool?.name ?? poolId}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-xs text-neutral-500 font-mono">
+                                        {new Date(
+                                          borrow.borrowedAt,
+                                        ).toLocaleString()}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm font-medium text-white font-mono">
+                                        {formatCurrency(
+                                          parseFloat(borrow.principal),
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              }),
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </motion.div>
                 )}
@@ -848,7 +977,9 @@ export default function LendingPage() {
       </main>
       <Footer />
 
-      {/* Modals */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Modals                                                               */}
+      {/* ------------------------------------------------------------------ */}
       <YieldCalculator
         isOpen={showCalculator}
         onClose={() => setShowCalculator(false)}
@@ -858,6 +989,8 @@ export default function LendingPage() {
         action={actionType}
         isOpen={!!selectedPool}
         onClose={() => setSelectedPool(null)}
+        userAddress={address}
+        onSuccess={refetch}
       />
     </motion.div>
   );
