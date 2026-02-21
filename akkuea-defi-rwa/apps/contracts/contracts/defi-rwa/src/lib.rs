@@ -101,7 +101,7 @@ impl PropertyTokenContract {
         let collateral_token = token::Client::new(&env, &collateral_asset);
         collateral_token.transfer(
             &borrower,
-            &env.current_contract_address(),
+            env.current_contract_address(),
             &collateral_amount,
         );
 

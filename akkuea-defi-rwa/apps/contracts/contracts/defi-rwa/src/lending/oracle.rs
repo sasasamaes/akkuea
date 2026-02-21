@@ -21,7 +21,7 @@ impl PriceOracle {
 
     pub fn get_price(env: &Env, asset: &Address) -> i128 {
         let oracle_address = Self::get_oracle_address(env);
-        let price_feed_client = PriceFeedClient::new(&env, &oracle_address);
+        let price_feed_client = PriceFeedClient::new(env, &oracle_address);
 
         let asset_enum = Asset::Stellar(asset.clone());
         let price_data = price_feed_client
@@ -51,8 +51,8 @@ impl PriceOracle {
     }
 
     pub fn get_raw_price_data(env: &Env, asset: &Address) -> PriceData {
-        let oracle_address = Self::get_oracle_address(&env);
-        let price_feed_client = PriceFeedClient::new(&env, &oracle_address);
+        let oracle_address = Self::get_oracle_address(env);
+        let price_feed_client = PriceFeedClient::new(env, &oracle_address);
         let asset_enum = Asset::Stellar(asset.clone());
         price_feed_client
             .lastprice(&asset_enum)
