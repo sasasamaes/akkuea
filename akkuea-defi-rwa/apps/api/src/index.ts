@@ -17,7 +17,8 @@ app.use(
 );
 
 // Add health check endpoint
-app.get('/health', async () => {
+app
+  .get('/health', async () => {
     const dbHealth = await checkDatabaseHealth();
 
     return {
@@ -38,17 +39,15 @@ app.get('/health', async () => {
     hostname: '0.0.0.0',
   });
 
- 
 console.log(`🚀 Real Estate DeFi API is running on port ${process.env.PORT || 3001}`);
- 
+
 console.log(`📚 Swagger docs available at http://localhost:${process.env.PORT || 3001}/swagger`);
 
 // Graceful shutdown handlers
 const shutdown = async (signal: string) => {
-   
   console.log(`\n${signal} received, closing database connections...`);
   await closeDatabaseConnection();
-   
+
   console.log('Database connections closed. Exiting...');
   process.exit(0);
 };

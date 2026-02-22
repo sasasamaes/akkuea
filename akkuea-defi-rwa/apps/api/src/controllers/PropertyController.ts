@@ -7,7 +7,11 @@ import {
   NotImplementedError,
 } from '@real-estate-defi/shared';
 import { logger } from '../services/logger';
-import { propertyRepository, type PropertyFilter, type PaginatedResult } from '../repositories/PropertyRepository';
+import {
+  propertyRepository,
+  type PropertyFilter,
+  type PaginatedResult,
+} from '../repositories/PropertyRepository';
 import { userRepository } from '../repositories/UserRepository';
 import type { Property, NewProperty, PropertyDocument } from '../db/schema';
 
@@ -68,7 +72,7 @@ export interface PaginatedResponse<T> {
  */
 async function mapPropertyToPropertyInfo(
   property: Property & { documents?: PropertyDocument[] },
-  ownerAddress?: string
+  ownerAddress?: string,
 ): Promise<PropertyInfo> {
   // Get owner's wallet address if not provided
   let walletAddress = ownerAddress;
@@ -107,8 +111,10 @@ async function mapPropertyToPropertyInfo(
  * Validates pagination parameters
  */
 function validatePagination(page: unknown, limit: unknown): { page: number; limit: number } {
-  const pageNum = typeof page === 'string' ? parseInt(page, 10) : typeof page === 'number' ? page : 1;
-  const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : typeof limit === 'number' ? limit : 10;
+  const pageNum =
+    typeof page === 'string' ? parseInt(page, 10) : typeof page === 'number' ? page : 1;
+  const limitNum =
+    typeof limit === 'string' ? parseInt(limit, 10) : typeof limit === 'number' ? limit : 10;
 
   return {
     page: pageNum > 0 ? pageNum : 1,
@@ -144,7 +150,10 @@ export class PropertyController {
       if (query?.ownerId) filter.ownerId = query.ownerId;
       if (query?.city) filter.city = query.city;
       if (query?.country) filter.country = query.country;
-      if (query?.propertyType && ['residential', 'commercial', 'industrial', 'land', 'mixed'].includes(query.propertyType)) {
+      if (
+        query?.propertyType &&
+        ['residential', 'commercial', 'industrial', 'land', 'mixed'].includes(query.propertyType)
+      ) {
         filter.propertyType = query.propertyType as PropertyFilter['propertyType'];
       }
       if (query?.minPricePerShare !== undefined) {
@@ -165,12 +174,12 @@ export class PropertyController {
 
       const result: PaginatedResult<Property> = await propertyRepository.findPaginated(
         pagination,
-        Object.keys(filter).length > 0 ? filter : undefined
+        Object.keys(filter).length > 0 ? filter : undefined,
       );
 
       // Map properties to PropertyInfo
       const properties = await Promise.all(
-        result.data.map((property) => mapPropertyToPropertyInfo(property))
+        result.data.map((property) => mapPropertyToPropertyInfo(property)),
       );
 
       logger.info('Properties fetched successfully', {
@@ -197,7 +206,9 @@ export class PropertyController {
     const startTime = Date.now();
 
     if (!id) {
-      throw new ValidationError('Property ID is required', [{ field: 'id', message: 'Property ID is required' }]);
+      throw new ValidationError('Property ID is required', [
+        { field: 'id', message: 'Property ID is required' },
+      ]);
     }
 
     logger.info('Fetching property', { operation: 'READ', entity: 'property', entityId: id });
@@ -220,7 +231,12 @@ export class PropertyController {
 
       return propertyInfo;
     } catch (error) {
-      logger.error('Failed to fetch property', { error, operation: 'READ', entity: 'property', entityId: id });
+      logger.error('Failed to fetch property', {
+        error,
+        operation: 'READ',
+        entity: 'property',
+        entityId: id,
+      });
       throw error;
     }
   }
@@ -233,7 +249,11 @@ export class PropertyController {
     userAddress: string,
   ): Promise<PropertyInfo> {
     const startTime = Date.now();
-    logger.info('Creating property', { operation: 'CREATE', entity: 'property', userId: userAddress });
+    logger.info('Creating property', {
+      operation: 'CREATE',
+      entity: 'property',
+      userId: userAddress,
+    });
 
     try {
       // Validate required fields
@@ -310,7 +330,12 @@ export class PropertyController {
       throw new AuthenticationError('User address is required for authentication');
     }
 
-    logger.info('Updating property', { operation: 'UPDATE', entity: 'property', entityId: id, userId: userAddress });
+    logger.info('Updating property', {
+      operation: 'UPDATE',
+      entity: 'property',
+      entityId: id,
+      userId: userAddress,
+    });
 
     try {
       // Check if property exists
@@ -353,7 +378,12 @@ export class PropertyController {
 
       return propertyInfo;
     } catch (error) {
-      logger.error('Failed to update property', { error, operation: 'UPDATE', entity: 'property', entityId: id });
+      logger.error('Failed to update property', {
+        error,
+        operation: 'UPDATE',
+        entity: 'property',
+        entityId: id,
+      });
       throw error;
     }
   }
@@ -372,7 +402,12 @@ export class PropertyController {
       throw new AuthenticationError('User address is required for authentication');
     }
 
-    logger.info('Deleting property', { operation: 'DELETE', entity: 'property', entityId: id, userId: userAddress });
+    logger.info('Deleting property', {
+      operation: 'DELETE',
+      entity: 'property',
+      entityId: id,
+      userId: userAddress,
+    });
 
     try {
       // Check if property exists
@@ -404,7 +439,12 @@ export class PropertyController {
 
       return { success: true };
     } catch (error) {
-      logger.error('Failed to delete property', { error, operation: 'DELETE', entity: 'property', entityId: id });
+      logger.error('Failed to delete property', {
+        error,
+        operation: 'DELETE',
+        entity: 'property',
+        entityId: id,
+      });
       throw error;
     }
   }
@@ -413,11 +453,7 @@ export class PropertyController {
    * Tokenize a property on the blockchain
    * Note: This feature is planned for Cycle 2
    */
-  static async tokenizeProperty(
-    id: string,
-    _data: unknown,
-    userAddress?: string,
-  ): Promise<never> {
+  static async tokenizeProperty(id: string, _data: unknown, userAddress?: string): Promise<never> {
     logger.info('Tokenization attempted', {
       operation: 'TOKENIZE',
       entity: 'property',
@@ -432,10 +468,7 @@ export class PropertyController {
    * Buy shares of a property
    * Note: This feature is planned for Cycle 2
    */
-  static async buyShares(
-    id: string,
-    data: { buyer: string; shares: number },
-  ): Promise<never> {
+  static async buyShares(id: string, data: { buyer: string; shares: number }): Promise<never> {
     logger.info('Share purchase attempted', {
       operation: 'BUY_SHARES',
       entity: 'property',

@@ -128,7 +128,12 @@ export class LoggerService {
       });
     },
 
-    update: (entity: string, entityId: string, data?: Record<string, unknown>, userId?: string): void => {
+    update: (
+      entity: string,
+      entityId: string,
+      data?: Record<string, unknown>,
+      userId?: string,
+    ): void => {
       this.info(`Updating ${entity} with id ${entityId}`, {
         operation: 'UPDATE',
         entity,
@@ -157,16 +162,19 @@ export class LoggerService {
     },
 
     failure: (operation: string, entity: string, error: Error, entityId?: string): void => {
-      this.log('error', `${operation} ${entity} failed: ${error.message}`, {
-        operation,
-        entity,
-        entityId,
-      }, error);
+      this.log(
+        'error',
+        `${operation} ${entity} failed: ${error.message}`,
+        {
+          operation,
+          entity,
+          entityId,
+        },
+        error,
+      );
     },
   };
 }
 
 // Export singleton instance
-export const logger = new LoggerService(
-  (process.env.LOG_LEVEL as LogLevel) || 'info'
-);
+export const logger = new LoggerService((process.env.LOG_LEVEL as LogLevel) || 'info');

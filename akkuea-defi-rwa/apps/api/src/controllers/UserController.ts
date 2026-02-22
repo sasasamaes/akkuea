@@ -33,11 +33,7 @@ export class UserController {
     // Check for existing wallet
     const exists = await userRepository.walletExists(walletAddress);
     if (exists) {
-      throw new ApiError(
-        409,
-        'WALLET_EXISTS',
-        'User with this wallet address already exists'
-      );
+      throw new ApiError(409, 'WALLET_EXISTS', 'User with this wallet address already exists');
     }
 
     const user = await userRepository.createUser({
@@ -96,7 +92,6 @@ export class UserController {
    * Get user by wallet address
    */
   static async getByWallet(ctx: Context<{ params: { address: string } }>): Promise<Response> {
-   
     const { address } = ctx.params;
 
     // Validate wallet address format

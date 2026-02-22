@@ -52,9 +52,7 @@ describe('Lending Routes Integration Tests', () => {
 
   describe('GET /lending/pools/:id', () => {
     it('should return pool when id is provided', async () => {
-      const response = await app.handle(
-        new Request('http://localhost/lending/pools/test-pool-id'),
-      );
+      const response = await app.handle(new Request('http://localhost/lending/pools/test-pool-id'));
 
       expect(response.status).toBe(200);
     });

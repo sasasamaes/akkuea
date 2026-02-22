@@ -54,7 +54,9 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
   /**
    * Find property by ID with documents
    */
-  async findByIdWithDocuments(id: string): Promise<(Property & { documents: PropertyDocument[] }) | undefined> {
+  async findByIdWithDocuments(
+    id: string,
+  ): Promise<(Property & { documents: PropertyDocument[] }) | undefined> {
     const property = await this.findById(id);
     if (!property) return undefined;
 
@@ -70,10 +72,7 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
    * Find properties by owner ID
    */
   async findByOwner(ownerId: string): Promise<Property[]> {
-    return db
-      .select()
-      .from(properties)
-      .where(eq(properties.ownerId, ownerId));
+    return db.select().from(properties).where(eq(properties.ownerId, ownerId));
   }
 
   /**
@@ -97,7 +96,7 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
    */
   async findPaginated(
     options: PaginationOptions,
-    filter?: PropertyFilter
+    filter?: PropertyFilter,
   ): Promise<PaginatedResult<Property>> {
     const { page, limit } = options;
     const offset = (page - 1) * limit;
@@ -113,12 +112,7 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
     const total = countResult[0]?.count ?? 0;
 
     // Get paginated data
-    const data = await db
-      .select()
-      .from(properties)
-      .where(whereClause)
-      .limit(limit)
-      .offset(offset);
+    const data = await db.select().from(properties).where(whereClause).limit(limit).offset(offset);
 
     return {
       data,
@@ -142,7 +136,10 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
   /**
    * Update available shares (e.g., after a purchase)
    */
-  async updateAvailableShares(id: string, newAvailableShares: number): Promise<Property | undefined> {
+  async updateAvailableShares(
+    id: string,
+    newAvailableShares: number,
+  ): Promise<Property | undefined> {
     if (newAvailableShares < 0) {
       throw new Error('Available shares cannot be negative');
     }
@@ -201,10 +198,7 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
    * Add a document to a property
    */
   async addDocument(document: NewPropertyDocument): Promise<PropertyDocument> {
-    const results = await db
-      .insert(propertyDocuments)
-      .values(document)
-      .returning();
+    const results = await db.insert(propertyDocuments).values(document).returning();
 
     const result = results[0];
     if (!result) {
@@ -217,10 +211,7 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
    * Get documents for a property
    */
   async getDocuments(propertyId: string): Promise<PropertyDocument[]> {
-    return db
-      .select()
-      .from(propertyDocuments)
-      .where(eq(propertyDocuments.propertyId, propertyId));
+    return db.select().from(propertyDocuments).where(eq(propertyDocuments.propertyId, propertyId));
   }
 
   /**
