@@ -261,30 +261,14 @@ jobs:
         cd apps/api
         bun install
         echo "Testing API imports..."
-        node --input-type=module -e "
-        import('../shared/dist/index.js').then(shared => {
-          console.log('✅ API can import shared library');
-          const { ValidationService } = shared;
-          console.log('✅ ValidationService available:', typeof ValidationService);
-        }).catch(err => {
-          console.error('❌ Failed to import shared in API:', err.message);
-          process.exit(1);
-        });
-        "
+        bun -e "const shared = await import('../shared/dist/index.js'); console.log('✅ API can import shared library'); const { ValidationService } = shared; console.log('✅ ValidationService available:', typeof ValidationService);"
         cd ../..
         
         # Test webapp imports from shared
         cd apps/webapp
         bun install
         echo "Testing WebApp imports..."
-        node --input-type=module -e "
-        import('../shared/dist/index.js').then(shared => {
-          console.log('✅ WebApp can import shared library');
-        }).catch(err => {
-          console.error('❌ Failed to import shared in WebApp:', err.message);
-          process.exit(1);
-        });
-        "
+        bun -e "const shared = await import('../shared/dist/index.js'); console.log('✅ WebApp can import shared library');"
         cd ../..
         
     - name: Type compatibility test
