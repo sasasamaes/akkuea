@@ -35,6 +35,18 @@ pub enum StorageKey {
     /// Allowance tracking for approved spenders
     /// Key: Allowance(property_id, owner_address, spender_address)
     Allowance(u64, Address, Address),
+
+    /// Available shares for a property (total - sold)
+    /// Key: AvailableShares(property_id)
+    AvailableShares(u64),
+
+    /// Price per share for a property
+    /// Key: PricePerShare(property_id)
+    PricePerShare(u64),
+
+    /// Verified status for a property
+    /// Key: PropertyVerified(property_id)
+    PropertyVerified(u64),
 }
 
 impl StorageKey {
@@ -49,6 +61,11 @@ impl StorageKey {
             StorageKey::Admin => Symbol::new(&soroban_sdk::Env::default(), "Admin"),
             StorageKey::PropertyCounter => Symbol::new(&soroban_sdk::Env::default(), "PropCnt"),
             StorageKey::Allowance(_, _, _) => Symbol::new(&soroban_sdk::Env::default(), "Allow"),
+            StorageKey::AvailableShares(_) => {
+                Symbol::new(&soroban_sdk::Env::default(), "AvailShrs")
+            }
+            StorageKey::PricePerShare(_) => Symbol::new(&soroban_sdk::Env::default(), "PriceShr"),
+            StorageKey::PropertyVerified(_) => Symbol::new(&soroban_sdk::Env::default(), "PropVer"),
         }
     }
 }

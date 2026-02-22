@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { ApiError } from '../errors/ApiError';
 
-export const errorHandler = new Elysia().onError(({ error, code, set }) => {
+export const errorHandler = new Elysia().onError({ as: 'global' }, ({ error, code, set }) => {
   // Handle custom ApiError instances
   if (error instanceof ApiError) {
     set.status = error.statusCode;
