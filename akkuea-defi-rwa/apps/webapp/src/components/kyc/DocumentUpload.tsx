@@ -19,7 +19,9 @@ export default function DocumentUpload({
 }: DocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({})
+  const [uploadProgress, setUploadProgress] = useState<{
+    [key: string]: number;
+  }>({});
   const { setValue } = useFormContext<KycFormData>();
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const [fileError, setFileError] = useState<string | null>(null);
@@ -55,8 +57,6 @@ export default function DocumentUpload({
     xhr.send(formData);
   };
 
-
-
   const handleFiles = (fileList: FileList | null) => {
     if (!fileList) return;
 
@@ -66,7 +66,7 @@ export default function DocumentUpload({
     for (const file of selectedFiles) {
       if (file.size > MAX_FILE_SIZE) {
         setFileError(
-          `${file.name} exceeds 10MB. Maximum allowed size is 10MB.`
+          `${file.name} exceeds 10MB. Maximum allowed size is 10MB.`,
         );
         return; // stop everything
       }
@@ -106,10 +106,9 @@ export default function DocumentUpload({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition cursor-pointer ${isDragging
-          ? "border-blue-500 bg-blue-50"
-          : "border-gray-300"
-          }`}
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition cursor-pointer ${
+          isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"
+        }`}
       >
         <input
           type="file"
@@ -119,10 +118,13 @@ export default function DocumentUpload({
           id={label}
           onChange={handleChange}
         />
-        <label htmlFor={label} className="cursor-pointer flex flex-col gap-2 text-xs ">
+        <label
+          htmlFor={label}
+          className="cursor-pointer flex flex-col gap-2 text-xs "
+        >
           {label}
           <span>Or</span>
-          <span  > Drag and Drop file here</span>
+          <span> Drag and Drop file here</span>
         </label>
       </div>
 
@@ -131,7 +133,9 @@ export default function DocumentUpload({
           {files.map((file, index) => (
             <div key={index} className="p-2 bg-gray-50 rounded border">
               <div className="flex justify-between text-xs mb-4">
-                <span>{file.name}   {(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                <span>
+                  {file.name} {(file.size / (1024 * 1024)).toFixed(2)} MB
+                </span>
                 <span>{uploadProgress[file.name] || 0}%</span>
               </div>
 
@@ -148,12 +152,7 @@ export default function DocumentUpload({
         </div>
       )}
 
-
-      {fileError && (
-        <p className="mt-2 text-xs text-red-600">
-          {fileError}
-        </p>
-      )}
+      {fileError && <p className="mt-2 text-xs text-red-600">{fileError}</p>}
     </div>
   );
 }

@@ -27,7 +27,9 @@ export default function KYCStatus({ status }: KYCStatusProps) {
   }
 
   return (
-    <div className={`p-4 border rounded-md w-full max-w-md ${color} border-gray-200 bg-gray-50`}>
+    <div
+      className={`p-4 border rounded-md w-full max-w-md ${color} border-gray-200 bg-gray-50`}
+    >
       <p className="font-semibold text-center">{message}</p>
     </div>
   );

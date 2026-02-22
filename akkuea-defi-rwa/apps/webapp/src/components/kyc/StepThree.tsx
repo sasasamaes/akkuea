@@ -26,7 +26,9 @@ export default function StepThree() {
 
         {/* date of birth */}
         <div>
-          <h3 className="text-sm font-medium text-neutral-500">Date of Birth</h3>
+          <h3 className="text-sm font-medium text-neutral-500">
+            Date of Birth
+          </h3>
           <p className="text-[#0a0a0a] text-sm">{values.date_of_birth}</p>
         </div>
 
@@ -50,7 +52,6 @@ export default function StepThree() {
           <p className="text-[#0a0a0a] text-sm">{values.residential_address}</p>
         </div>
 
-
         {/* National ID */}
         {values.nationalId && values.nationalId?.length > 0 ? (
           <div>
@@ -59,23 +60,15 @@ export default function StepThree() {
             </h3>
             <p className="text-sm">{values.nationalId[0].name}</p>
           </div>
-        )
-          :
-          null
-        }
+        ) : null}
 
         {/* Selfie */}
         {values.selfie && values.selfie?.length > 0 ? (
           <div>
-            <h3 className="text-sm font-medium text-neutral-500">
-              Selfie
-            </h3>
+            <h3 className="text-sm font-medium text-neutral-500">Selfie</h3>
             <p className="text-sm">{values.selfie[0].name}</p>
           </div>
-        )
-          :
-          null
-        }
+        ) : null}
       </div>
     </div>
   );

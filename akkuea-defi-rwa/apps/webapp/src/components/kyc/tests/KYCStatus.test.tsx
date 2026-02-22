@@ -1,8 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import KYCStatus from "../KYCStatus";
-import '@testing-library/jest-dom';
-
-
+import "@testing-library/jest-dom";
 
 describe("KYCStatus", () => {
   it("displays pending status", () => {
