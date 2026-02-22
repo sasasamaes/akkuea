@@ -1,14 +1,6 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
-import {
-  StellarService,
-  WalletSigner,
-} from "./stellar";
-import {
-  Server,
-  Keypair,
-  Operation,
-  xdr,
-} from "@stellar/stellar-sdk";
+import { describe, it, expect, beforeEach } from "bun:test";
+import { StellarService, WalletSigner } from "./stellar";
+import { Keypair, Operation, Asset } from "@stellar/stellar-sdk";
 
 // Mock wallet signer for testing
 class MockWalletSigner implements WalletSigner {
@@ -21,20 +13,21 @@ class MockWalletSigner implements WalletSigner {
   }
 
   async sign(transaction: string): Promise<string> {
-    const tx = this.keypair.signHash(Buffer.from(transaction, "base64"));
-    return Buffer.from(tx.signature).toString("base64");
+    // Mock implementation for testing
+    return Buffer.from(`mock-signature-${transaction.slice(0, 10)}`).toString("base64");
   }
 }
 
 describe("StellarService", () => {
   let service: StellarService;
-  let mockServer: any;
-  const testAddress = "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIEAL7EFSEF5L4XJJWUSM5EC5C7";
+  let testAddress: string;
   const testContractId =
     "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
 
   beforeEach(() => {
     service = new StellarService("testnet");
+    // Generate a valid test address
+    testAddress = Keypair.random().publicKey();
   });
 
   describe("getAccountBalance", () => {
@@ -110,7 +103,8 @@ describe("StellarService", () => {
 
     it("should retry with exponential backoff", async () => {
       const attempts: number[] = [];
-      const originalDelay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+      const originalDelay = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
 
       // Test that retries happen with increasing delays
       const status = await service.getTransactionStatus("test-hash", 3);
@@ -131,7 +125,7 @@ describe("StellarService", () => {
           testContractId,
           "method",
           [],
-          "" // empty source account
+          "", // empty source account
         );
       } catch (error) {
         const err = error as Error;
@@ -147,13 +141,9 @@ describe("StellarService", () => {
 
     it("should require source account", async () => {
       // validateAddress should be called before contract operations
-      try {
-        service.validateAddress(testAddress);
-        // Valid address passes validation
-        expect(true).toBe(true);
-      } catch {
-        expect.fail("Should not throw for valid address");
-      }
+      const isValid = service.validateAddress(testAddress);
+      // Valid address passes validation
+      expect(isValid).toBe(true);
     });
 
     it("should handle contract simulation errors with cause", async () => {
@@ -172,7 +162,7 @@ describe("StellarService", () => {
       const keypair = Keypair.random();
       const operation = Operation.payment({
         destination: testAddress,
-        asset: "native",
+        asset: Asset.native(),
         amount: "100",
       });
 
@@ -180,7 +170,7 @@ describe("StellarService", () => {
         const xdr = await service.buildAndSignTransaction(
           keypair.publicKey(),
           operation,
-          keypair
+          keypair,
         );
         expect(typeof xdr).toBe("string");
       } catch {
@@ -192,7 +182,7 @@ describe("StellarService", () => {
       const walletSigner = new MockWalletSigner();
       const operation = Operation.payment({
         destination: testAddress,
-        asset: "native",
+        asset: Asset.native(),
         amount: "100",
       });
 
@@ -200,7 +190,7 @@ describe("StellarService", () => {
         const xdr = await service.buildAndSignTransaction(
           walletSigner.publicKey,
           operation,
-          walletSigner
+          walletSigner,
         );
         expect(typeof xdr).toBe("string");
       } catch {
@@ -212,7 +202,7 @@ describe("StellarService", () => {
       const keypair = Keypair.random();
       const operation = Operation.payment({
         destination: testAddress,
-        asset: "native",
+        asset: Asset.native(),
         amount: "100",
       });
 
@@ -222,7 +212,7 @@ describe("StellarService", () => {
         await service.buildAndSignTransaction(
           keypair.publicKey(),
           operation,
-          keypair
+          keypair,
         );
       } catch (error) {
         // Expected in test environment (no real account)
@@ -236,7 +226,7 @@ describe("StellarService", () => {
       const keypair = Keypair.random();
       const operation = Operation.payment({
         destination: testAddress,
-        asset: "native",
+        asset: Asset.native(),
         amount: "100",
       });
 
@@ -249,7 +239,7 @@ describe("StellarService", () => {
       const keypair = Keypair.random();
       const operation = Operation.payment({
         destination: testAddress,
-        asset: "native",
+        asset: Asset.native(),
         amount: "100",
       });
 
@@ -257,7 +247,7 @@ describe("StellarService", () => {
         await service.buildAndSignTransaction(
           keypair.publicKey(),
           operation,
-          keypair
+          keypair,
         );
       } catch (error) {
         const err = error as Error;
@@ -318,7 +308,7 @@ describe("StellarService", () => {
       // Validate that operations are properly typed
       const operation = Operation.payment({
         destination: testAddress,
-        asset: "native",
+        asset: Asset.native(),
         amount: "100",
       });
       expect(operation).toBeDefined();
@@ -356,7 +346,7 @@ describe("StellarService", () => {
 
     it("should support any WalletSigner implementation", async () => {
       const customWallet: WalletSigner = {
-        publicKey: "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIEAL7EFSEF5L4XJJWUSM5EC5C7",
+        publicKey: Keypair.random().publicKey(),
         sign: async (txn: string) => {
           return Buffer.from("mock-signature").toString("base64");
         },
@@ -396,7 +386,7 @@ describe("Integration Pattern Tests", () => {
 
   it("should follow the complete transaction flow pattern", async () => {
     const keypair = service.createKeypair();
-    const testAccount = "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIEAL7EFSEF5L4XJJWUSM5EC5C7";
+    const testAccount = keypair.publicKey();
 
     // 1. Validate address
     const isValid = service.validateAddress(testAccount);
@@ -405,7 +395,7 @@ describe("Integration Pattern Tests", () => {
     // 2. Create operation
     const operation = Operation.payment({
       destination: testAccount,
-      asset: "native",
+      asset: Asset.native(),
       amount: "100",
     });
     expect(operation).toBeDefined();

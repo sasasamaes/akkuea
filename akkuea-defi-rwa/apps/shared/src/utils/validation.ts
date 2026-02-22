@@ -104,7 +104,10 @@ export class ValidationService {
       errors.push("Collateral factor must be between 0 and 10000 basis points");
     }
 
-    if (pool.totalDeposits !== undefined && parseFloat(pool.totalDeposits) < 0) {
+    if (
+      pool.totalDeposits !== undefined &&
+      parseFloat(pool.totalDeposits) < 0
+    ) {
       errors.push("Total deposits cannot be negative");
     }
 
