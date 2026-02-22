@@ -43,12 +43,13 @@ export default function StepOne() {
 
 
                 <div className="w-full flex flex-col items-start gap-1" >
-                    <h3 className="text-sm md:text-base font-medium" >Date of Birth</h3>
+                    <h3 className="text-sm md:text-base font-medium  " >Date of Birth</h3>
                     <Input
                         type="date"
                         leftIcon={<Calendar className="w-3 h-3 " />}
                         {...register("date_of_birth")}
                         error={errors.date_of_birth?.message}
+                        className="text-white  scheme-dark"
                     />
                 </div>
 
@@ -57,7 +58,7 @@ export default function StepOne() {
                     <h3 className="text-sm md:text-base font-medium" >Nationality</h3>
                     <FormSelect
                         {...register("nationality")}>
-                        <option value="">Select country</option>
+                        <option value="" >Select country</option>
                         <option value="nigeria">Nigeria</option>
                         <option value="kenya">Kenya</option>
                         <option value="ghana">Ghana</option>

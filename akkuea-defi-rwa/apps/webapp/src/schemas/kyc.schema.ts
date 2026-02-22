@@ -25,6 +25,23 @@ export const kycSchema = z.object({
   residential_address: z
     .string()
     .min(5, "Residential address is required"),
+
+  nationalId: z
+    .array(z.instanceof(File))
+    .refine(
+      (files) => files.every((file) => file.size <= 10 * 1024 * 1024),
+      "Each file must be less than 10MB"
+    ),
+
+  selfie: z
+    .array(z.instanceof(File))
+    .refine(
+      (files) => files.every((file) => file.size <= 10 * 1024 * 1024),
+      "Each file must be less than 10MB"
+    ),
 });
+
+
+
 
 export type KycFormData = z.infer<typeof kycSchema>;

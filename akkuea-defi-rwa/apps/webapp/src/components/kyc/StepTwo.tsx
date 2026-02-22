@@ -1,17 +1,12 @@
 "use client"
-
-import { useState } from "react";
+import { useFormContext } from "react-hook-form";
+import { KycFormData } from "@/schemas/kyc.schema";
 import DocumentUpload from "./DocumentUpload";
 
 
 
-
-
-
 export default function StepTwo() {
-    const [profileImage, setProfileImage] = useState<File[]>([]);
-    const [documents, setDocuments] = useState<File[]>([]);
-
+    const { setValue } = useFormContext<KycFormData>();
 
     return (
         <div className="flex flex-col gap-6 items-start  w-full" >
@@ -24,14 +19,14 @@ export default function StepTwo() {
                     label="Click to upload National ID card"
                     accept="image/*"
                     multiple={false}
-                    onFilesChange={(files) => setProfileImage(files)}
+                    onFilesChange={(files: File[]) => setValue("nationalId", files)}
                 />
 
                 <DocumentUpload
                     label="Click to upload selfie"
                     accept=".pdf,.doc,.docx"
                     multiple={false}
-                    onFilesChange={(files) => setDocuments(files)}
+                    onFilesChange={(files: File[]) => setValue("selfie", files)}
                 />
 
 
