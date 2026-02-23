@@ -32,6 +32,10 @@ pub enum StorageKey {
     /// Single instance per contract
     PropertyCounter,
 
+    /// Allowance tracking for approved spenders
+    /// Key: Allowance(property_id, owner_address, spender_address)
+    Allowance(u64, Address, Address),
+
     /// Available shares for a property (total - sold)
     /// Key: AvailableShares(property_id)
     AvailableShares(u64),
@@ -56,6 +60,7 @@ impl StorageKey {
             StorageKey::TotalShares(_) => Symbol::new(&soroban_sdk::Env::default(), "TotShrs"),
             StorageKey::Admin => Symbol::new(&soroban_sdk::Env::default(), "Admin"),
             StorageKey::PropertyCounter => Symbol::new(&soroban_sdk::Env::default(), "PropCnt"),
+            StorageKey::Allowance(_, _, _) => Symbol::new(&soroban_sdk::Env::default(), "Allow"),
             StorageKey::AvailableShares(_) => {
                 Symbol::new(&soroban_sdk::Env::default(), "AvailShrs")
             }
