@@ -1,7 +1,9 @@
 use super::access::{AdminControl, PauseControl};
 use super::*;
 use sep_40_oracle::{Asset, PriceData};
-use soroban_sdk::{testutils::Address as _, testutils::Events, token, Address, Env, String, Symbol};
+use soroban_sdk::{
+    testutils::Address as _, testutils::Events, token, Address, Env, String, Symbol,
+};
 use token::StellarAssetClient;
 
 // Created this contract just for testing storage
