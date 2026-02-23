@@ -19,7 +19,7 @@ use super::keys::StorageKey;
 #[allow(dead_code)]
 pub fn get_balance(env: &Env, property_id: u64, owner: &Address) -> u64 {
     let key = StorageKey::ShareBalance(property_id, owner.clone());
-    env.storage().instance().get(&key).unwrap_or(0)
+    env.storage().persistent().get(&key).unwrap_or(0)
 }
 
 /// Sets the share balance for a specific owner and property
@@ -38,9 +38,9 @@ pub fn set_balance(env: &Env, property_id: u64, owner: &Address, balance: u64) {
 
     if balance == 0 {
         // Remove storage entry to save costs when balance is zero
-        env.storage().instance().remove(&key);
+        env.storage().persistent().remove(&key);
     } else {
-        env.storage().instance().set(&key, &balance);
+        env.storage().persistent().set(&key, &balance);
     }
 }
 
@@ -91,7 +91,7 @@ pub fn decrease_balance(env: &Env, property_id: u64, owner: &Address, amount: u6
 #[allow(dead_code)]
 pub fn get_total_shares(env: &Env, property_id: u64) -> u64 {
     let key = StorageKey::TotalShares(property_id);
-    env.storage().instance().get(&key).unwrap_or(0)
+    env.storage().persistent().get(&key).unwrap_or(0)
 }
 
 /// Sets the total shares for a property
@@ -103,7 +103,7 @@ pub fn get_total_shares(env: &Env, property_id: u64) -> u64 {
 #[allow(dead_code)]
 pub fn set_total_shares(env: &Env, property_id: u64, total: u64) {
     let key = StorageKey::TotalShares(property_id);
-    env.storage().instance().set(&key, &total);
+    env.storage().persistent().set(&key, &total);
 }
 
 /// Transfers shares from one owner to another
@@ -121,4 +121,38 @@ pub fn set_total_shares(env: &Env, property_id: u64, total: u64) {
 pub fn transfer_shares(env: &Env, property_id: u64, from: &Address, to: &Address, amount: u64) {
     decrease_balance(env, property_id, from, amount);
     increase_balance(env, property_id, to, amount);
+}
+
+/// Helper to get approved allowance
+#[allow(dead_code)]
+pub fn get_allowance(env: &Env, property_id: u64, owner: &Address, spender: &Address) -> u64 {
+    let key = StorageKey::Allowance(property_id, owner.clone(), spender.clone());
+    env.storage().persistent().get(&key).unwrap_or(0)
+}
+
+/// Helper to set approved allowance
+#[allow(dead_code)]
+pub fn set_allowance(env: &Env, property_id: u64, owner: &Address, spender: &Address, amount: u64) {
+    let key = StorageKey::Allowance(property_id, owner.clone(), spender.clone());
+    if amount == 0 {
+        env.storage().persistent().remove(&key);
+    } else {
+        env.storage().persistent().set(&key, &amount);
+    }
+}
+
+/// Helper to consume approved allowance
+#[allow(dead_code)]
+pub fn spend_allowance(
+    env: &Env,
+    property_id: u64,
+    owner: &Address,
+    spender: &Address,
+    amount: u64,
+) {
+    let current_allowance = get_allowance(env, property_id, owner, spender);
+    let new_allowance = current_allowance
+        .checked_sub(amount)
+        .expect("Insufficient allowance");
+    set_allowance(env, property_id, owner, spender, new_allowance);
 }

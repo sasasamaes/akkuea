@@ -38,22 +38,38 @@ export {
   type BorrowPositionInput,
 } from "./lending.schema";
 
+// Transaction schemas and types
+export {
+  transactionTypeSchema,
+  transactionStatusSchema,
+  transactionSchema,
+  transactionFilterSchema,
+  transactionQueryParamsSchema,
+  paginatedTransactionResponseSchema,
+  type TransactionType,
+  type TransactionStatus,
+  type Transaction,
+  type TransactionFilter,
+  type TransactionQueryParams,
+  type PaginatedTransactionResponse,
+  type TransactionInput,
+  type TransactionFilterInput,
+  type TransactionQueryParamsInput,
+} from "./transaction.schema";
+
 // User schemas and types
 export {
   kycStatusSchema,
   kycTierSchema,
   kycDocumentSchema,
   userSchema,
-  transactionSchema,
   oraclePriceSchema,
   type KycStatus,
   type KycTier,
   type KycDocument,
   type User,
-  type Transaction,
   type OraclePrice,
   type UserInput,
   type KycDocumentInput,
-  type TransactionInput,
   type OraclePriceInput,
 } from "./user.schema";

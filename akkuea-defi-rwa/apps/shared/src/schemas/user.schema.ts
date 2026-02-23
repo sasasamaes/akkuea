@@ -65,31 +65,6 @@ export const userSchema = z.object({
 });
 
 /**
- * Schema for Transaction
- */
-export const transactionSchema = z.object({
-  id: z.string().uuid(),
-  type: z.enum([
-    "deposit",
-    "withdraw",
-    "borrow",
-    "repay",
-    "liquidation",
-    "buy_shares",
-    "sell_shares",
-    "dividend",
-  ]),
-  hash: z.string().length(64).optional(),
-  from: stellarAddressSchema,
-  to: stellarAddressSchema.optional(),
-  amount: positiveAmountSchema,
-  asset: z.string(),
-  status: z.enum(["pending", "confirmed", "failed"]),
-  timestamp: isoDateSchema,
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-/**
  * Schema for OraclePrice
  */
 export const oraclePriceSchema = z.object({
@@ -108,11 +83,9 @@ export type KycStatus = z.infer<typeof kycStatusSchema>;
 export type KycTier = z.infer<typeof kycTierSchema>;
 export type KycDocument = z.infer<typeof kycDocumentSchema>;
 export type User = z.infer<typeof userSchema>;
-export type Transaction = z.infer<typeof transactionSchema>;
 export type OraclePrice = z.infer<typeof oraclePriceSchema>;
 
 // Keep input types for advanced use cases
 export type UserInput = z.input<typeof userSchema>;
 export type KycDocumentInput = z.input<typeof kycDocumentSchema>;
-export type TransactionInput = z.input<typeof transactionSchema>;
 export type OraclePriceInput = z.input<typeof oraclePriceSchema>;

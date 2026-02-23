@@ -162,3 +162,95 @@ impl PropertyMetadata {
         env.storage().persistent().remove(&key);
     }
 }
+
+/// Gets the available shares for a property
+///
+/// # Arguments
+/// * `env` - Soroban environment
+/// * `property_id` - ID of the property
+///
+/// # Returns
+/// * `u64` - Number of available shares (0 if not set)
+pub fn get_available_shares(env: &Env, property_id: u64) -> u64 {
+    let key = StorageKey::AvailableShares(property_id);
+    env.storage().instance().get(&key).unwrap_or(0)
+}
+
+/// Sets the available shares for a property
+///
+/// # Arguments
+/// * `env` - Soroban environment
+/// * `property_id` - ID of the property
+/// * `available` - Number of available shares
+pub fn set_available_shares(env: &Env, property_id: u64, available: u64) {
+    let key = StorageKey::AvailableShares(property_id);
+    env.storage().instance().set(&key, &available);
+}
+
+/// Decreases available shares for a property
+///
+/// # Arguments
+/// * `env` - Soroban environment
+/// * `property_id` - ID of the property
+/// * `amount` - Number of shares to decrease
+///
+/// # Panics
+/// Panics if the subtraction would underflow (insufficient available shares)
+pub fn decrease_available_shares(env: &Env, property_id: u64, amount: u64) {
+    let current = get_available_shares(env, property_id);
+    let new_available = current
+        .checked_sub(amount)
+        .expect("Insufficient available shares");
+    set_available_shares(env, property_id, new_available);
+}
+
+/// Gets the price per share for a property
+///
+/// # Arguments
+/// * `env` - Soroban environment
+/// * `property_id` - ID of the property
+///
+/// # Returns
+/// * `i128` - Price per share (0 if not set)
+pub fn get_price_per_share(env: &Env, property_id: u64) -> i128 {
+    let key = StorageKey::PricePerShare(property_id);
+    env.storage().instance().get(&key).unwrap_or(0)
+}
+
+/// Sets the price per share for a property
+///
+/// # Arguments
+/// * `env` - Soroban environment
+/// * `property_id` - ID of the property
+/// * `price` - Price per share (must be positive)
+pub fn set_price_per_share(env: &Env, property_id: u64, price: i128) {
+    if price <= 0 {
+        panic!("Price per share must be positive");
+    }
+    let key = StorageKey::PricePerShare(property_id);
+    env.storage().instance().set(&key, &price);
+}
+
+/// Checks if a property is verified
+///
+/// # Arguments
+/// * `env` - Soroban environment
+/// * `property_id` - ID of the property
+///
+/// # Returns
+/// * `bool` - True if verified, false otherwise
+pub fn is_verified(env: &Env, property_id: u64) -> bool {
+    let key = StorageKey::PropertyVerified(property_id);
+    env.storage().instance().get(&key).unwrap_or(false)
+}
+
+/// Sets the verified status for a property
+///
+/// # Arguments
+/// * `env` - Soroban environment
+/// * `property_id` - ID of the property
+/// * `verified` - Verified status
+pub fn set_verified(env: &Env, property_id: u64, verified: bool) {
+    let key = StorageKey::PropertyVerified(property_id);
+    env.storage().instance().set(&key, &verified);
+}
