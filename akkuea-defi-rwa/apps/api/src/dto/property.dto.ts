@@ -20,7 +20,7 @@ export interface CreatePropertyDto {
   documents?: {
     title: string;
     url: string;
-    type: "deed" | "appraisal" | "inspection" | "other";
+    type: 'deed' | 'appraisal' | 'inspection' | 'other';
   }[];
 }
 
@@ -45,7 +45,7 @@ export interface UpdatePropertyDto {
   documents?: {
     title: string;
     url: string;
-    type: "deed" | "appraisal" | "inspection" | "other";
+    type: 'deed' | 'appraisal' | 'inspection' | 'other';
   }[];
 }
 
@@ -125,14 +125,18 @@ export function validateCreateProperty(data: unknown): { valid: boolean; errors:
       errors.push('Location country must be a string');
     }
     if (dto.location.coordinates) {
-      if (typeof dto.location.coordinates.lat !== 'number' || 
-          dto.location.coordinates.lat < -90 || 
-          dto.location.coordinates.lat > 90) {
+      if (
+        typeof dto.location.coordinates.lat !== 'number' ||
+        dto.location.coordinates.lat < -90 ||
+        dto.location.coordinates.lat > 90
+      ) {
         errors.push('Location coordinates latitude must be between -90 and 90');
       }
-      if (typeof dto.location.coordinates.lng !== 'number' || 
-          dto.location.coordinates.lng < -180 || 
-          dto.location.coordinates.lng > 180) {
+      if (
+        typeof dto.location.coordinates.lng !== 'number' ||
+        dto.location.coordinates.lng < -180 ||
+        dto.location.coordinates.lng > 180
+      ) {
         errors.push('Location coordinates longitude must be between -180 and 180');
       }
     }
@@ -184,15 +188,24 @@ export function validateUpdateProperty(data: unknown): { valid: boolean; errors:
     errors.push('Owner must be a non-empty string');
   }
 
-  if (dto.totalShares !== undefined && (typeof dto.totalShares !== 'number' || dto.totalShares <= 0)) {
+  if (
+    dto.totalShares !== undefined &&
+    (typeof dto.totalShares !== 'number' || dto.totalShares <= 0)
+  ) {
     errors.push('Total shares must be a positive number');
   }
 
-  if (dto.availableShares !== undefined && (typeof dto.availableShares !== 'number' || dto.availableShares < 0)) {
+  if (
+    dto.availableShares !== undefined &&
+    (typeof dto.availableShares !== 'number' || dto.availableShares < 0)
+  ) {
     errors.push('Available shares must be a non-negative number');
   }
 
-  if (dto.valuePerShare !== undefined && (typeof dto.valuePerShare !== 'number' || dto.valuePerShare <= 0)) {
+  if (
+    dto.valuePerShare !== undefined &&
+    (typeof dto.valuePerShare !== 'number' || dto.valuePerShare <= 0)
+  ) {
     errors.push('Value per share must be a positive number');
   }
 
@@ -212,14 +225,18 @@ export function validateUpdateProperty(data: unknown): { valid: boolean; errors:
       errors.push('Location country must be a string');
     }
     if (dto.location.coordinates) {
-      if (typeof dto.location.coordinates.lat !== 'number' || 
-          dto.location.coordinates.lat < -90 || 
-          dto.location.coordinates.lat > 90) {
+      if (
+        typeof dto.location.coordinates.lat !== 'number' ||
+        dto.location.coordinates.lat < -90 ||
+        dto.location.coordinates.lat > 90
+      ) {
         errors.push('Location coordinates latitude must be between -90 and 90');
       }
-      if (typeof dto.location.coordinates.lng !== 'number' || 
-          dto.location.coordinates.lng < -180 || 
-          dto.location.coordinates.lng > 180) {
+      if (
+        typeof dto.location.coordinates.lng !== 'number' ||
+        dto.location.coordinates.lng < -180 ||
+        dto.location.coordinates.lng > 180
+      ) {
         errors.push('Location coordinates longitude must be between -180 and 180');
       }
     }
@@ -251,8 +268,10 @@ export function validateUpdateProperty(data: unknown): { valid: boolean; errors:
  * Validates pagination parameters
  */
 export function validatePagination(page: unknown, limit: unknown): PaginationDto {
-  const pageNum = typeof page === 'string' ? parseInt(page, 10) : typeof page === 'number' ? page : 1;
-  const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : typeof limit === 'number' ? limit : 10;
+  const pageNum =
+    typeof page === 'string' ? parseInt(page, 10) : typeof page === 'number' ? page : 1;
+  const limitNum =
+    typeof limit === 'string' ? parseInt(limit, 10) : typeof limit === 'number' ? limit : 10;
 
   return {
     page: pageNum > 0 ? pageNum : 1,
@@ -285,7 +304,10 @@ export function matchesFilter(property: PropertyInfo, filter: PropertyFilterDto)
     return false;
   }
 
-  if (filter.minAvailableShares !== undefined && property.availableShares < filter.minAvailableShares) {
+  if (
+    filter.minAvailableShares !== undefined &&
+    property.availableShares < filter.minAvailableShares
+  ) {
     return false;
   }
 

@@ -82,10 +82,7 @@ const createPropertyRoute = new Elysia()
       if (!userAddress) {
         throw new UnauthorizedError('User address is required for authentication');
       }
-      return await PropertyController.createProperty(
-        validatedBody!,
-        userAddress,
-      );
+      return await PropertyController.createProperty(validatedBody!, userAddress);
     } catch (error) {
       const errorResponse = handleError(error);
       set.status = errorResponse.statusCode;
@@ -138,7 +135,11 @@ const tokenizePropertyRoute = new Elysia()
   .post('/:id/tokenize', async ({ validatedParams, body, headers, set }) => {
     try {
       const userAddress = headers['x-user-address'] as string | undefined;
-      return await PropertyController.tokenizeProperty(validatedParams!.id, body as unknown, userAddress);
+      return await PropertyController.tokenizeProperty(
+        validatedParams!.id,
+        body as unknown,
+        userAddress,
+      );
     } catch (error) {
       const errorResponse = handleError(error);
       set.status = errorResponse.statusCode;
@@ -154,7 +155,7 @@ const buySharesRoute = new Elysia()
     try {
       return await PropertyController.buyShares(validatedParams!.id, {
         buyer: validatedBody!.buyer,
-        shares: validatedBody!.shares
+        shares: validatedBody!.shares,
       });
     } catch (error) {
       const errorResponse = handleError(error);
