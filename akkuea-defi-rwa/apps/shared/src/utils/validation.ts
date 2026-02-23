@@ -4,7 +4,7 @@ import type {
   Transaction,
   LendingPool,
 } from "../types";
-import { StrKey } from "stellar-sdk";
+import { StrKey } from "@stellar/stellar-sdk";
 
 export class ValidationService {
   static validatePropertyInfo(property: Partial<PropertyInfo>): {
@@ -104,7 +104,10 @@ export class ValidationService {
       errors.push("Collateral factor must be between 0 and 10000 basis points");
     }
 
-    if (pool.totalDeposits !== undefined && parseFloat(pool.totalDeposits) < 0) {
+    if (
+      pool.totalDeposits !== undefined &&
+      parseFloat(pool.totalDeposits) < 0
+    ) {
       errors.push("Total deposits cannot be negative");
     }
 
