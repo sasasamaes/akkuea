@@ -63,6 +63,10 @@ pub enum LendingKey {
     /// Pool pause status
     /// Storage: Instance
     PoolPaused(String),
+
+    /// Contract administrator address
+    /// Storage: Instance
+    Admin,
 }
 
 /// TTL bump amounts for lending storage

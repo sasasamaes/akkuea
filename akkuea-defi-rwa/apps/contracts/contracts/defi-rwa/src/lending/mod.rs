@@ -2,6 +2,7 @@
 // This module provides storage structures and helpers for the lending pool functionality.
 // This module is used to store the lending pool configuration, deposit positions, borrow positions, and interest rate model.
 
+pub mod events;
 mod interest;
 mod keys;
 mod pool;

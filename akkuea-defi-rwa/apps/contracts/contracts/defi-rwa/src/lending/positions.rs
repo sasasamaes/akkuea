@@ -44,12 +44,17 @@ pub struct BorrowPosition {
 /// Position storage helpers
 pub struct PositionStorage;
 
+#[allow(dead_code)]
 impl PositionStorage {
     // Deposit Position Methods
 
     /// Store deposit position
     pub fn set_deposit(env: &Env, position: &DepositPosition) {
         let key = LendingKey::DepositPosition(position.depositor.clone(), position.pool_id.clone());
+
+        // Only add to user's deposit list when this is a NEW position (O(1) check)
+        let is_new = !env.storage().persistent().has(&key);
+
         env.storage().persistent().set(&key, position);
         env.storage().persistent().extend_ttl(
             &key,
@@ -57,8 +62,9 @@ impl PositionStorage {
             lending_bump::PERSISTENT_BUMP,
         );
 
-        // Add to user's deposit list
-        Self::add_to_user_deposits(env, &position.depositor, &position.pool_id);
+        if is_new {
+            Self::add_to_user_deposits(env, &position.depositor, &position.pool_id);
+        }
     }
 
     /// Get deposit position
@@ -96,24 +102,16 @@ impl PositionStorage {
             .unwrap_or(Vec::new(env))
     }
 
-    /// Add pool to user's deposit list
+    /// Add pool to user's deposit list.
+    ///
+    /// Uses the deposit position's own existence (checked *before* calling this
+    /// function) to gate the append, avoiding an O(n) duplicate scan.
+    /// The caller must only invoke this when creating a **new** position.
     fn add_to_user_deposits(env: &Env, user: &Address, pool_id: &String) {
         let key = LendingKey::UserDeposits(user.clone());
         let mut list = Self::get_user_deposits(env, user);
-
-        // Check if already exists
-        let mut exists = false;
-        for i in 0..list.len() {
-            if list.get(i).unwrap() == pool_id.clone() {
-                exists = true;
-                break;
-            }
-        }
-
-        if !exists {
-            list.push_back(pool_id.clone());
-            env.storage().persistent().set(&key, &list);
-        }
+        list.push_back(pool_id.clone());
+        env.storage().persistent().set(&key, &list);
     }
 
     /// Remove pool from user's deposit list
@@ -237,6 +235,9 @@ impl PositionStorage {
     }
 
     /// Calculate health factor for position
+    ///
+    /// Returns health factor in PRECISION units (1e18 = 1.0).
+    /// health = (collateral_value * liquidation_threshold / PRECISION) / debt_value
     pub fn calculate_health_factor(
         collateral_value: i128,
         debt_value: i128,
@@ -246,7 +247,8 @@ impl PositionStorage {
             return i128::MAX;
         }
 
-        // health = (collateral * liquidation_threshold) / debt
+        // liquidation_threshold is already in PRECISION units (e.g., 80% = 0.8 * PRECISION)
+        // Result is in PRECISION units: 1e18 means health factor = 1.0
         (collateral_value * liquidation_threshold) / (debt_value * PRECISION)
     }
 }
