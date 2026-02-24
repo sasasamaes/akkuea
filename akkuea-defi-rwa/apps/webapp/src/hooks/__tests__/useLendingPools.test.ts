@@ -60,13 +60,10 @@ const mockPool2: LendingPool = {
  * existing bun:test patterns.
  */
 
-const mockGetPools = mock(async (): Promise<LendingPool[]> => [
-  mockPool,
-  mockPool2,
-]);
-const mockGetUserDeposits = mock(
-  async (_poolId: string, _addr: string): Promise<DepositPosition[]> => [],
+const mockGetPools = mock(
+  async (): Promise<LendingPool[]> => [mockPool, mockPool2],
 );
+const mockGetUserDeposits = mock(async (): Promise<DepositPosition[]> => []);
 const mockGetUserBorrows = mock(async () => []);
 
 mock.module("@/services/api", () => ({
@@ -105,8 +102,7 @@ describe("useLendingPools — service integration", () => {
     try {
       result = await lendingApi.getPools();
     } catch (err) {
-      errorMessage =
-        err instanceof Error ? err.message : "Unknown error";
+      errorMessage = err instanceof Error ? err.message : "Unknown error";
     }
 
     expect(result).toHaveLength(0);
@@ -126,12 +122,10 @@ describe("useLendingPools — service integration", () => {
     };
 
     mockGetUserDeposits.mockImplementationOnce(
-      async (_poolId: string, _addr: string): Promise<DepositPosition[]> => [
-        mockDeposit,
-      ],
+      async (): Promise<DepositPosition[]> => [mockDeposit],
     );
     mockGetUserDeposits.mockImplementationOnce(
-      async (_poolId: string, _addr: string): Promise<DepositPosition[]> => [],
+      async (): Promise<DepositPosition[]> => [],
     );
 
     const pools = await lendingApi.getPools();

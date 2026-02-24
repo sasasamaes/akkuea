@@ -4,12 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Shield, Coins, CheckCircle2, ExternalLink } from "lucide-react";
 import type { LendingPool } from "@real-estate-defi/shared";
-import {
-  Modal,
-  Badge,
-  Button,
-  Toggle,
-} from "@/components/ui";
+import { Modal, Badge, Button, Toggle } from "@/components/ui";
 import { Form, FormInput } from "@/components/forms";
 import {
   createLendingActionSchema,
@@ -191,7 +186,10 @@ export function PoolActionModal({
                     className="w-10 h-10 rounded-lg bg-[#262626] flex items-center justify-center flex-shrink-0"
                     aria-hidden="true"
                   >
-                    <Coins className="w-5 h-5 text-neutral-300" aria-hidden="true" />
+                    <Coins
+                      className="w-5 h-5 text-neutral-300"
+                      aria-hidden="true"
+                    />
                   </div>
                   <div>
                     <p className="font-semibold text-white">{pool.name}</p>

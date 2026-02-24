@@ -82,25 +82,19 @@ describe("useHealthFactor", () => {
   });
 
   it('returns status "safe" when health factor is >= 1.5', () => {
-    const result = computeHealthFactor([
-      makeBorrow({ healthFactor: 2.45 }),
-    ]);
+    const result = computeHealthFactor([makeBorrow({ healthFactor: 2.45 })]);
     expect(result.status).toBe("safe");
     expect(result.healthFactor).toBeCloseTo(2.45, 1);
   });
 
   it('returns status "warning" when health factor is between 1.1 and 1.5', () => {
-    const result = computeHealthFactor([
-      makeBorrow({ healthFactor: 1.3 }),
-    ]);
+    const result = computeHealthFactor([makeBorrow({ healthFactor: 1.3 })]);
     expect(result.status).toBe("warning");
     expect(result.healthFactor).toBeCloseTo(1.3, 1);
   });
 
   it('returns status "critical" when health factor is below 1.1', () => {
-    const result = computeHealthFactor([
-      makeBorrow({ healthFactor: 0.95 }),
-    ]);
+    const result = computeHealthFactor([makeBorrow({ healthFactor: 0.95 })]);
     expect(result.status).toBe("critical");
     expect(result.healthFactor).toBeCloseTo(0.95, 1);
   });
@@ -109,8 +103,18 @@ describe("useHealthFactor", () => {
     // Pool A: debt=10000, hf=2.0  |  Pool B: debt=30000, hf=1.0
     // Weighted avg = (2.0 * 10000 + 1.0 * 30000) / 40000 = 1.25
     const result = computeHealthFactor([
-      makeBorrow({ id: "b-001", principal: "10000", accruedInterest: "0", healthFactor: 2.0 }),
-      makeBorrow({ id: "b-002", principal: "30000", accruedInterest: "0", healthFactor: 1.0 }),
+      makeBorrow({
+        id: "b-001",
+        principal: "10000",
+        accruedInterest: "0",
+        healthFactor: 2.0,
+      }),
+      makeBorrow({
+        id: "b-002",
+        principal: "30000",
+        accruedInterest: "0",
+        healthFactor: 1.0,
+      }),
     ]);
     expect(result.healthFactor).toBeCloseTo(1.25, 1);
     expect(result.status).toBe("warning");
@@ -119,7 +123,11 @@ describe("useHealthFactor", () => {
   it("includes accrued interest in the debt weighting", () => {
     // debt = principal(5000) + accruedInterest(5000) = 10000
     const result = computeHealthFactor([
-      makeBorrow({ principal: "5000", accruedInterest: "5000", healthFactor: 1.5 }),
+      makeBorrow({
+        principal: "5000",
+        accruedInterest: "5000",
+        healthFactor: 1.5,
+      }),
     ]);
     expect(result.healthFactor).toBeCloseTo(1.5, 1);
     expect(result.status).toBe("safe");

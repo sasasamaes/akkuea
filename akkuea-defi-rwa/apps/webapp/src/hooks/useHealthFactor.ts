@@ -29,9 +29,7 @@ export function useHealthFactor(
   allBorrows: BorrowPosition[],
 ): UseHealthFactorReturn {
   return useMemo(() => {
-    const openBorrows = allBorrows.filter(
-      (b) => parseFloat(b.principal) > 0,
-    );
+    const openBorrows = allBorrows.filter((b) => parseFloat(b.principal) > 0);
 
     if (openBorrows.length === 0) {
       return { healthFactor: Infinity, status: "none" as HealthFactorStatus };

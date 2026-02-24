@@ -33,7 +33,7 @@ import {
   Modal,
 } from "@/components/ui";
 import { useWallet } from "@/components/auth/hooks";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import {
   pageTransition,
   staggerContainer,
@@ -43,7 +43,10 @@ import {
 import type { LendingPool } from "@real-estate-defi/shared";
 import { useLendingPools } from "@/hooks/useLendingPools";
 import { useHealthFactor } from "@/hooks/useHealthFactor";
-import { PoolActionModal, type PoolAction } from "@/components/lending/PoolActionModal";
+import {
+  PoolActionModal,
+  type PoolAction,
+} from "@/components/lending/PoolActionModal";
 
 // ---------------------------------------------------------------------------
 // Yield Calculator (retained, unchanged)
@@ -196,13 +199,13 @@ function StatCardSkeleton() {
 export default function LendingPage() {
   const { isConnected, connect, isConnecting, address } = useWallet();
 
-  const { pools, userPositions, isLoading, error, refetch } =
-    useLendingPools(isConnected ? address : null);
+  const { pools, userPositions, isLoading, error, refetch } = useLendingPools(
+    isConnected ? address : null,
+  );
 
   // Flatten all borrow positions across all pools for health factor computation
   const allBorrows = useMemo(
-    () =>
-      Object.values(userPositions).flatMap((pos) => pos.borrows),
+    () => Object.values(userPositions).flatMap((pos) => pos.borrows),
     [userPositions],
   );
 
@@ -213,8 +216,7 @@ export default function LendingPage() {
     () =>
       Object.values(userPositions).reduce(
         (acc, pos) =>
-          acc +
-          pos.deposits.reduce((s, d) => s + parseFloat(d.amount), 0),
+          acc + pos.deposits.reduce((s, d) => s + parseFloat(d.amount), 0),
         0,
       ),
     [userPositions],
@@ -317,8 +319,7 @@ export default function LendingPage() {
   function poolUserBorrow(poolId: string): number {
     return (
       userPositions[poolId]?.borrows.reduce(
-        (s, b) =>
-          s + parseFloat(b.principal) + parseFloat(b.accruedInterest),
+        (s, b) => s + parseFloat(b.principal) + parseFloat(b.accruedInterest),
         0,
       ) ?? 0
     );
@@ -413,9 +414,7 @@ export default function LendingPage() {
                     <EyeOff className="w-4 h-4" aria-hidden="true" />
                   )
                 }
-                aria-label={
-                  hideBalances ? "Show balances" : "Hide balances"
-                }
+                aria-label={hideBalances ? "Show balances" : "Hide balances"}
               >
                 {hideBalances ? "Show" : "Hide"}
               </Button>
@@ -472,10 +471,18 @@ export default function LendingPage() {
             {/* Total Supplied */}
             {isLoading ? (
               <>
-                <Card><StatCardSkeleton /></Card>
-                <Card><StatCardSkeleton /></Card>
-                <Card><StatCardSkeleton /></Card>
-                <Card><StatCardSkeleton /></Card>
+                <Card>
+                  <StatCardSkeleton />
+                </Card>
+                <Card>
+                  <StatCardSkeleton />
+                </Card>
+                <Card>
+                  <StatCardSkeleton />
+                </Card>
+                <Card>
+                  <StatCardSkeleton />
+                </Card>
               </>
             ) : (
               <>
@@ -865,9 +872,7 @@ export default function LendingPage() {
                           (p) => p.deposits.length === 0,
                         ) ? (
                         <div className="py-8 text-center text-neutral-500">
-                          <p className="text-sm">
-                            No transaction history yet.
-                          </p>
+                          <p className="text-sm">No transaction history yet.</p>
                         </div>
                       ) : (
                         <div className="divide-y divide-[#1a1a1a]">
@@ -875,9 +880,7 @@ export default function LendingPage() {
                           {Object.entries(userPositions).flatMap(
                             ([poolId, pos]) =>
                               pos.deposits.map((dep) => {
-                                const pool = pools.find(
-                                  (p) => p.id === poolId,
-                                );
+                                const pool = pools.find((p) => p.id === poolId);
                                 return (
                                   <div
                                     key={dep.id}
@@ -909,9 +912,7 @@ export default function LendingPage() {
                                     </div>
                                     <div className="text-right">
                                       <p className="text-sm font-medium text-white font-mono">
-                                        {formatCurrency(
-                                          parseFloat(dep.amount),
-                                        )}
+                                        {formatCurrency(parseFloat(dep.amount))}
                                       </p>
                                     </div>
                                   </div>
@@ -922,9 +923,7 @@ export default function LendingPage() {
                           {Object.entries(userPositions).flatMap(
                             ([poolId, pos]) =>
                               pos.borrows.map((borrow) => {
-                                const pool = pools.find(
-                                  (p) => p.id === poolId,
-                                );
+                                const pool = pools.find((p) => p.id === poolId);
                                 return (
                                   <div
                                     key={borrow.id}
