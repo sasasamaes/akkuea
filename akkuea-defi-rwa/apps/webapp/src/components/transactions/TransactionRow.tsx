@@ -80,12 +80,12 @@ const TYPE_CONFIG: Record<
 
 const STATUS_VARIANT: Record<
   Transaction["status"],
-  "success" | "warning" | "error" | "info" | "outline"
+  "success" | "warning" | "danger" | "info" | "outline"
 > = {
   confirmed: "success",
   pending: "warning",
   submitting: "info",
-  failed: "error",
+  failed: "danger",
   not_found: "outline",
 };
 

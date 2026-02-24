@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Landmark,
   TrendingUp,
@@ -9,19 +9,16 @@ import {
   Calculator,
   Eye,
   EyeOff,
-  CheckCircle2,
   Clock,
   Percent,
   DollarSign,
   Coins,
-  FileText,
-  ChevronDown,
-  ChevronUp,
   Wallet,
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
+import { TransactionHistory } from "@/components/transactions";
 import {
   Card,
   CardHeader,
@@ -259,7 +256,7 @@ export default function LendingPage() {
   const [selectedPool, setSelectedPool] = useState<LendingPool | null>(null);
   const [actionType, setActionType] = useState<PoolAction>("supply");
   const [showCalculator, setShowCalculator] = useState(false);
-  const [showAuditLogs, setShowAuditLogs] = useState(false);
+
   const [hideBalances, setHideBalances] = useState(false);
 
   const openPoolAction = (pool: LendingPool, action: PoolAction) => {
@@ -819,158 +816,9 @@ export default function LendingPage() {
             </Card>
           </motion.div>
 
-          {/* ----------------------------------------------------------------
-              Audit Logs (collapsible)
-          ---------------------------------------------------------------- */}
+          {/* Transaction History */}
           <motion.div variants={staggerItem}>
-            <Card noPadding>
-              <CardHeader className="p-4 border-b border-[#262626]">
-                <button
-                  onClick={() => setShowAuditLogs(!showAuditLogs)}
-                  className="w-full flex items-center justify-between cursor-pointer"
-                  aria-expanded={showAuditLogs}
-                  aria-controls="audit-logs-panel"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText
-                      className="w-4 h-4 text-neutral-500"
-                      aria-hidden="true"
-                    />
-                    <CardTitle>Audit Logs</CardTitle>
-                  </div>
-                  {showAuditLogs ? (
-                    <ChevronUp
-                      className="w-4 h-4 text-neutral-500"
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <ChevronDown
-                      className="w-4 h-4 text-neutral-500"
-                      aria-hidden="true"
-                    />
-                  )}
-                </button>
-              </CardHeader>
-              <AnimatePresence>
-                {showAuditLogs && (
-                  <motion.div
-                    id="audit-logs-panel"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <CardContent>
-                      {isLoading ? (
-                        <div className="py-8 text-center">
-                          <p className="text-xs text-neutral-500">
-                            Loading transaction history…
-                          </p>
-                        </div>
-                      ) : allBorrows.length === 0 &&
-                        Object.values(userPositions).every(
-                          (p) => p.deposits.length === 0,
-                        ) ? (
-                        <div className="py-8 text-center text-neutral-500">
-                          <p className="text-sm">No transaction history yet.</p>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-[#1a1a1a]">
-                          {/* Deposit log entries */}
-                          {Object.entries(userPositions).flatMap(
-                            ([poolId, pos]) =>
-                              pos.deposits.map((dep) => {
-                                const pool = pools.find((p) => p.id === poolId);
-                                return (
-                                  <div
-                                    key={dep.id}
-                                    className="p-4 flex items-center gap-4"
-                                  >
-                                    <div className="w-10 h-10 rounded-full bg-[#00ff88]/10 flex items-center justify-center flex-shrink-0">
-                                      <CheckCircle2
-                                        className="w-4 h-4 text-[#00ff88]"
-                                        aria-hidden="true"
-                                      />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium text-white">
-                                          Deposit
-                                        </span>
-                                        <Badge
-                                          variant="outline"
-                                          className="text-[10px]"
-                                        >
-                                          {pool?.name ?? poolId}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-xs text-neutral-500 font-mono">
-                                        {new Date(
-                                          dep.depositedAt,
-                                        ).toLocaleString()}
-                                      </p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-sm font-medium text-white font-mono">
-                                        {formatCurrency(parseFloat(dep.amount))}
-                                      </p>
-                                    </div>
-                                  </div>
-                                );
-                              }),
-                          )}
-                          {/* Borrow log entries */}
-                          {Object.entries(userPositions).flatMap(
-                            ([poolId, pos]) =>
-                              pos.borrows.map((borrow) => {
-                                const pool = pools.find((p) => p.id === poolId);
-                                return (
-                                  <div
-                                    key={borrow.id}
-                                    className="p-4 flex items-center gap-4"
-                                  >
-                                    <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                                      <CheckCircle2
-                                        className="w-4 h-4 text-amber-400"
-                                        aria-hidden="true"
-                                      />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium text-white">
-                                          Borrow
-                                        </span>
-                                        <Badge
-                                          variant="outline"
-                                          className="text-[10px]"
-                                        >
-                                          {pool?.name ?? poolId}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-xs text-neutral-500 font-mono">
-                                        {new Date(
-                                          borrow.borrowedAt,
-                                        ).toLocaleString()}
-                                      </p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-sm font-medium text-white font-mono">
-                                        {formatCurrency(
-                                          parseFloat(borrow.principal),
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-                                );
-                              }),
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
+            <TransactionHistory />
           </motion.div>
         </motion.div>
       </main>
