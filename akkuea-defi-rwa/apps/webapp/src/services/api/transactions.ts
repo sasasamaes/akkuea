@@ -33,8 +33,7 @@ export const transactionsApi = {
     const query = searchParams.toString();
     const path = `/transactions${query ? `?${query}` : ""}`;
 
-    const response =
-      await apiClient.get<PaginatedTransactionResponse>(path);
+    const response = await apiClient.get<PaginatedTransactionResponse>(path);
     return response.data;
   },
 
@@ -42,9 +41,7 @@ export const transactionsApi = {
    * Get a single transaction by ID.
    */
   async getTransaction(id: string): Promise<Transaction> {
-    const response = await apiClient.get<Transaction>(
-      `/transactions/${id}`,
-    );
+    const response = await apiClient.get<Transaction>(`/transactions/${id}`);
     return response.data;
   },
 };

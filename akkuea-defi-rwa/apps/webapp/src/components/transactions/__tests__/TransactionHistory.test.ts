@@ -36,7 +36,10 @@ const STELLAR_EXPERT_BASE = "https://stellar.expert/explorer/testnet/tx";
 
 const mockGetTransactions = mock(
   async (): Promise<PaginatedTransactionResponse> => ({
-    items: [makeTx(), makeTx({ id: "550e8400-e29b-41d4-a716-446655440002", type: "borrow" })],
+    items: [
+      makeTx(),
+      makeTx({ id: "550e8400-e29b-41d4-a716-446655440002", type: "borrow" }),
+    ],
     nextCursor: undefined,
     total: 2,
   }),
@@ -107,8 +110,7 @@ describe("TransactionHistory — service integration", () => {
     try {
       await transactionsApi.getTransactions({});
     } catch (err) {
-      errorMessage =
-        err instanceof Error ? err.message : "Unknown error";
+      errorMessage = err instanceof Error ? err.message : "Unknown error";
     }
 
     expect(errorMessage).toBe("Network error: unable to reach server");
@@ -132,10 +134,7 @@ describe("TransactionHistory — service integration", () => {
 
     // Page 2 — uses cursor from page 1
     mockGetTransactions.mockImplementationOnce(async () => ({
-      items: [
-        makeTx({ id: "page2-001" }),
-        makeTx({ id: "page2-002" }),
-      ],
+      items: [makeTx({ id: "page2-001" }), makeTx({ id: "page2-002" })],
       nextCursor: undefined,
       total: 3,
     }));
@@ -153,7 +152,16 @@ describe("TransactionHistory — service integration", () => {
   });
 
   it("transaction types map to correct values", () => {
-    const types = ["deposit", "withdraw", "borrow", "repay", "liquidation", "buy_shares", "sell_shares", "dividend"] as const;
+    const types = [
+      "deposit",
+      "withdraw",
+      "borrow",
+      "repay",
+      "liquidation",
+      "buy_shares",
+      "sell_shares",
+      "dividend",
+    ] as const;
     for (const type of types) {
       const tx = makeTx({ type });
       expect(tx.type).toBe(type);
@@ -161,7 +169,13 @@ describe("TransactionHistory — service integration", () => {
   });
 
   it("status values are valid enum members", () => {
-    const statuses = ["submitting", "pending", "confirmed", "failed", "not_found"] as const;
+    const statuses = [
+      "submitting",
+      "pending",
+      "confirmed",
+      "failed",
+      "not_found",
+    ] as const;
     for (const status of statuses) {
       const tx = makeTx({ status });
       expect(tx.status).toBe(status);

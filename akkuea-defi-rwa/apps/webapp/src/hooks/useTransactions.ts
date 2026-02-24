@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type {
-  Transaction,
-  TransactionFilter,
-} from "@real-estate-defi/shared";
+import type { Transaction, TransactionFilter } from "@real-estate-defi/shared";
 import { transactionsApi } from "@/services/api";
 
 export interface UseTransactionsReturn {

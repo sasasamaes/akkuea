@@ -138,10 +138,7 @@ export function TransactionHistory({
           aria-controls="transaction-history-panel"
         >
           <div className="flex items-center gap-3">
-            <FileText
-              className="w-4 h-4 text-neutral-500"
-              aria-hidden="true"
-            />
+            <FileText className="w-4 h-4 text-neutral-500" aria-hidden="true" />
             <CardTitle>{title}</CardTitle>
           </div>
           {isExpanded ? (
@@ -183,9 +180,9 @@ export function TransactionHistory({
               )}
 
               {/* Empty state */}
-              {!isLoading &&
-                !error &&
-                transactions.length === 0 && <EmptyState />}
+              {!isLoading && !error && transactions.length === 0 && (
+                <EmptyState />
+              )}
 
               {/* Transaction rows */}
               {transactions.map((tx) => (
