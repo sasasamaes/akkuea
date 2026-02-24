@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
 
-export type FormRenderProps<TSchema extends ZodTypeAny> = UseFormReturn<
+export type FormRenderProps<TSchema extends z.ZodType<any, any, any>> = UseFormReturn<
   z.infer<TSchema>
 > & {
   formError: string | null;
@@ -17,20 +17,20 @@ export type FormRenderProps<TSchema extends ZodTypeAny> = UseFormReturn<
   setFormSuccess: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-export interface FormProps<TSchema extends ZodTypeAny> {
+export interface FormProps<TSchema extends z.ZodType<any, any, any>> {
   schema: TSchema;
   defaultValues?: DefaultValues<z.infer<TSchema>>;
   onSubmit: (values: z.infer<TSchema>) => void | Promise<void>;
   children:
-    | React.ReactNode
-    | ((methods: FormRenderProps<TSchema>) => React.ReactNode);
+  | React.ReactNode
+  | ((methods: FormRenderProps<TSchema>) => React.ReactNode);
   className?: string;
   id?: string;
   successMessage?: string;
   showFeedback?: boolean;
 }
 
-export function Form<TSchema extends ZodTypeAny>({
+export function Form<TSchema extends z.ZodType<any, any, any>>({
   schema,
   defaultValues,
   onSubmit,
