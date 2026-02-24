@@ -3,12 +3,11 @@
 import React, { useMemo, useState } from "react";
 import type { DefaultValues } from "react-hook-form";
 import { FormProvider, useForm, type UseFormReturn } from "react-hook-form";
-import type { ZodTypeAny } from "zod";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
 
-export type FormRenderProps<TSchema extends z.ZodType<any, any, any>> = UseFormReturn<
+export type FormRenderProps<TSchema extends z.ZodSchema> = UseFormReturn<
   z.infer<TSchema>
 > & {
   formError: string | null;
@@ -17,7 +16,7 @@ export type FormRenderProps<TSchema extends z.ZodType<any, any, any>> = UseFormR
   setFormSuccess: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-export interface FormProps<TSchema extends z.ZodType<any, any, any>> {
+export interface FormProps<TSchema extends z.ZodSchema> {
   schema: TSchema;
   defaultValues?: DefaultValues<z.infer<TSchema>>;
   onSubmit: (values: z.infer<TSchema>) => void | Promise<void>;
@@ -30,7 +29,7 @@ export interface FormProps<TSchema extends z.ZodType<any, any, any>> {
   showFeedback?: boolean;
 }
 
-export function Form<TSchema extends z.ZodType<any, any, any>>({
+export function Form<TSchema extends z.ZodSchema>({
   schema,
   defaultValues,
   onSubmit,
