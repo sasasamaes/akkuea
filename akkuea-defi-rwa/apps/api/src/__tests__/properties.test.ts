@@ -66,7 +66,9 @@ describe.skipIf(skipIfNoDatabase)('Property Routes Integration Tests', () => {
     });
 
     it('should return 404 for non-existent property with valid UUID', async () => {
-      const response = await app.handle(new Request(`http://localhost/properties/${NON_EXISTENT_UUID}`));
+      const response = await app.handle(
+        new Request(`http://localhost/properties/${NON_EXISTENT_UUID}`),
+      );
 
       expect(response.status).toBe(404);
     });
@@ -178,7 +180,9 @@ describe.skipIf(skipIfNoDatabase)('Property Routes Integration Tests', () => {
       );
 
       // Should not be 400 validation error - either 200, 404 (not found), or 403 (not owner)
-      expect(response.status === 200 || response.status === 404 || response.status === 403).toBe(true);
+      expect(response.status === 200 || response.status === 404 || response.status === 403).toBe(
+        true,
+      );
     });
   });
 
@@ -251,7 +255,9 @@ describe.skipIf(skipIfNoDatabase)('Property Routes Integration Tests', () => {
       );
 
       // Should not be 400 validation error
-      expect(response.status !== 400 || (await response.clone().json()).code !== 'VALIDATION_ERROR').toBe(true);
+      expect(
+        response.status !== 400 || (await response.clone().json()).code !== 'VALIDATION_ERROR',
+      ).toBe(true);
     });
   });
 

@@ -8,7 +8,10 @@ const walletParamSchema = z.object({
 });
 
 const createUserSchema = z.object({
-  walletAddress: z.string().length(56).regex(/^G[A-Z2-7]{55}$/),
+  walletAddress: z
+    .string()
+    .length(56)
+    .regex(/^G[A-Z2-7]{55}$/),
   email: z.string().email().optional(),
   displayName: z.string().min(2).max(50).optional(),
 });
@@ -19,7 +22,10 @@ const updateUserSchema = z.object({
 });
 
 const authWalletSchema = z.object({
-  walletAddress: z.string().length(56).regex(/^G[A-Z2-7]{55}$/),
+  walletAddress: z
+    .string()
+    .length(56)
+    .regex(/^G[A-Z2-7]{55}$/),
 });
 
 export const userRoutes = new Elysia({ prefix: '/users' })

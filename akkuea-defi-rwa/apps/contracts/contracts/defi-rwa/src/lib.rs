@@ -15,18 +15,312 @@ pub use lending::*;
 pub use storage::*;
 
 // Import necessary types for the contract (always available, not just in tests)
-use soroban_sdk::{contract, contractimpl, vec, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, token, Address, Env, String};
 
 #[cfg(test)]
 mod test;
+
+// Helper function: Convert u64 to Soroban String for Event mapping in no_std
+fn u64_to_string(env: &Env, mut val: u64) -> String {
+    if val == 0 {
+        return String::from_str(env, "0");
+    }
+    let mut buffer = [0u8; 20];
+    let mut i = 20;
+    while val > 0 {
+        i -= 1;
+        buffer[i] = (val % 10) as u8 + b'0';
+        val /= 10;
+    }
+    let slice = &buffer[i..20];
+    String::from_str(env, core::str::from_utf8(slice).unwrap())
+}
 
 #[contract]
 pub struct PropertyTokenContract;
 
 #[contractimpl]
 impl PropertyTokenContract {
-    /// Placeholder function - will be replaced with actual contract logic
-    pub fn hello(env: Env, to: String) -> Vec<String> {
-        vec![&env, String::from_str(&env, "Hello"), to]
+    /// Mint shares to a recipient (Admin only)
+    pub fn mint_shares(
+        env: Env,
+        admin: Address,
+        property_id: u64,
+        recipient: Address,
+        amount: u64,
+    ) {
+        // Authorization check
+        admin.require_auth();
+        AdminControl::require_admin(&env, &admin);
+
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+
+        let total = get_total_shares(&env, property_id);
+        let new_total = total.checked_add(amount).expect("Total shares overflow");
+        set_total_shares(&env, property_id, new_total);
+
+        increase_balance(&env, property_id, &recipient, amount);
+
+        // Wire event emission
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, admin, recipient, amount as i128);
+    }
+
+    /// Burn shares from owner
+    pub fn burn_shares(env: Env, owner: Address, property_id: u64, amount: u64) {
+        // Authorization check
+        owner.require_auth();
+
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+
+        decrease_balance(&env, property_id, &owner, amount);
+
+        let total = get_total_shares(&env, property_id);
+        let new_total = total.checked_sub(amount).expect("Total shares underflow");
+        set_total_shares(&env, property_id, new_total);
+
+        // Wire event emission
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, owner.clone(), owner, amount as i128);
+    }
+
+    /// Transfer shares between addresses
+    pub fn transfer_shares(env: Env, from: Address, to: Address, property_id: u64, amount: u64) {
+        // Authorization check
+        from.require_auth();
+
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+
+        transfer_shares(&env, property_id, &from, &to, amount);
+
+        // Wire event emission
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, from, to, amount as i128);
+    }
+
+    /// Approve owner allowance to spender
+    pub fn approve(env: Env, owner: Address, spender: Address, property_id: u64, amount: u64) {
+        // Authorization check
+        owner.require_auth();
+        set_allowance(&env, property_id, &owner, &spender, amount);
+    }
+
+    /// Spend allowance directly to transfer shares
+    pub fn transfer_from(
+        env: Env,
+        spender: Address,
+        from: Address,
+        to: Address,
+        property_id: u64,
+        amount: u64,
+    ) {
+        // Authorization check
+        spender.require_auth();
+
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+
+        spend_allowance(&env, property_id, &from, &spender, amount);
+        transfer_shares(&env, property_id, &from, &to, amount);
+
+        // Wire event emission
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, from, to, amount as i128);
+    }
+
+    /// Query functions
+    pub fn get_balance(env: Env, property_id: u64, owner: Address) -> u64 {
+        get_balance(&env, property_id, &owner)
+    }
+
+    pub fn get_total_shares(env: Env, property_id: u64) -> u64 {
+        get_total_shares(&env, property_id)
+    }
+
+    pub fn get_allowance(env: Env, property_id: u64, owner: Address, spender: Address) -> u64 {
+        get_allowance(&env, property_id, &owner, &spender)
+    }
+
+    /// Purchase shares of a property
+    ///
+    /// This function allows users to purchase property token shares by transferring
+    /// payment tokens via SEP-41. The function validates the property exists, is verified,
+    /// has available shares, calculates the total cost, transfers payment, mints shares,
+    /// and emits a SharePurchase event.
+    ///
+    /// # Arguments
+    /// * `env` - Soroban environment
+    /// * `buyer` - Address of the buyer (must be authorized)
+    /// * `property_id` - ID of the property to purchase shares from
+    /// * `amount` - Number of shares to purchase (must be positive)
+    /// * `payment_token` - Address of the SEP-41 payment token contract
+    ///
+    /// # Panics
+    /// Panics if:
+    /// - Buyer is not authorized
+    /// - Contract is paused
+    /// - Property does not exist
+    /// - Property is not verified
+    /// - Property has no available shares
+    /// - Amount is zero or exceeds available shares
+    /// - Payment token transfer fails
+    pub fn purchase_shares(
+        env: Env,
+        buyer: Address,
+        property_id: u64,
+        amount: u64,
+        payment_token: Address,
+    ) {
+        buyer.require_auth();
+        PauseControl::require_not_paused(&env);
+
+        if amount == 0 {
+            panic!("Amount must be positive");
+        }
+
+        let property = storage::property::PropertyMetadata::load(&env, property_id)
+            .unwrap_or_else(|| panic!("Property not found"));
+
+        if !storage::property::is_verified(&env, property_id) {
+            panic!("Property is not verified");
+        }
+
+        let available_shares = storage::property::get_available_shares(&env, property_id);
+        if available_shares == 0 {
+            panic!("No shares available");
+        }
+
+        if amount > available_shares {
+            panic!("Insufficient shares available");
+        }
+
+        let price_per_share = storage::property::get_price_per_share(&env, property_id);
+        if price_per_share <= 0 {
+            panic!("Price per share not set");
+        }
+
+        let total_cost = (amount as i128)
+            .checked_mul(price_per_share)
+            .expect("Cost calculation overflow");
+
+        let token_client = token::Client::new(&env, &payment_token);
+        token_client.transfer(&buyer, &property.owner, &total_cost);
+
+        storage::shares::increase_balance(&env, property_id, &buyer, amount);
+        storage::property::decrease_available_shares(&env, property_id, amount);
+
+        let mut buffer = itoa::Buffer::new();
+        let property_id_str = String::from_str(&env, buffer.format(property_id));
+        PropertyEvents::share_purchase(&env, property_id_str, buyer, amount as i128, total_cost);
+    }
+
+    pub fn set_oracle(env: Env, oracle_address: Address, caller: Address) {
+        // Todo: Admin auth check
+        caller.require_auth();
+        AdminControl::require_admin(&env, &caller);
+        PriceOracle::set_oracle_address(&env, &oracle_address);
+    }
+
+    pub fn borrow(
+        env: Env,
+        borrower: Address,
+        pool_id: String,
+        amount: i128,
+        collateral_asset: Address,
+        collateral_amount: i128,
+    ) -> BorrowPosition {
+        borrower.require_auth();
+
+        let pool = PoolStorage::get(&env, &pool_id).expect("Pool not found");
+        if !pool.is_active {
+            panic!("Pool is not active");
+        }
+        if PoolStorage::is_paused(&env, &pool_id) {
+            panic!("Pool is paused");
+        }
+
+        let total_deposits = PoolStorage::get_total_deposits(&env, &pool_id);
+        let total_borrows = PoolStorage::get_total_borrows(&env, &pool_id);
+        let available = PoolStorage::calculate_available_liquidity(total_deposits, total_borrows);
+
+        if amount > available {
+            panic!("Insufficient liquidity");
+        }
+
+        let current_time = env.ledger().timestamp();
+        let last_accrual = InterestStorage::get_last_accrual(&env, &pool_id);
+        let time_elapsed = current_time - last_accrual;
+
+        let current_index = InterestStorage::get_interest_index(&env, &pool_id);
+        let model = InterestStorage::get_model(&env, &pool_id);
+        let utilization = PoolStorage::calculate_utilization(total_deposits, total_borrows);
+        let borrow_rate = model.calculate_borrow_rate(utilization);
+        let new_index =
+            InterestStorage::calculate_new_index(current_index, borrow_rate, time_elapsed);
+
+        if new_index == 0 {
+            panic!("Interest index is zero - invariant violation");
+        }
+
+        InterestStorage::set_interest_index(&env, &pool_id, new_index);
+        InterestStorage::set_last_accrual(&env, &pool_id, current_time);
+
+        // let collateral_price = PriceOracle::get_price(&env, &collateral_asset);
+        let collateral_price = PriceOracle::get_price(&env, &collateral_asset);
+        let collateral_value = (collateral_price * collateral_amount) / PRECISION;
+
+        let debt_value = amount; // Initial debt is borrowed amount
+        let health_factor = PositionStorage::calculate_health_factor(
+            collateral_value,
+            debt_value,
+            pool.liquidation_threshold,
+        );
+
+        let min_health_factor = (15 * PRECISION) / 10; //1.5
+        if health_factor < min_health_factor {
+            panic!("Health factor too low");
+        }
+
+        let collateral_token = token::Client::new(&env, &collateral_asset);
+        collateral_token.transfer(
+            &borrower,
+            env.current_contract_address(),
+            &collateral_amount,
+        );
+
+        let pool_token = token::Client::new(&env, &pool.asset_address);
+        pool_token.transfer(&env.current_contract_address(), &borrower, &amount);
+
+        let position = BorrowPosition {
+            pool_id: pool_id.clone(),
+            borrower: borrower.clone(),
+            principal: amount,
+            index_at_borrow: new_index,
+            collateral_amount,
+            collateral_asset: collateral_asset.clone(),
+            borrowed_at: current_time,
+        };
+
+        PositionStorage::set_borrow(&env, &position);
+        PoolStorage::set_total_borrows(&env, &pool_id, total_borrows + amount);
+
+        LendingEvents::borrow(
+            &env,
+            pool_id,
+            borrower,
+            amount,
+            collateral_amount,
+            collateral_asset,
+            health_factor,
+        );
+
+        position
     }
 }

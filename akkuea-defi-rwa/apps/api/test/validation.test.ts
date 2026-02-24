@@ -8,11 +8,11 @@ describe('Validation Middleware', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: '' }), // name too short, plus missing fields
-      })
+      }),
     );
 
     expect(response.status).toBe(400);
-    const body = await response.json() as {
+    const body = (await response.json()) as {
       code: string;
       details: {
         source: string;
@@ -26,12 +26,10 @@ describe('Validation Middleware', () => {
   });
 
   it('should reject invalid query on GET /properties', async () => {
-    const response = await app.handle(
-      new Request('http://localhost/properties?page=abc')
-    );
+    const response = await app.handle(new Request('http://localhost/properties?page=abc'));
 
     expect(response.status).toBe(400);
-    const body = await response.json() as {
+    const body = (await response.json()) as {
       code: string;
       details: {
         source: string;
@@ -44,12 +42,10 @@ describe('Validation Middleware', () => {
   });
 
   it('should reject invalid params on GET /properties/:id', async () => {
-    const response = await app.handle(
-      new Request('http://localhost/properties/not-a-uuid')
-    );
+    const response = await app.handle(new Request('http://localhost/properties/not-a-uuid'));
 
     expect(response.status).toBe(400);
-    const body = await response.json() as {
+    const body = (await response.json()) as {
       code: string;
       details: {
         source: string;
@@ -84,13 +80,13 @@ describe('Validation Middleware', () => {
           pricePerShare: '1000.00',
           images: ['https://example.com/image.jpg'],
         }),
-      })
+      }),
     );
 
     // Validation should pass - if 400 it should NOT be VALIDATION_ERROR
     // (Controller may return 400 for business logic validation)
     if (response.status === 400) {
-      const body = await response.json() as { code?: string };
+      const body = (await response.json()) as { code?: string };
       expect(body.code).not.toBe('VALIDATION_ERROR');
     }
   });

@@ -31,6 +31,7 @@ Defines unique storage keys to prevent collisions and organize contract data:
 - **PropertyCounter**: Counter for generating unique property IDs
 
 **Key Features**:
+
 - Strongly typed keys prevent storage collisions
 - Efficient serialization with `#[contracttype]`
 - Debug-friendly symbol names
@@ -54,6 +55,7 @@ pub struct PropertyMetadata {
 ```
 
 **Key Methods**:
+
 - `new()`: Creates a new property metadata instance
 - `save()`: Stores metadata in contract storage
 - `load()`: Retrieves metadata from storage
@@ -65,6 +67,7 @@ pub struct PropertyMetadata {
 Tracks property share ownership with optimized storage patterns:
 
 **Core Functions**:
+
 - `get_balance(property_id, owner)`: Get share balance
 - `set_balance(property_id, owner, balance)`: Set share balance
 - `increase_balance()`: Add shares to balance
@@ -74,6 +77,7 @@ Tracks property share ownership with optimized storage patterns:
 - `set_total_shares()`: Set total shares for property
 
 **Optimizations**:
+
 - Zero balances are automatically removed from storage
 - Composite keys enable O(1) access
 - Safe arithmetic with overflow/underflow checks
@@ -93,6 +97,7 @@ pub struct TokenConfig {
 ```
 
 **Key Methods**:
+
 - `new()`: Creates new token configuration
 - `save()`: Stores configuration
 - `load()`: Retrieves configuration
@@ -100,6 +105,7 @@ pub struct TokenConfig {
 - `update_admin()`: Updates admin address
 
 **Helper Functions**:
+
 - `get_admin()`: Quick admin lookup
 - `set_admin()`: Update admin address
 - `get_property_counter()`: Get current property counter
@@ -178,6 +184,7 @@ StorageKey::ShareBalance(property_id, owner_address)
 ```
 
 This enables:
+
 - Direct access without nested structures
 - O(1) lookup complexity
 - Reduced serialization overhead
@@ -333,6 +340,7 @@ Strongly typed `StorageKey` enum prevents accidental key collisions that could l
 ## Support
 
 For questions or issues related to the storage module:
+
 1. Check the [Storage Optimization Guide](STORAGE_OPTIMIZATION.md)
 2. Review test cases for usage examples
 3. Open an issue in the repository

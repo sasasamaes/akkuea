@@ -63,6 +63,9 @@ pub enum LendingKey {
     /// Pool pause status
     /// Storage: Instance
     PoolPaused(String),
+
+    /// Oracle Address
+    OracleAddress,
 }
 
 /// TTL bump amounts for lending storage

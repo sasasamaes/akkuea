@@ -1,7 +1,7 @@
 export const formatCurrency = (
   value: number,
   locale: string = "en-US",
-  currency: string = "USD"
+  currency: string = "USD",
 ): string => {
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -12,7 +12,7 @@ export const formatCurrency = (
 export const formatPercent = (
   value: number,
   decimals: number = 2,
-  locale: string = "en-US"
+  locale: string = "en-US",
 ): string => {
   return new Intl.NumberFormat(locale, {
     style: "percent",
@@ -28,17 +28,23 @@ export const formatDate = (
     month: "short",
     day: "numeric",
     year: "numeric",
-  }
+  },
 ): string => {
-  const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+  const d =
+    typeof date === "string" || typeof date === "number"
+      ? new Date(date)
+      : date;
   return new Intl.DateTimeFormat(locale, options).format(d);
 };
 
 export const formatRelativeTime = (
   date: Date | string | number,
-  locale: string = "en-US"
+  locale: string = "en-US",
 ): string => {
-  const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+  const d =
+    typeof date === "string" || typeof date === "number"
+      ? new Date(date)
+      : date;
   const now = new Date();
   const diffInSeconds = Math.floor((d.getTime() - now.getTime()) / 1000);
 
@@ -67,7 +73,7 @@ export const formatRelativeTime = (
 export const abbreviateNumber = (
   value: number,
   decimals: number = 1,
-  locale: string = "en-US"
+  locale: string = "en-US",
 ): string => {
   return new Intl.NumberFormat(locale, {
     notation: "compact",

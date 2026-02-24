@@ -13,11 +13,19 @@ export type {
 } from "../schemas/lending.schema";
 
 export type {
+  TransactionType,
+  TransactionStatus,
+  Transaction,
+  TransactionFilter,
+  TransactionQueryParams,
+  PaginatedTransactionResponse,
+} from "../schemas/transaction.schema";
+
+export type {
   KycStatus,
   KycTier,
   KycDocument,
   User,
-  Transaction,
   OraclePrice,
 } from "../schemas/user.schema";
 

@@ -3,7 +3,7 @@ export class ApiError extends Error {
     public readonly statusCode: number,
     public readonly code: string,
     message: string,
-    public readonly details?: Record<string, unknown>
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message);
     Object.setPrototypeOf(this, ApiError.prototype);

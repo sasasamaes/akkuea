@@ -23,7 +23,7 @@ function formatZodErrors(error: ZodError): Record<string, string[]> {
  */
 function createValidationError(
   errors: Record<string, string[]>,
-  source: 'body' | 'query' | 'params'
+  source: 'body' | 'query' | 'params',
 ) {
   return {
     status: 400,
@@ -49,10 +49,7 @@ export function validateBody<T extends ZodSchema>(schema: T) {
         if (!result.success) {
           return {
             validatedBody: null as z.infer<T> | null,
-            bodyValidationError: createValidationError(
-              formatZodErrors(result.error),
-              'body'
-            ),
+            bodyValidationError: createValidationError(formatZodErrors(result.error), 'body'),
           };
         }
 
@@ -90,10 +87,7 @@ export function validateQuery<T extends ZodSchema>(schema: T) {
       if (!result.success) {
         return {
           validatedQuery: null as z.infer<T> | null,
-          queryValidationError: createValidationError(
-            formatZodErrors(result.error),
-            'query'
-          ),
+          queryValidationError: createValidationError(formatZodErrors(result.error), 'query'),
         };
       }
 
@@ -121,10 +115,7 @@ export function validateParams<T extends ZodSchema>(schema: T) {
       if (!result.success) {
         return {
           validatedParams: null as z.infer<T> | null,
-          paramsValidationError: createValidationError(
-            formatZodErrors(result.error),
-            'params'
-          ),
+          paramsValidationError: createValidationError(formatZodErrors(result.error), 'params'),
         };
       }
 
@@ -149,18 +140,17 @@ export function validate<
   TBody extends ZodSchema | undefined = undefined,
   TQuery extends ZodSchema | undefined = undefined,
   TParams extends ZodSchema | undefined = undefined,
->(options: {
-  body?: TBody;
-  query?: TQuery;
-  params?: TParams;
-}) {
+>(options: { body?: TBody; query?: TQuery; params?: TParams }) {
   return new Elysia({ name: 'validate' })
     .derive({ as: 'scoped' }, async ({ request, query, params }) => {
       const result: {
         validatedBody: TBody extends ZodSchema ? z.infer<TBody> : undefined;
         validatedQuery: TQuery extends ZodSchema ? z.infer<TQuery> : undefined;
         validatedParams: TParams extends ZodSchema ? z.infer<TParams> : undefined;
-        validationError: ReturnType<typeof createValidationError> | { status: number; code: string; message: string } | null;
+        validationError:
+          | ReturnType<typeof createValidationError>
+          | { status: number; code: string; message: string }
+          | null;
       } = {
         validatedBody: undefined as TBody extends ZodSchema ? z.infer<TBody> : undefined,
         validatedQuery: undefined as TQuery extends ZodSchema ? z.infer<TQuery> : undefined,
@@ -177,7 +167,7 @@ export function validate<
           if (!bodyResult.success) {
             result.validationError = createValidationError(
               formatZodErrors(bodyResult.error),
-              'body'
+              'body',
             );
             return result;
           }
@@ -200,7 +190,7 @@ export function validate<
         if (!queryResult.success) {
           result.validationError = createValidationError(
             formatZodErrors(queryResult.error),
-            'query'
+            'query',
           );
           return result;
         }
@@ -215,7 +205,7 @@ export function validate<
         if (!paramsResult.success) {
           result.validationError = createValidationError(
             formatZodErrors(paramsResult.error),
-            'params'
+            'params',
           );
           return result;
         }
