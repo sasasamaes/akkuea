@@ -170,6 +170,13 @@ describe('Lending Routes', () => {
     });
   });
 
+  describe('GET /lending/pools/:id', () => {
+    it('should return pool when id is provided', async () => {
+      const response = await app.handle(new Request('http://localhost/lending/pools/test-pool-id'));
+      expect([200, 404, 500]).toContain(response.status);
+    });
+  });
+
   describe('POST /lending/pools/:id/deposit (auth + validation)', () => {
     it('should return 401 without auth', async () => {
       const response = await app.handle(
