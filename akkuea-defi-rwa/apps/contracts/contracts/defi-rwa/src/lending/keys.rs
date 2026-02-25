@@ -64,6 +64,10 @@ pub enum LendingKey {
     /// Storage: Instance
     PoolPaused(String),
 
+    /// Contract administrator address
+    /// Storage: Instance
+    Admin,
+
     /// Oracle Address
     OracleAddress,
 }

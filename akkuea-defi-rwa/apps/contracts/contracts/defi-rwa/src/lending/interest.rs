@@ -95,13 +95,27 @@ impl InterestStorage {
     /// Store interest rate model for pool
     pub fn set_model(env: &Env, pool_id: &String, model: &InterestRateModel) {
         let key = LendingKey::InterestRateModel(pool_id.clone());
-        env.storage().instance().set(&key, model);
+        env.storage().persistent().set(&key, model);
+        env.storage().persistent().extend_ttl(
+            &key,
+            lending_bump::PERSISTENT_BUMP,
+            lending_bump::PERSISTENT_BUMP,
+        );
     }
 
     /// Get interest rate model for pool
     pub fn get_model(env: &Env, pool_id: &String) -> InterestRateModel {
         let key = LendingKey::InterestRateModel(pool_id.clone());
-        env.storage().instance().get(&key).unwrap_or_default()
+        if env.storage().persistent().has(&key) {
+            env.storage().persistent().extend_ttl(
+                &key,
+                lending_bump::PERSISTENT_BUMP,
+                lending_bump::PERSISTENT_BUMP,
+            );
+            env.storage().persistent().get(&key).unwrap_or_default()
+        } else {
+            InterestRateModel::default()
+        }
     }
 
     /// Get accumulated interest index
@@ -131,31 +145,64 @@ impl InterestStorage {
     pub fn set_last_accrual(env: &Env, pool_id: &String, timestamp: u64) {
         let key = LendingKey::PoolLastAccrual(pool_id.clone());
         env.storage().persistent().set(&key, &timestamp);
+        env.storage().persistent().extend_ttl(
+            &key,
+            lending_bump::PERSISTENT_BUMP,
+            lending_bump::PERSISTENT_BUMP,
+        );
     }
 
-    /// Calculate new interest index based on time elapsed
-    /// Uses checked arithmetic to prevent overflow
+    /// Calculate new interest index with **compound** interest.
+    ///
+    /// Uses per-second compounding via iterative squaring (exponentiation by
+    /// squaring) to compute: `new_index = current_index * (1 + rate_per_second) ^ time_elapsed`.
+    ///
+    /// This avoids the underestimation inherent in the linear approximation
+    /// `index * (1 + rate * time)` for longer accrual intervals.
+    /// Uses checked arithmetic to prevent overflow.
     pub fn calculate_new_index(current_index: i128, borrow_rate: i128, time_elapsed: u64) -> i128 {
         if time_elapsed == 0 {
             return current_index;
         }
 
-        // Calculate rate per second
+        // rate_per_second in PRECISION units
         let rate_per_second = borrow_rate / (SECONDS_PER_YEAR as i128);
 
-        // Calculate accumulated interest: index * (1 + rate * time)
-        // Using checked arithmetic to prevent overflow
-        let rate_times_time = rate_per_second
-            .checked_mul(time_elapsed as i128)
-            .expect("Interest calculation overflow: rate * time");
+        // base = 1 + rate_per_second  (in PRECISION units)
+        let base = PRECISION
+            .checked_add(rate_per_second)
+            .expect("Interest calculation base overflow");
 
-        let interest_factor = PRECISION
-            .checked_add(rate_times_time)
-            .expect("Interest calculation overflow: 1 + rate*time");
+        // Compute base^time_elapsed using exponentiation by squaring
+        let compound_factor = Self::pow_precision(base, time_elapsed);
 
         current_index
-            .checked_mul(interest_factor)
-            .expect("Interest calculation overflow: index * factor")
+            .checked_mul(compound_factor)
+            .expect("Interest calculation index overflow")
             / PRECISION
+    }
+
+    /// Fixed-point exponentiation by squaring.
+    ///
+    /// Computes `base ^ exp` where `base` is in PRECISION units.
+    /// Returns the result in PRECISION units.
+    fn pow_precision(base: i128, exp: u64) -> i128 {
+        if exp == 0 {
+            return PRECISION;
+        }
+
+        let mut result = PRECISION;
+        let mut b = base;
+        let mut e = exp;
+
+        while e > 0 {
+            if e & 1 == 1 {
+                result = (result * b) / PRECISION;
+            }
+            b = (b * b) / PRECISION;
+            e >>= 1;
+        }
+
+        result
     }
 }

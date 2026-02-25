@@ -32,6 +32,7 @@ pub struct LendingPool {
 /// Pool storage helpers
 pub struct PoolStorage;
 
+#[allow(dead_code)]
 impl PoolStorage {
     /// Store lending pool
     pub fn set(env: &Env, pool: &LendingPool) {
