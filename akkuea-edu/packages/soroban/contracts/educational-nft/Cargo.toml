@@ -9,13 +9,13 @@ crate-type = ["cdylib", "lib"]
 doctest = false
 
 [dependencies]
-soroban-sdk = { workspace = true }
+soroban-sdk = { version = "22.0.6", features = ["alloc"] }
 stellar-macros = "0.4.0"
 stellar-tokens = "0.4.0"
 stellar-access = "0.4.0"
 
 [dev-dependencies]
-soroban-sdk = { workspace = true, features = ["testutils"] }
+soroban-sdk = { version = "22.0.6", features = ["testutils"] }
 
 # Optimization settings
 [profile.release]

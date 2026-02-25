@@ -208,12 +208,10 @@ fn test_submit_review_events() {
     // Verify emitted events
     let events = env.events().all();
 
-    assert_eq!(events.len(), 1); // Expect 1 events
+    assert_eq!(events.events().len(), 1); // Expect 1 events
 
-    // Verify the first event
-    let event = events.get(0).unwrap();
-
-    assert_eq!(event.0, contract_id);
+    // Verify the first event was emitted by this contract
+    assert!(!events.filter_by_contract(&contract_id).events().is_empty());
 }
 
 #[test]
@@ -302,7 +300,7 @@ fn test_vote_helpful() {
 
     let events = env.events().all();
 
-    assert_eq!(events.len(), 1, "Should emit vote event");
+    assert_eq!(events.events().len(), 1, "Should emit vote event");
 }
 
 #[test]

@@ -3,7 +3,15 @@
 #![allow(clippy::needless_borrows_for_generic_args)]
 #![allow(deprecated)]
 
+//! # Property Tokenization & Lending Smart Contract
+//!
+//! This contract enables tokenization of real-world properties and a lending market
+//! for those property shares on the Stellar/Soroban blockchain.
+
+mod access;
+mod events;
 mod lending;
+mod storage;
 
 // Public re-exports for consumers and tests
 pub use lending::{
@@ -12,20 +20,41 @@ pub use lending::{
     LendingPool, PoolStorage, PositionStorage, PRECISION, SECONDS_PER_YEAR,
 };
 
+pub use access::*;
+pub use events::*;
+pub use lending::*;
+pub use storage::*;
+
 use soroban_sdk::{contract, contractimpl, token, Address, Env, String, Vec};
 
-// Internal imports (non-overlapping with pub use)
-use lending::events;
+// Internal imports
+use lending::events as lending_events;
+
+#[cfg(test)]
+mod test;
 
 // ───────────────────────────────────────────────
-// Contract definition
+// Helper functions
 // ───────────────────────────────────────────────
 
-#[contract]
-pub struct LendingPoolContract;
+/// Convert u64 to Soroban String for Event mapping in no_std
+fn u64_to_string(env: &Env, mut val: u64) -> String {
+    if val == 0 {
+        return String::from_str(env, "0");
+    }
+    let mut buffer = [0u8; 20];
+    let mut i = 20;
+    while val > 0 {
+        i -= 1;
+        buffer[i] = (val % 10) as u8 + b'0';
+        val /= 10;
+    }
+    let slice = &buffer[i..20];
+    String::from_str(env, core::str::from_utf8(slice).unwrap())
+}
 
 // ───────────────────────────────────────────────
-// Admin helpers
+// Internal Lending Helpers
 // ───────────────────────────────────────────────
 
 fn get_admin(env: &Env) -> Address {
@@ -49,10 +78,6 @@ fn require_admin(env: &Env, caller: &Address) {
         panic!("only admin");
     }
 }
-
-// ───────────────────────────────────────────────
-// Internal helpers
-// ───────────────────────────────────────────────
 
 /// Accrue interest for a pool – updates the global interest index, reserves,
 /// and last-accrual timestamp. Safe to call multiple times in the same ledger.
@@ -85,7 +110,7 @@ fn accrue_interest_internal(env: &Env, pool_id: &String) {
     // Calculate and add reserve income
     if total_borrows > 0 {
         let pool = PoolStorage::get(env, pool_id).expect("pool must exist");
-        let reserve_factor_precision = (pool.reserve_factor as i128) * PRECISION / 10_000; // basis points → PRECISION
+        let reserve_factor_precision = (pool.reserve_factor as i128) * PRECISION / 10_000;
         let interest_income = (total_borrows * (new_index - current_index)) / current_index;
         let reserve_income = (interest_income * reserve_factor_precision) / PRECISION;
         if reserve_income > 0 {
@@ -97,32 +122,132 @@ fn accrue_interest_internal(env: &Env, pool_id: &String) {
 }
 
 // ───────────────────────────────────────────────
-// Contract implementation
+// Contract definition
 // ───────────────────────────────────────────────
 
+#[contract]
+pub struct PropertyTokenContract;
+
 #[contractimpl]
-impl LendingPoolContract {
+impl PropertyTokenContract {
     // ─── Constructor ───────────────────────────
-    /// Initialize the contract with an admin address.
     pub fn __constructor(env: Env, admin: Address) {
         set_admin(&env, &admin);
     }
 
-    // ─── Admin functions ───────────────────────
+    // ─── Share Management (Admin) ──────────────
 
-    /// Create a new lending pool.
-    ///
-    /// # Arguments
-    /// * `admin` – must match the stored admin and `require_auth()`
-    /// * `pool_id` – unique pool identifier
-    /// * `name` – human readable name
-    /// * `asset` – symbol (e.g. "USDC")
-    /// * `asset_address` – SEP-41 token contract address
-    /// * `collateral_factor` – in PRECISION units (e.g. 75 % = 0.75 × 10^18)
-    /// * `liquidation_threshold` – in PRECISION units
-    /// * `liquidation_penalty` – in PRECISION units
-    /// * `reserve_factor` – in basis points (e.g. 1000 = 10 %)
-    #[allow(clippy::too_many_arguments)]
+    pub fn mint_shares(env: Env, admin: Address, property_id: u64, recipient: Address, amount: u64) {
+        admin.require_auth();
+        AdminControl::require_admin(&env, &admin);
+
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+
+        let total = get_total_shares(&env, property_id);
+        let new_total = total.checked_add(amount).expect("Total shares overflow");
+        set_total_shares(&env, property_id, new_total);
+        increase_balance(&env, property_id, &recipient, amount);
+
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, admin, recipient, amount as i128);
+    }
+
+    pub fn burn_shares(env: Env, owner: Address, property_id: u64, amount: u64) {
+        owner.require_auth();
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+        decrease_balance(&env, property_id, &owner, amount);
+        let total = get_total_shares(&env, property_id);
+        let new_total = total.checked_sub(amount).expect("Total shares underflow");
+        set_total_shares(&env, property_id, new_total);
+
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, owner.clone(), owner, amount as i128);
+    }
+
+    // ─── Share Transfers & Allowances ──────────
+
+    pub fn transfer_shares(env: Env, from: Address, to: Address, property_id: u64, amount: u64) {
+        from.require_auth();
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+        transfer_shares(&env, property_id, &from, &to, amount);
+
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, from, to, amount as i128);
+    }
+
+    pub fn approve(env: Env, owner: Address, spender: Address, property_id: u64, amount: u64) {
+        owner.require_auth();
+        set_allowance(&env, property_id, &owner, &spender, amount);
+    }
+
+    pub fn transfer_from(
+        env: Env,
+        spender: Address,
+        from: Address,
+        to: Address,
+        property_id: u64,
+        amount: u64,
+    ) {
+        spender.require_auth();
+        if amount == 0 {
+            panic!("Amount must be greater than zero");
+        }
+        spend_allowance(&env, property_id, &from, &spender, amount);
+        transfer_shares(&env, property_id, &from, &to, amount);
+
+        let prop_str = u64_to_string(&env, property_id);
+        PropertyEvents::share_transfer(&env, prop_str, from, to, amount as i128);
+    }
+
+    // ─── Property Purchases ─────────────────────
+
+    pub fn purchase_shares(
+        env: Env,
+        buyer: Address,
+        property_id: u64,
+        amount: u64,
+        payment_token: Address,
+    ) {
+        buyer.require_auth();
+        PauseControl::require_not_paused(&env);
+
+        if amount == 0 {
+            panic!("Amount must be positive");
+        }
+        let property = storage::property::PropertyMetadata::load(&env, property_id)
+            .unwrap_or_else(|| panic!("Property not found"));
+        if !storage::property::is_verified(&env, property_id) {
+            panic!("Property is not verified");
+        }
+        let available_shares = storage::property::get_available_shares(&env, property_id);
+        if amount > available_shares {
+            panic!("Insufficient shares available");
+        }
+
+        let price_per_share = storage::property::get_price_per_share(&env, property_id);
+        let total_cost = (amount as i128)
+            .checked_mul(price_per_share)
+            .expect("Cost calculation overflow");
+
+        let token_client = token::Client::new(&env, &payment_token);
+        token_client.transfer(&buyer, &property.owner, &total_cost);
+
+        storage::shares::increase_balance(&env, property_id, &buyer, amount);
+        storage::property::decrease_available_shares(&env, property_id, amount);
+
+        let mut buffer = itoa::Buffer::new();
+        let property_id_str = String::from_str(&env, buffer.format(property_id));
+        PropertyEvents::share_purchase(&env, property_id_str, buyer, amount as i128, total_cost);
+    }
+
+    // ─── Lending Pool Admin ────────────────────
+
     pub fn create_pool(
         env: Env,
         admin: Address,
@@ -136,8 +261,6 @@ impl LendingPoolContract {
         reserve_factor: u32,
     ) {
         require_admin(&env, &admin);
-
-        // Pool must not exist already
         if PoolStorage::exists(&env, &pool_id) {
             panic!("pool already exists");
         }
@@ -158,61 +281,39 @@ impl LendingPoolContract {
         PoolStorage::set(&env, &pool);
         PoolStorage::add_to_list(&env, &pool_id);
 
-        // Initialize interest model and index
         let model = InterestRateModel::default();
         InterestStorage::set_model(&env, &pool_id, &model);
         InterestStorage::set_interest_index(&env, &pool_id, PRECISION);
         InterestStorage::set_last_accrual(&env, &pool_id, env.ledger().timestamp());
 
-        // Initialize totals
         PoolStorage::set_total_deposits(&env, &pool_id, 0);
         PoolStorage::set_total_borrows(&env, &pool_id, 0);
 
-        events::emit_pool_created(&env, &admin, &pool_id);
+        lending_events::emit_pool_created(&env, &admin, &pool_id);
     }
 
-    // ─── User functions ────────────────────────
+    // ─── Lending Operations ─────────────────────
 
-    /// Deposit tokens into a lending pool.
-    ///
-    /// Transfers `amount` of the pool's underlying asset from `depositor`
-    /// to the contract, creates / updates the deposit position, and
-    /// updates the pool's total deposits.
     pub fn deposit(env: Env, depositor: Address, pool_id: String, amount: i128) {
         depositor.require_auth();
-
-        // Validations
-        if amount <= 0 {
-            panic!("amount must be positive");
-        }
+        if amount <= 0 { panic!("amount must be positive"); }
         let pool = PoolStorage::get(&env, &pool_id).expect("pool not found");
-        if !pool.is_active {
-            panic!("pool is not active");
-        }
-        if PoolStorage::is_paused(&env, &pool_id) {
-            panic!("pool is paused");
-        }
+        if !pool.is_active { panic!("pool is not active"); }
+        if PoolStorage::is_paused(&env, &pool_id) { panic!("pool is paused"); }
 
-        // Accrue interest before mutating state
         accrue_interest_internal(&env, &pool_id);
-
-        // SEP-41 token transfer: depositor → contract
         let token_client = token::Client::new(&env, &pool.asset_address);
         token_client.transfer(&depositor, &env.current_contract_address(), &amount);
 
-        // Get current interest index for the position snapshot
         let current_index = InterestStorage::get_interest_index(&env, &pool_id);
 
-        // Create or update deposit position
         match PositionStorage::get_deposit(&env, &depositor, &pool_id) {
             Some(mut existing) => {
-                // Weighted-average index for the combined position
                 let total_amount = existing.amount + amount;
                 existing.index_at_deposit = ((existing.amount * existing.index_at_deposit)
-                    + (amount * current_index))
-                    / total_amount;
+                    + (amount * current_index)) / total_amount;
                 existing.amount = total_amount;
-                existing.shares = total_amount; // 1:1 for now
+                existing.shares = total_amount;
                 PositionStorage::set_deposit(&env, &existing);
             }
             None => {
@@ -220,7 +321,7 @@ impl LendingPoolContract {
                     pool_id: pool_id.clone(),
                     depositor: depositor.clone(),
                     amount,
-                    shares: amount, // 1:1 initial
+                    shares: amount,
                     index_at_deposit: current_index,
                     deposited_at: env.ledger().timestamp(),
                 };
@@ -228,116 +329,116 @@ impl LendingPoolContract {
             }
         }
 
-        // Update pool total deposits
         let total = PoolStorage::get_total_deposits(&env, &pool_id);
         PoolStorage::set_total_deposits(&env, &pool_id, total + amount);
-
-        events::emit_deposit(&env, &depositor, &pool_id, amount);
+        lending_events::emit_deposit(&env, &depositor, &pool_id, amount);
     }
 
-    /// Withdraw tokens from a lending pool.
-    ///
-    /// Transfers `amount` of the pool's underlying asset from the contract
-    /// back to `depositor`, updates or removes the deposit position, and
-    /// updates the pool's total deposits.
     pub fn withdraw(env: Env, depositor: Address, pool_id: String, amount: i128) {
         depositor.require_auth();
-
-        // Validations
-        if amount <= 0 {
-            panic!("amount must be positive");
-        }
+        if amount <= 0 { panic!("amount must be positive"); }
         let pool = PoolStorage::get(&env, &pool_id).expect("pool not found");
 
-        // Accrue interest before mutating state
         accrue_interest_internal(&env, &pool_id);
-
-        // Get the deposit position
-        let position =
-            PositionStorage::get_deposit(&env, &depositor, &pool_id).expect("no deposit position");
-
-        // Calculate accrued interest
+        let position = PositionStorage::get_deposit(&env, &depositor, &pool_id).expect("no deposit position");
         let accrued = PositionStorage::calculate_deposit_interest(&env, &position);
         let total_available = position.amount + accrued;
 
-        if amount > total_available {
-            panic!("insufficient balance");
-        }
+        if amount > total_available { panic!("insufficient balance"); }
 
-        // Check pool liquidity
         let total_deposits = PoolStorage::get_total_deposits(&env, &pool_id);
         let total_borrows = PoolStorage::get_total_borrows(&env, &pool_id);
-        let available_liquidity =
-            PoolStorage::calculate_available_liquidity(total_deposits, total_borrows);
-        if amount > available_liquidity {
-            panic!("insufficient pool liquidity");
-        }
+        let available_liquidity = PoolStorage::calculate_available_liquidity(total_deposits, total_borrows);
+        if amount > available_liquidity { panic!("insufficient pool liquidity"); }
 
-        // SEP-41 token transfer: contract → depositor
         let token_client = token::Client::new(&env, &pool.asset_address);
         token_client.transfer(&env.current_contract_address(), &depositor, &amount);
 
-        // Update or remove position
         if amount >= total_available {
-            // Full withdrawal – remove position entirely
             PositionStorage::remove_deposit(&env, &depositor, &pool_id);
         } else {
-            // Partial withdrawal
             let mut updated = position;
             updated.amount = total_available - amount;
-            updated.shares = updated.amount; // 1:1
+            updated.shares = updated.amount;
             updated.index_at_deposit = InterestStorage::get_interest_index(&env, &pool_id);
             PositionStorage::set_deposit(&env, &updated);
         }
 
-        // Update pool total deposits
         PoolStorage::set_total_deposits(&env, &pool_id, total_deposits - amount);
-
-        events::emit_withdraw(&env, &depositor, &pool_id, amount);
+        lending_events::emit_withdraw(&env, &depositor, &pool_id, amount);
     }
 
-    // ─── Public interest accrual ───────────────
+    pub fn borrow(
+        env: Env,
+        borrower: Address,
+        pool_id: String,
+        amount: i128,
+        collateral_asset: Address,
+        collateral_amount: i128,
+    ) -> BorrowPosition {
+        borrower.require_auth();
+        let pool = PoolStorage::get(&env, &pool_id).expect("Pool not found");
+        if !pool.is_active { panic!("Pool is not active"); }
+        if PoolStorage::is_paused(&env, &pool_id) { panic!("Pool is paused"); }
 
-    /// Accrue interest for a pool. Anyone may call this.
+        accrue_interest_internal(&env, &pool_id);
+
+        let total_deposits = PoolStorage::get_total_deposits(&env, &pool_id);
+        let total_borrows = PoolStorage::get_total_borrows(&env, &pool_id);
+        let available = PoolStorage::calculate_available_liquidity(total_deposits, total_borrows);
+        if amount > available { panic!("Insufficient liquidity"); }
+
+        let current_index = InterestStorage::get_interest_index(&env, &pool_id);
+        let collateral_price = PriceOracle::get_price(&env, &collateral_asset);
+        let collateral_value = (collateral_price * collateral_amount) / PRECISION;
+
+        let debt_value = amount;
+        let health_factor = PositionStorage::calculate_health_factor(collateral_value, debt_value, pool.liquidation_threshold);
+        let min_health_factor = (15 * PRECISION) / 10;
+        if health_factor < min_health_factor { panic!("Health factor too low"); }
+
+        let collateral_token = token::Client::new(&env, &collateral_asset);
+        collateral_token.transfer(&borrower, env.current_contract_address(), &collateral_amount);
+        let pool_token = token::Client::new(&env, &pool.asset_address);
+        pool_token.transfer(&env.current_contract_address(), &borrower, &amount);
+
+        let position = BorrowPosition {
+            pool_id: pool_id.clone(),
+            borrower: borrower.clone(),
+            principal: amount,
+            index_at_borrow: current_index,
+            collateral_amount,
+            collateral_asset: collateral_asset.clone(),
+            borrowed_at: env.ledger().timestamp(),
+        };
+
+        PositionStorage::set_borrow(&env, &position);
+        PoolStorage::set_total_borrows(&env, &pool_id, total_borrows + amount);
+
+        LendingEvents::borrow(&env, pool_id, borrower, amount, collateral_amount, collateral_asset, health_factor);
+        position
+    }
+
     pub fn accrue_interest(env: Env, pool_id: String) {
-        if !PoolStorage::exists(&env, &pool_id) {
-            panic!("pool not found");
-        }
+        if !PoolStorage::exists(&env, &pool_id) { panic!("pool not found"); }
         accrue_interest_internal(&env, &pool_id);
     }
 
-    // ─── Read-only views ───────────────────────
-
-    /// Return pool metadata.
-    pub fn get_pool(env: Env, pool_id: String) -> LendingPool {
-        PoolStorage::get(&env, &pool_id).expect("pool not found")
+    pub fn set_oracle(env: Env, oracle_address: Address, caller: Address) {
+        caller.require_auth();
+        AdminControl::require_admin(&env, &caller);
+        PriceOracle::set_oracle_address(&env, &oracle_address);
     }
 
-    /// Return the pool IDs a user has deposited into.
-    pub fn get_user_deposits(env: Env, user: Address) -> Vec<String> {
-        PositionStorage::get_user_deposits(&env, &user)
-    }
+    // ─── Query Views ────────────────────────────
 
-    /// Return total deposits for a pool.
-    pub fn get_total_deposits(env: Env, pool_id: String) -> i128 {
-        PoolStorage::get_total_deposits(&env, &pool_id)
-    }
-
-    /// Return total borrows for a pool.
-    pub fn get_total_borrows(env: Env, pool_id: String) -> i128 {
-        PoolStorage::get_total_borrows(&env, &pool_id)
-    }
-
-    /// Return the current interest index for a pool.
-    pub fn get_interest_index(env: Env, pool_id: String) -> i128 {
-        InterestStorage::get_interest_index(&env, &pool_id)
-    }
-
-    /// Return a user's deposit position in a pool.
-    pub fn get_deposit_position(env: Env, user: Address, pool_id: String) -> DepositPosition {
-        PositionStorage::get_deposit(&env, &user, &pool_id).expect("no deposit position")
-    }
+    pub fn get_balance(env: Env, property_id: u64, owner: Address) -> u64 { get_balance(&env, property_id, &owner) }
+    pub fn get_total_shares(env: Env, property_id: u64) -> u64 { get_total_shares(&env, property_id) }
+    pub fn get_allowance(env: Env, property_id: u64, owner: Address, spender: Address) -> u64 { get_allowance(&env, property_id, &owner, &spender) }
+    pub fn get_pool(env: Env, pool_id: String) -> LendingPool { PoolStorage::get(&env, &pool_id).expect("pool not found") }
+    pub fn get_user_deposits(env: Env, user: Address) -> Vec<String> { PositionStorage::get_user_deposits(&env, &user) }
+    pub fn get_total_deposits(env: Env, pool_id: String) -> i128 { PoolStorage::get_total_deposits(&env, &pool_id) }
+    pub fn get_total_borrows(env: Env, pool_id: String) -> i128 { PoolStorage::get_total_borrows(&env, &pool_id) }
+    pub fn get_interest_index(env: Env, pool_id: String) -> i128 { InterestStorage::get_interest_index(&env, &pool_id) }
+    pub fn get_deposit_position(env: Env, user: Address, pool_id: String) -> DepositPosition { PositionStorage::get_deposit(&env, &user, &pool_id).expect("no deposit position") }
 }
-
-#[cfg(test)]
-mod test;

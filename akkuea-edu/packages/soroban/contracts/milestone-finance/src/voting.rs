@@ -52,13 +52,14 @@ pub struct VotingStatus {
     pub is_approved: bool,
     pub unique_voters: u32,
 }
-/// Get voting threshold based on project category enum
+/// Get voting threshold based on project category enum.
+/// Thresholds are calibrated for Soroban's 65536-byte instance storage limit.
 pub fn get_category_threshold(category: &ProjectCategory) -> u32 {
     match category {
-        ProjectCategory::STEM => 1000,
-        ProjectCategory::RESEARCH => 1200,
-        ProjectCategory::ARTS => 800,
-        ProjectCategory::COMMUNITY => 500,
+        ProjectCategory::STEM => 100,
+        ProjectCategory::RESEARCH => 120,
+        ProjectCategory::ARTS => 80,
+        ProjectCategory::COMMUNITY => 50,
     }
 }
 

@@ -1,77 +1,269 @@
-import type { LendingPool, DepositPosition, BorrowPosition } from '@real-estate-defi/shared';
+import type { Context } from 'elysia';
+import { ApiError } from '../errors/ApiError';
+import { lendingRepository } from '../repositories/LendingRepository';
+import { userRepository } from '../repositories/UserRepository';
+import { CreatePoolDto, DepositDto, WithdrawDto, BorrowDto, RepayDto } from '../dto/lending.dto';
 
 export class LendingController {
-  static async getPools(): Promise<LendingPool[]> {
-    try {
-      // Implementation to fetch all lending pools
-      return []; // Placeholder
-    } catch (error) {
-      throw new Error(`Failed to fetch pools: ${error}`);
-    }
+  /**
+   * Helper method to create JSON responses
+   */
+  private static jsonResponse(data: unknown, status: number = 200): Response {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
-  static async getPool(id: string): Promise<LendingPool> {
-    try {
-      // Implementation to fetch specific pool
-      return {} as LendingPool; // Placeholder
-    } catch (error) {
-      throw new Error(`Failed to fetch pool ${id}: ${error}`);
-    }
+  /**
+   * Get paginated list of lending pools
+   */
+  static async getPools(ctx: Context): Promise<Response> {
+    const query = ctx.query as Record<string, string | undefined>;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
+    const asset = query.asset;
+    const isActive = query.isActive !== undefined ? query.isActive === 'true' : undefined;
+
+    const filter = asset || isActive !== undefined ? { asset, isActive } : undefined;
+    const result = await lendingRepository.findPaginated({ page, limit }, filter);
+
+    return this.jsonResponse(result);
   }
 
-  static async createPool(_data: Partial<LendingPool>): Promise<LendingPool> {
-    try {
-      // Implementation to create lending pool
-      return {} as LendingPool; // Placeholder
-    } catch (error) {
-      throw new Error(`Failed to create pool: ${error}`);
+  /**
+   * Get a single lending pool by ID
+   */
+  static async getPool(ctx: Context<{ params: { id: string } }>): Promise<Response> {
+    const { id } = ctx.params;
+
+    const pool = await lendingRepository.findById(id);
+
+    if (!pool) {
+      throw new ApiError(404, 'NOT_FOUND', `Pool with id ${id} not found`);
     }
+
+    return this.jsonResponse(pool);
   }
 
-  static async deposit(
-    _id: string,
-    _data: { user: string; amount: number },
-  ): Promise<{ txHash: string }> {
-    try {
-      // Implementation to handle deposit
-      return { txHash: 'placeholder' };
-    } catch (error) {
-      throw new Error(`Failed to deposit: ${error}`);
+  /**
+   * Create a new lending pool (auth required)
+   */
+  static async createPool(ctx: Context): Promise<Response> {
+    const userId = ctx.headers['x-user-id'];
+    if (!userId) {
+      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
     }
+
+    const validationResult = CreatePoolDto.safeParse(ctx.body);
+    if (!validationResult.success) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid pool data', {
+        errors: validationResult.error.format(),
+      });
+    }
+
+    const data = validationResult.data;
+
+    const pool = await lendingRepository.create({
+      name: data.name,
+      asset: data.asset,
+      assetAddress: data.assetAddress,
+      collateralFactor: data.collateralFactor,
+      liquidationThreshold: data.liquidationThreshold,
+      liquidationPenalty: data.liquidationPenalty,
+      reserveFactor: data.reserveFactor,
+    });
+
+    return this.jsonResponse(pool, 201);
   }
 
-  static async borrow(
-    _id: string,
-    _data: {
-      borrower: string;
-      collateralPropertyId: string;
-      collateralShares: number;
-      borrowAmount: number;
-    },
-  ): Promise<{ txHash: string }> {
-    try {
-      // Implementation to handle borrowing
-      return { txHash: 'placeholder' };
-    } catch (error) {
-      throw new Error(`Failed to borrow: ${error}`);
+  /**
+   * Deposit into a lending pool (auth required)
+   */
+  static async deposit(ctx: Context<{ params: { id: string } }>): Promise<Response> {
+    const { id: poolId } = ctx.params;
+
+    const userId = ctx.headers['x-user-id'];
+    if (!userId) {
+      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
     }
+
+    const validationResult = DepositDto.safeParse(ctx.body);
+    if (!validationResult.success) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid deposit data', {
+        errors: validationResult.error.format(),
+      });
+    }
+
+    const { amount } = validationResult.data;
+
+    const pool = await lendingRepository.findActivePool(poolId);
+    if (!pool) {
+      throw new ApiError(404, 'NOT_FOUND', `Active pool with id ${poolId} not found`);
+    }
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new ApiError(404, 'NOT_FOUND', 'User not found');
+    }
+
+    const position = await lendingRepository.deposit(poolId, user.id, amount, amount);
+
+    return this.jsonResponse(position);
   }
 
-  static async getUserDeposits(_id: string, _address: string): Promise<DepositPosition[]> {
-    try {
-      // Implementation to fetch user deposits
-      return []; // Placeholder
-    } catch (error) {
-      throw new Error(`Failed to fetch user deposits: ${error}`);
+  /**
+   * Withdraw from a lending pool (auth required)
+   */
+  static async withdraw(ctx: Context<{ params: { id: string } }>): Promise<Response> {
+    const { id: poolId } = ctx.params;
+
+    const userId = ctx.headers['x-user-id'];
+    if (!userId) {
+      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
     }
+
+    const validationResult = WithdrawDto.safeParse(ctx.body);
+    if (!validationResult.success) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid withdrawal data', {
+        errors: validationResult.error.format(),
+      });
+    }
+
+    const { amount } = validationResult.data;
+
+    const pool = await lendingRepository.findActivePool(poolId);
+    if (!pool) {
+      throw new ApiError(404, 'NOT_FOUND', `Active pool with id ${poolId} not found`);
+    }
+
+    if (parseFloat(pool.availableLiquidity) < parseFloat(amount)) {
+      throw new ApiError(400, 'INSUFFICIENT_LIQUIDITY', 'Insufficient liquidity in pool');
+    }
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new ApiError(404, 'NOT_FOUND', 'User not found');
+    }
+
+    const position = await lendingRepository.withdraw(poolId, user.id, amount);
+    if (!position) {
+      throw new ApiError(404, 'NOT_FOUND', 'No deposit position found for this user in this pool');
+    }
+
+    return this.jsonResponse(position);
   }
 
-  static async getUserBorrows(_id: string, _address: string): Promise<BorrowPosition[]> {
-    try {
-      // Implementation to fetch user borrows
-      return []; // Placeholder
-    } catch (error) {
-      throw new Error(`Failed to fetch user borrows: ${error}`);
+  /**
+   * Borrow from a lending pool (auth required)
+   */
+  static async borrow(ctx: Context<{ params: { id: string } }>): Promise<Response> {
+    const { id: poolId } = ctx.params;
+
+    const userId = ctx.headers['x-user-id'];
+    if (!userId) {
+      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
     }
+
+    const validationResult = BorrowDto.safeParse(ctx.body);
+    if (!validationResult.success) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid borrow data', {
+        errors: validationResult.error.format(),
+      });
+    }
+
+    const { borrowAmount, collateralAmount, collateralAsset } = validationResult.data;
+
+    const pool = await lendingRepository.findActivePool(poolId);
+    if (!pool) {
+      throw new ApiError(404, 'NOT_FOUND', `Active pool with id ${poolId} not found`);
+    }
+
+    if (parseFloat(pool.availableLiquidity) < parseFloat(borrowAmount)) {
+      throw new ApiError(400, 'INSUFFICIENT_LIQUIDITY', 'Insufficient liquidity in pool');
+    }
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new ApiError(404, 'NOT_FOUND', 'User not found');
+    }
+
+    const position = await lendingRepository.borrow(poolId, user.id, {
+      borrowAmount,
+      collateralAmount,
+      collateralAsset,
+    });
+
+    return this.jsonResponse(position);
+  }
+
+  /**
+   * Repay a loan (auth required)
+   */
+  static async repay(ctx: Context<{ params: { id: string } }>): Promise<Response> {
+    const { id: poolId } = ctx.params;
+
+    const userId = ctx.headers['x-user-id'];
+    if (!userId) {
+      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
+    }
+
+    const validationResult = RepayDto.safeParse(ctx.body);
+    if (!validationResult.success) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid repayment data', {
+        errors: validationResult.error.format(),
+      });
+    }
+
+    const { amount } = validationResult.data;
+
+    const pool = await lendingRepository.findById(poolId);
+    if (!pool) {
+      throw new ApiError(404, 'NOT_FOUND', `Pool with id ${poolId} not found`);
+    }
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new ApiError(404, 'NOT_FOUND', 'User not found');
+    }
+
+    const position = await lendingRepository.repay(poolId, user.id, amount);
+    if (!position) {
+      throw new ApiError(404, 'NOT_FOUND', 'No borrow position found for this user in this pool');
+    }
+
+    return this.jsonResponse(position);
+  }
+
+  /**
+   * Get user's deposit positions in a pool
+   */
+  static async getUserDeposits(ctx: Context<{ params: { id: string; address: string } }>): Promise<Response> {
+    const { id: poolId, address } = ctx.params;
+
+    const user = await userRepository.findByWalletAddress(address);
+    if (!user) {
+      return this.jsonResponse([]);
+    }
+
+    const deposits = await lendingRepository.getUserDeposits(poolId, user.id);
+
+    return this.jsonResponse(deposits);
+  }
+
+  /**
+   * Get user's borrow positions in a pool
+   */
+  static async getUserBorrows(ctx: Context<{ params: { id: string; address: string } }>): Promise<Response> {
+    const { id: poolId, address } = ctx.params;
+
+    const user = await userRepository.findByWalletAddress(address);
+    if (!user) {
+      return this.jsonResponse([]);
+    }
+
+    const borrows = await lendingRepository.getUserBorrows(poolId, user.id);
+
+    return this.jsonResponse(borrows);
   }
 }

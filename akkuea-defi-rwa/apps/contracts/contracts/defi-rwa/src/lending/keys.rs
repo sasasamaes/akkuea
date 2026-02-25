@@ -67,6 +67,9 @@ pub enum LendingKey {
     /// Contract administrator address
     /// Storage: Instance
     Admin,
+
+    /// Oracle Address
+    OracleAddress,
 }
 
 /// TTL bump amounts for lending storage

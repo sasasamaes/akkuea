@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Wallet,
@@ -27,7 +28,7 @@ import {
   Button,
   Badge,
 } from "@/components/ui";
-import { useWallet } from "@/context/WalletContext";
+import { useWallet } from "@/components/auth/hooks";
 import {
   formatCurrency,
   formatPercentage,
@@ -234,7 +235,9 @@ export default function DashboardPage() {
                     Wallet Balance
                   </p>
                   <p className="text-xl font-bold text-white font-mono">
-                    {showBalance ? formatCurrency(balance) : "******"}
+                    {showBalance
+                      ? formatCurrency(parseFloat(balance || "0"))
+                      : "******"}
                   </p>
                 </div>
               </div>
@@ -352,9 +355,11 @@ export default function DashboardPage() {
                       className="p-4 flex items-center gap-4 hover:bg-[#0a0a0a] transition-colors cursor-pointer"
                     >
                       <div className="w-14 h-14 rounded-lg bg-[#1a1a1a] overflow-hidden flex-shrink-0">
-                        <img
+                        <Image
                           src={property.image}
                           alt={property.name}
+                          width={56}
+                          height={56}
                           className="w-full h-full object-cover"
                         />
                       </div>

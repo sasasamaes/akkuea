@@ -235,9 +235,10 @@ impl PositionStorage {
     }
 
     /// Calculate health factor for position
+    /// Calculate health factor for position
     ///
-    /// Returns health factor in PRECISION units (1e18 = 1.0).
-    /// health = (collateral_value * liquidation_threshold / PRECISION) / debt_value
+    /// Returns health factor in PRECISION units (1.0 = PRECISION).
+    /// Formula: (collateral_value * liquidation_threshold) / debt_value
     pub fn calculate_health_factor(
         collateral_value: i128,
         debt_value: i128,
@@ -247,8 +248,8 @@ impl PositionStorage {
             return i128::MAX;
         }
 
-        // liquidation_threshold is already in PRECISION units (e.g., 80% = 0.8 * PRECISION)
-        // Result is in PRECISION units: 1e18 means health factor = 1.0
-        (collateral_value * liquidation_threshold) / (debt_value * PRECISION)
+        // health = (collateral * liquidation_threshold / PRECISION) / debt * PRECISION
+        // Result is in PRECISION units: e.g., 1.5 * PRECISION
+        (collateral_value * liquidation_threshold) / debt_value
     }
 }

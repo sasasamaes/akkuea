@@ -38,20 +38,37 @@ impl Default for InterestRateModel {
 
 impl InterestRateModel {
     /// Calculate borrow rate based on utilization
+    /// Uses checked arithmetic to prevent overflow
     pub fn calculate_borrow_rate(&self, utilization: i128) -> i128 {
         if utilization <= self.optimal_utilization {
             // Below optimal: base + utilization * slope1 / optimal
-            self.base_rate + (utilization * self.slope1) / self.optimal_utilization
+            let slope_component = utilization
+                .checked_mul(self.slope1)
+                .expect("Borrow rate overflow: utilization * slope1")
+                / self.optimal_utilization;
+            self.base_rate
+                .checked_add(slope_component)
+                .expect("Borrow rate overflow: base + slope_component")
         } else {
             // Above optimal: rate_at_optimal + (utilization - optimal) * slope2 / (1 - optimal)
-            let rate_at_optimal = self.base_rate + self.slope1;
+            let rate_at_optimal = self
+                .base_rate
+                .checked_add(self.slope1)
+                .expect("Borrow rate overflow: base + slope1");
             let excess_utilization = utilization - self.optimal_utilization;
             let remaining = PRECISION - self.optimal_utilization;
-            rate_at_optimal + (excess_utilization * self.slope2) / remaining
+            let excess_component = excess_utilization
+                .checked_mul(self.slope2)
+                .expect("Borrow rate overflow: excess * slope2")
+                / remaining;
+            rate_at_optimal
+                .checked_add(excess_component)
+                .expect("Borrow rate overflow: rate_at_optimal + excess_component")
         }
     }
 
     /// Calculate supply rate based on borrow rate and utilization
+    /// Uses checked arithmetic to prevent overflow
     pub fn calculate_supply_rate(
         &self,
         borrow_rate: i128,
@@ -59,8 +76,15 @@ impl InterestRateModel {
         reserve_factor: i128,
     ) -> i128 {
         // supply_rate = borrow_rate * utilization * (1 - reserve_factor)
-        let effective_rate = (borrow_rate * utilization) / PRECISION;
-        (effective_rate * (PRECISION - reserve_factor)) / PRECISION
+        let effective_rate = borrow_rate
+            .checked_mul(utilization)
+            .expect("Supply rate overflow: borrow_rate * utilization")
+            / PRECISION;
+        let factor = PRECISION - reserve_factor;
+        effective_rate
+            .checked_mul(factor)
+            .expect("Supply rate overflow: effective_rate * factor")
+            / PRECISION
     }
 }
 
@@ -135,6 +159,7 @@ impl InterestStorage {
     ///
     /// This avoids the underestimation inherent in the linear approximation
     /// `index * (1 + rate * time)` for longer accrual intervals.
+    /// Uses checked arithmetic to prevent overflow.
     pub fn calculate_new_index(current_index: i128, borrow_rate: i128, time_elapsed: u64) -> i128 {
         if time_elapsed == 0 {
             return current_index;
@@ -144,12 +169,17 @@ impl InterestStorage {
         let rate_per_second = borrow_rate / (SECONDS_PER_YEAR as i128);
 
         // base = 1 + rate_per_second  (in PRECISION units)
-        let base = PRECISION + rate_per_second;
+        let base = PRECISION
+            .checked_add(rate_per_second)
+            .expect("Interest calculation base overflow");
 
         // Compute base^time_elapsed using exponentiation by squaring
         let compound_factor = Self::pow_precision(base, time_elapsed);
 
-        (current_index * compound_factor) / PRECISION
+        current_index
+            .checked_mul(compound_factor)
+            .expect("Interest calculation index overflow")
+            / PRECISION
     }
 
     /// Fixed-point exponentiation by squaring.

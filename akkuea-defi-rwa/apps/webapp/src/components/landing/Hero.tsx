@@ -5,7 +5,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
-function GridBackground() {
+export function GridBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden opacity-20">
       <div className="grid-pattern absolute inset-0" />
