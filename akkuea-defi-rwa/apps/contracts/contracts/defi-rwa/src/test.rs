@@ -5,15 +5,14 @@ use super::storage;
 use super::*;
 use sep_40_oracle::{Asset, PriceData};
 use soroban_sdk::{
-    symbol_short,
-    testutils::{Address as _, Events as _, Ledger as _},
+    testutils::{Address as _, Ledger as _},
     token::{StellarAssetClient, TokenClient},
-    Address, Env, IntoVal, String, Symbol,
+    Address, Env, String, Symbol,
 };
 
 use crate::{
-    InterestRateModel, PRECISION, PropertyTokenContract, PropertyTokenContractClient,
-    PoolStorage, PositionStorage,
+    InterestRateModel, PoolStorage, PositionStorage, PropertyTokenContract,
+    PropertyTokenContractClient, PRECISION,
 };
 
 // ───────────────────────────────────────────────
@@ -54,10 +53,18 @@ impl MockOracleContract {
         }
     }
 
-    pub fn decimals(_env: Env) -> u32 { 18 }
-    pub fn resolution(_env: Env) -> u32 { 1 }
-    pub fn base(_env: Env) -> Asset { Asset::Other(Symbol::new(&_env, "USD")) }
-    pub fn assets(_env: Env) -> soroban_sdk::Vec<Asset> { soroban_sdk::Vec::new(&_env) }
+    pub fn decimals(_env: Env) -> u32 {
+        18
+    }
+    pub fn resolution(_env: Env) -> u32 {
+        1
+    }
+    pub fn base(_env: Env) -> Asset {
+        Asset::Other(Symbol::new(&_env, "USD"))
+    }
+    pub fn assets(_env: Env) -> soroban_sdk::Vec<Asset> {
+        soroban_sdk::Vec::new(&_env)
+    }
 }
 
 fn setup() -> TestSetup<'static> {
@@ -482,18 +489,28 @@ fn test_health_factor_precision() {
     // Expected: (1000 * 0.8) / 800 = 1.0 * PRECISION
     // Formula: (collateral * lt) / debt
     // = (1000e9 * 800e15) / 800e9 = 1_000_000_000_000_000_000 = PRECISION
-    assert_eq!(hf, PRECISION, "health factor should be PRECISION for balanced position");
+    assert_eq!(
+        hf, PRECISION,
+        "health factor should be PRECISION for balanced position"
+    );
 
     // Over-collateralized: collateral = 2000 tokens
     let collateral_2: i128 = 2_000_000_000_000;
     let hf_2 = PositionStorage::calculate_health_factor(collateral_2, debt, lt);
-    assert!(hf_2 > PRECISION, "over-collateralized position should have HF > PRECISION");
+    assert!(
+        hf_2 > PRECISION,
+        "over-collateralized position should have HF > PRECISION"
+    );
     assert_eq!(hf_2, 2 * PRECISION, "2000 * 0.8 / 800 = 2 * PRECISION");
 
     // Under-collateralized: collateral = 500 tokens
     let collateral_3: i128 = 500_000_000_000;
     let hf_3 = PositionStorage::calculate_health_factor(collateral_3, debt, lt);
-    assert_eq!(hf_3, PRECISION / 2, "under-collateralized: 500 * 0.8 / 800 = 0.5 * PRECISION");
+    assert_eq!(
+        hf_3,
+        PRECISION / 2,
+        "under-collateralized: 500 * 0.8 / 800 = 0.5 * PRECISION"
+    );
 
     // Zero debt → MAX
     let hf_zero = PositionStorage::calculate_health_factor(collateral, 0, lt);
@@ -727,7 +744,7 @@ fn test_admin_initialization() {
     let (contract_id, env) = setup_internal();
     let admin = Address::generate(&env);
     env.as_contract(&contract_id, || {
-        use super::access::roles::{RoleKey, Role, RoleStorage};
+        use super::access::roles::{Role, RoleKey, RoleStorage};
         env.storage().instance().set(&RoleKey::Admin, &admin);
         RoleStorage::grant_role(&env, &admin, &Role::Admin);
         let expected_admin = AdminControl::get_admin(&env).unwrap();
@@ -754,7 +771,7 @@ fn test_admin_transfer() {
     let admin = Address::generate(&env);
     let new_admin = Address::generate(&env);
     env.as_contract(&contract_id, || {
-        use super::access::roles::{RoleKey, Role, RoleStorage};
+        use super::access::roles::{Role, RoleKey, RoleStorage};
         env.storage().instance().set(&RoleKey::Admin, &admin);
         RoleStorage::grant_role(&env, &admin, &Role::Admin);
 
@@ -777,7 +794,7 @@ fn test_pause_unpause() {
     let (contract_id, env) = setup_internal();
     let admin = Address::generate(&env);
     env.as_contract(&contract_id, || {
-        use super::access::roles::{RoleKey, Role, RoleStorage};
+        use super::access::roles::{Role, RoleKey, RoleStorage};
         env.storage().instance().set(&RoleKey::Admin, &admin);
         RoleStorage::grant_role(&env, &admin, &Role::Admin);
         assert!(!PauseControl::is_paused(&env));
@@ -1341,7 +1358,7 @@ fn test_health_factor_with_known_values() {
 }
 
 #[test]
-#[ignore] // Contract doesn't enforce zero-index invariant; borrow succeeds with index=0
+#[should_panic(expected = "Interest index is zero - invariant violation")]
 fn test_borrow_with_zero_index() {
     use soroban_sdk::token::StellarAssetClient;
 
@@ -1456,7 +1473,7 @@ fn setup_purchase_test() -> (Address, Env, Address, Address, Address, u64) {
     // Set up admin for access control (constructor already set LendingKey::Admin,
     // which collides with RoleKey::Admin, so we set RoleKey::Admin directly)
     env.as_contract(&contract_id, || {
-        use super::access::roles::{RoleKey, Role, RoleStorage};
+        use super::access::roles::{Role, RoleKey, RoleStorage};
         env.storage().instance().set(&RoleKey::Admin, &admin);
         RoleStorage::grant_role(&env, &admin, &Role::Admin);
     });
@@ -1729,8 +1746,6 @@ fn test_purchase_when_contract_paused() {
 // Token Requirement Tests (REQ-010)
 // =========================================================================
 
-
-
 fn setup_token_test<'a>() -> (Env, PropertyTokenContractClient<'a>, Address) {
     let env = Env::default();
     env.mock_all_auths();
@@ -1741,7 +1756,7 @@ fn setup_token_test<'a>() -> (Env, PropertyTokenContractClient<'a>, Address) {
     // Set up admin for access control (constructor already set LendingKey::Admin,
     // which collides with RoleKey::Admin, so we set RoleKey::Admin directly)
     env.as_contract(&contract_id, || {
-        use super::access::roles::{RoleKey, Role, RoleStorage};
+        use super::access::roles::{Role, RoleKey, RoleStorage};
         env.storage().instance().set(&RoleKey::Admin, &admin);
         RoleStorage::grant_role(&env, &admin, &Role::Admin);
     });

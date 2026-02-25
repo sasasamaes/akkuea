@@ -137,7 +137,13 @@ impl PropertyTokenContract {
 
     // ─── Share Management (Admin) ──────────────
 
-    pub fn mint_shares(env: Env, admin: Address, property_id: u64, recipient: Address, amount: u64) {
+    pub fn mint_shares(
+        env: Env,
+        admin: Address,
+        property_id: u64,
+        recipient: Address,
+        amount: u64,
+    ) {
         admin.require_auth();
         AdminControl::require_admin(&env, &admin);
 
@@ -296,10 +302,16 @@ impl PropertyTokenContract {
 
     pub fn deposit(env: Env, depositor: Address, pool_id: String, amount: i128) {
         depositor.require_auth();
-        if amount <= 0 { panic!("amount must be positive"); }
+        if amount <= 0 {
+            panic!("amount must be positive");
+        }
         let pool = PoolStorage::get(&env, &pool_id).expect("pool not found");
-        if !pool.is_active { panic!("pool is not active"); }
-        if PoolStorage::is_paused(&env, &pool_id) { panic!("pool is paused"); }
+        if !pool.is_active {
+            panic!("pool is not active");
+        }
+        if PoolStorage::is_paused(&env, &pool_id) {
+            panic!("pool is paused");
+        }
 
         accrue_interest_internal(&env, &pool_id);
         let token_client = token::Client::new(&env, &pool.asset_address);
@@ -311,7 +323,8 @@ impl PropertyTokenContract {
             Some(mut existing) => {
                 let total_amount = existing.amount + amount;
                 existing.index_at_deposit = ((existing.amount * existing.index_at_deposit)
-                    + (amount * current_index)) / total_amount;
+                    + (amount * current_index))
+                    / total_amount;
                 existing.amount = total_amount;
                 existing.shares = total_amount;
                 PositionStorage::set_deposit(&env, &existing);
@@ -336,20 +349,28 @@ impl PropertyTokenContract {
 
     pub fn withdraw(env: Env, depositor: Address, pool_id: String, amount: i128) {
         depositor.require_auth();
-        if amount <= 0 { panic!("amount must be positive"); }
+        if amount <= 0 {
+            panic!("amount must be positive");
+        }
         let pool = PoolStorage::get(&env, &pool_id).expect("pool not found");
 
         accrue_interest_internal(&env, &pool_id);
-        let position = PositionStorage::get_deposit(&env, &depositor, &pool_id).expect("no deposit position");
+        let position =
+            PositionStorage::get_deposit(&env, &depositor, &pool_id).expect("no deposit position");
         let accrued = PositionStorage::calculate_deposit_interest(&env, &position);
         let total_available = position.amount + accrued;
 
-        if amount > total_available { panic!("insufficient balance"); }
+        if amount > total_available {
+            panic!("insufficient balance");
+        }
 
         let total_deposits = PoolStorage::get_total_deposits(&env, &pool_id);
         let total_borrows = PoolStorage::get_total_borrows(&env, &pool_id);
-        let available_liquidity = PoolStorage::calculate_available_liquidity(total_deposits, total_borrows);
-        if amount > available_liquidity { panic!("insufficient pool liquidity"); }
+        let available_liquidity =
+            PoolStorage::calculate_available_liquidity(total_deposits, total_borrows);
+        if amount > available_liquidity {
+            panic!("insufficient pool liquidity");
+        }
 
         let token_client = token::Client::new(&env, &pool.asset_address);
         token_client.transfer(&env.current_contract_address(), &depositor, &amount);
@@ -378,27 +399,46 @@ impl PropertyTokenContract {
     ) -> BorrowPosition {
         borrower.require_auth();
         let pool = PoolStorage::get(&env, &pool_id).expect("Pool not found");
-        if !pool.is_active { panic!("Pool is not active"); }
-        if PoolStorage::is_paused(&env, &pool_id) { panic!("Pool is paused"); }
+        if !pool.is_active {
+            panic!("Pool is not active");
+        }
+        if PoolStorage::is_paused(&env, &pool_id) {
+            panic!("Pool is paused");
+        }
 
         accrue_interest_internal(&env, &pool_id);
 
         let total_deposits = PoolStorage::get_total_deposits(&env, &pool_id);
         let total_borrows = PoolStorage::get_total_borrows(&env, &pool_id);
         let available = PoolStorage::calculate_available_liquidity(total_deposits, total_borrows);
-        if amount > available { panic!("Insufficient liquidity"); }
+        if amount > available {
+            panic!("Insufficient liquidity");
+        }
 
         let current_index = InterestStorage::get_interest_index(&env, &pool_id);
+        if current_index == 0 {
+            panic!("Interest index is zero - invariant violation");
+        }
         let collateral_price = PriceOracle::get_price(&env, &collateral_asset);
         let collateral_value = (collateral_price * collateral_amount) / PRECISION;
 
         let debt_value = amount;
-        let health_factor = PositionStorage::calculate_health_factor(collateral_value, debt_value, pool.liquidation_threshold);
+        let health_factor = PositionStorage::calculate_health_factor(
+            collateral_value,
+            debt_value,
+            pool.liquidation_threshold,
+        );
         let min_health_factor = (15 * PRECISION) / 10;
-        if health_factor < min_health_factor { panic!("Health factor too low"); }
+        if health_factor < min_health_factor {
+            panic!("Health factor too low");
+        }
 
         let collateral_token = token::Client::new(&env, &collateral_asset);
-        collateral_token.transfer(&borrower, env.current_contract_address(), &collateral_amount);
+        collateral_token.transfer(
+            &borrower,
+            env.current_contract_address(),
+            &collateral_amount,
+        );
         let pool_token = token::Client::new(&env, &pool.asset_address);
         pool_token.transfer(&env.current_contract_address(), &borrower, &amount);
 
@@ -415,12 +455,22 @@ impl PropertyTokenContract {
         PositionStorage::set_borrow(&env, &position);
         PoolStorage::set_total_borrows(&env, &pool_id, total_borrows + amount);
 
-        LendingEvents::borrow(&env, pool_id, borrower, amount, collateral_amount, collateral_asset, health_factor);
+        LendingEvents::borrow(
+            &env,
+            pool_id,
+            borrower,
+            amount,
+            collateral_amount,
+            collateral_asset,
+            health_factor,
+        );
         position
     }
 
     pub fn accrue_interest(env: Env, pool_id: String) {
-        if !PoolStorage::exists(&env, &pool_id) { panic!("pool not found"); }
+        if !PoolStorage::exists(&env, &pool_id) {
+            panic!("pool not found");
+        }
         accrue_interest_internal(&env, &pool_id);
     }
 
@@ -432,13 +482,31 @@ impl PropertyTokenContract {
 
     // ─── Query Views ────────────────────────────
 
-    pub fn get_balance(env: Env, property_id: u64, owner: Address) -> u64 { get_balance(&env, property_id, &owner) }
-    pub fn get_total_shares(env: Env, property_id: u64) -> u64 { get_total_shares(&env, property_id) }
-    pub fn get_allowance(env: Env, property_id: u64, owner: Address, spender: Address) -> u64 { get_allowance(&env, property_id, &owner, &spender) }
-    pub fn get_pool(env: Env, pool_id: String) -> LendingPool { PoolStorage::get(&env, &pool_id).expect("pool not found") }
-    pub fn get_user_deposits(env: Env, user: Address) -> Vec<String> { PositionStorage::get_user_deposits(&env, &user) }
-    pub fn get_total_deposits(env: Env, pool_id: String) -> i128 { PoolStorage::get_total_deposits(&env, &pool_id) }
-    pub fn get_total_borrows(env: Env, pool_id: String) -> i128 { PoolStorage::get_total_borrows(&env, &pool_id) }
-    pub fn get_interest_index(env: Env, pool_id: String) -> i128 { InterestStorage::get_interest_index(&env, &pool_id) }
-    pub fn get_deposit_position(env: Env, user: Address, pool_id: String) -> DepositPosition { PositionStorage::get_deposit(&env, &user, &pool_id).expect("no deposit position") }
+    pub fn get_balance(env: Env, property_id: u64, owner: Address) -> u64 {
+        get_balance(&env, property_id, &owner)
+    }
+    pub fn get_total_shares(env: Env, property_id: u64) -> u64 {
+        get_total_shares(&env, property_id)
+    }
+    pub fn get_allowance(env: Env, property_id: u64, owner: Address, spender: Address) -> u64 {
+        get_allowance(&env, property_id, &owner, &spender)
+    }
+    pub fn get_pool(env: Env, pool_id: String) -> LendingPool {
+        PoolStorage::get(&env, &pool_id).expect("pool not found")
+    }
+    pub fn get_user_deposits(env: Env, user: Address) -> Vec<String> {
+        PositionStorage::get_user_deposits(&env, &user)
+    }
+    pub fn get_total_deposits(env: Env, pool_id: String) -> i128 {
+        PoolStorage::get_total_deposits(&env, &pool_id)
+    }
+    pub fn get_total_borrows(env: Env, pool_id: String) -> i128 {
+        PoolStorage::get_total_borrows(&env, &pool_id)
+    }
+    pub fn get_interest_index(env: Env, pool_id: String) -> i128 {
+        InterestStorage::get_interest_index(&env, &pool_id)
+    }
+    pub fn get_deposit_position(env: Env, user: Address, pool_id: String) -> DepositPosition {
+        PositionStorage::get_deposit(&env, &user, &pool_id).expect("no deposit position")
+    }
 }
