@@ -9,7 +9,7 @@
 //! for those property shares on the Stellar/Soroban blockchain.
 
 mod access;
-mod events;
+pub mod events;
 mod lending;
 mod storage;
 
@@ -57,14 +57,14 @@ fn u64_to_string(env: &Env, mut val: u64) -> String {
 // Internal Lending Helpers
 // ───────────────────────────────────────────────
 
-fn get_admin(env: &Env) -> Address {
+fn get_lending_admin(env: &Env) -> Address {
     env.storage()
         .instance()
         .get(&LendingKey::Admin)
         .expect("admin not set")
 }
 
-fn set_admin(env: &Env, admin: &Address) {
+fn set_lending_admin(env: &Env, admin: &Address) {
     env.storage().instance().set(&LendingKey::Admin, admin);
     env.storage()
         .instance()
@@ -73,7 +73,7 @@ fn set_admin(env: &Env, admin: &Address) {
 
 fn require_admin(env: &Env, caller: &Address) {
     caller.require_auth();
-    let admin = get_admin(env);
+    let admin = get_lending_admin(env);
     if *caller != admin {
         panic!("only admin");
     }
@@ -132,7 +132,7 @@ pub struct PropertyTokenContract;
 impl PropertyTokenContract {
     // ─── Constructor ───────────────────────────
     pub fn __constructor(env: Env, admin: Address) {
-        set_admin(&env, &admin);
+        set_lending_admin(&env, &admin);
     }
 
     // ─── Share Management (Admin) ──────────────
