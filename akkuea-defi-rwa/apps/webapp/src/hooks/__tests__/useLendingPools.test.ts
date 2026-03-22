@@ -1,5 +1,6 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { LendingPool, DepositPosition } from "@real-estate-defi/shared";
+import { lendingApi } from "@/services/api";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -65,23 +66,25 @@ const mockGetPools = mock(
 );
 const mockGetUserDeposits = mock(async (): Promise<DepositPosition[]> => []);
 const mockGetUserBorrows = mock(async () => []);
-
-mock.module("@/services/api", () => ({
-  lendingApi: {
-    getPools: mockGetPools,
-    getUserDeposits: mockGetUserDeposits,
-    getUserBorrows: mockGetUserBorrows,
-  },
-}));
-
-// Import after module mock is set up
-const { lendingApi } = await import("@/services/api");
+const originalGetPools = lendingApi.getPools;
+const originalGetUserDeposits = lendingApi.getUserDeposits;
+const originalGetUserBorrows = lendingApi.getUserBorrows;
 
 describe("useLendingPools — service integration", () => {
   beforeEach(() => {
+    lendingApi.getPools = mockGetPools;
+    lendingApi.getUserDeposits = mockGetUserDeposits;
+    lendingApi.getUserBorrows = mockGetUserBorrows;
+
     mockGetPools.mockClear();
     mockGetUserDeposits.mockClear();
     mockGetUserBorrows.mockClear();
+  });
+
+  afterAll(() => {
+    lendingApi.getPools = originalGetPools;
+    lendingApi.getUserDeposits = originalGetUserDeposits;
+    lendingApi.getUserBorrows = originalGetUserBorrows;
   });
 
   it("getPools returns all pools", async () => {

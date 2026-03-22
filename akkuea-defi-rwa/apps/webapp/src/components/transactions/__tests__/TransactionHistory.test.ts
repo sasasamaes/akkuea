@@ -1,8 +1,9 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type {
   Transaction,
   PaginatedTransactionResponse,
 } from "@real-estate-defi/shared";
+import { transactionsApi } from "@/services/api";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -44,14 +45,7 @@ const mockGetTransactions = mock(
     total: 2,
   }),
 );
-
-mock.module("@/services/api", () => ({
-  transactionsApi: {
-    getTransactions: mockGetTransactions,
-  },
-}));
-
-const { transactionsApi } = await import("@/services/api");
+const originalGetTransactions = transactionsApi.getTransactions;
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -59,7 +53,12 @@ const { transactionsApi } = await import("@/services/api");
 
 describe("TransactionHistory — service integration", () => {
   beforeEach(() => {
+    transactionsApi.getTransactions = mockGetTransactions;
     mockGetTransactions.mockClear();
+  });
+
+  afterAll(() => {
+    transactionsApi.getTransactions = originalGetTransactions;
   });
 
   it("renders transaction list from API", async () => {
