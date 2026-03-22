@@ -269,6 +269,7 @@ describe("Property API", () => {
 
       const result = await propertyApi.buyShares(
         "550e8400-e29b-41d4-a716-446655440001",
+        VALID_STELLAR_ADDRESS,
         50,
       );
 
@@ -278,6 +279,7 @@ describe("Property API", () => {
       );
       expect(calls[0].options.method).toBe("POST");
       expect(JSON.parse(calls[0].options.body as string)).toEqual({
+        buyer: VALID_STELLAR_ADDRESS,
         shares: 50,
       });
     });

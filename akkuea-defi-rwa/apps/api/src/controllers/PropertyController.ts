@@ -1,4 +1,5 @@
-import type { PropertyInfo } from '@real-estate-defi/shared';
+import { randomBytes } from 'node:crypto';
+import type { PropertyInfo, ShareOwnership as SharedShareOwnership } from '@real-estate-defi/shared';
 import {
   ValidationError,
   NotFoundError,
@@ -6,14 +7,16 @@ import {
   AuthorizationError,
   NotImplementedError,
 } from '@real-estate-defi/shared';
+import { and, eq } from 'drizzle-orm';
 import { logger } from '../services/logger';
+import { db } from '../db';
 import {
   propertyRepository,
   type PropertyFilter,
   type PaginatedResult,
 } from '../repositories/PropertyRepository';
 import { userRepository } from '../repositories/UserRepository';
-import type { Property, NewProperty, PropertyDocument } from '../db/schema';
+import { properties, shareOwnerships, transactions, type Property, type NewProperty, type PropertyDocument } from '../db/schema';
 
 /**
  * DTO for creating a property
@@ -105,6 +108,24 @@ async function mapPropertyToPropertyInfo(
     listedAt: property.listedAt.toISOString(),
     owner: walletAddress,
   };
+}
+
+function mapShareOwnershipToShared(
+  ownership: typeof shareOwnerships.$inferSelect,
+  ownerAddress: string,
+): SharedShareOwnership {
+  return {
+    propertyId: ownership.propertyId,
+    owner: ownerAddress,
+    shares: ownership.shares,
+    purchasePrice: ownership.purchasePrice,
+    purchasedAt: ownership.purchasedAt.toISOString(),
+    lastDividendClaimed: ownership.lastDividendClaimed?.toISOString(),
+  };
+}
+
+function generateTransactionHash(): string {
+  return randomBytes(32).toString('hex');
 }
 
 /**
@@ -468,7 +489,28 @@ export class PropertyController {
    * Buy shares of a property
    * Note: This feature is planned for Cycle 2
    */
-  static async buyShares(id: string, data: { buyer: string; shares: number }): Promise<never> {
+  static async buyShares(
+    id: string,
+    data: { buyer: string; shares: number },
+  ): Promise<{ transactionHash: string; newBalance: number }> {
+    const startTime = Date.now();
+
+    if (!id) {
+      throw new ValidationError('Property ID is required', [
+        { field: 'id', message: 'Property ID is required' },
+      ]);
+    }
+
+    if (!data.buyer || data.buyer.trim().length === 0) {
+      throw new AuthenticationError('Buyer wallet address is required');
+    }
+
+    if (!Number.isInteger(data.shares) || data.shares <= 0) {
+      throw new ValidationError('Shares must be a positive integer', [
+        { field: 'shares', message: 'Shares must be a positive integer' },
+      ]);
+    }
+
     logger.info('Share purchase attempted', {
       operation: 'BUY_SHARES',
       entity: 'property',
@@ -477,14 +519,131 @@ export class PropertyController {
       shares: data.shares,
     });
 
-    throw new NotImplementedError('Share purchasing');
+    try {
+      const property = await propertyRepository.findById(id);
+      if (!property) {
+        throw new NotFoundError('Property', id);
+      }
+
+      if (property.availableShares < data.shares) {
+        throw new ValidationError('Not enough shares available', [
+          { field: 'shares', message: 'Requested shares exceed available inventory' },
+        ]);
+      }
+
+      const buyer = await userRepository.getOrCreateByWallet(data.buyer);
+      const totalPurchasePrice = (parseFloat(property.pricePerShare) * data.shares).toFixed(2);
+      const transactionHash = generateTransactionHash();
+
+      const result = await db.transaction(async (tx) => {
+        const [existingOwnership] = await tx
+          .select()
+          .from(shareOwnerships)
+          .where(
+            and(
+              eq(shareOwnerships.propertyId, property.id),
+              eq(shareOwnerships.ownerId, buyer.id),
+            ),
+          )
+          .limit(1);
+
+        const [updatedProperty] = await tx
+          .update(properties)
+          .set({ availableShares: property.availableShares - data.shares })
+          .where(eq(properties.id, property.id))
+          .returning();
+
+        if (!updatedProperty) {
+          throw new Error('Failed to update available shares');
+        }
+
+        const [ownership] = existingOwnership
+          ? await tx
+              .update(shareOwnerships)
+              .set({
+                shares: existingOwnership.shares + data.shares,
+                purchasePrice: (
+                  parseFloat(existingOwnership.purchasePrice) + parseFloat(totalPurchasePrice)
+                ).toFixed(2),
+              })
+              .where(eq(shareOwnerships.id, existingOwnership.id))
+              .returning()
+          : await tx
+              .insert(shareOwnerships)
+              .values({
+                propertyId: property.id,
+                ownerId: buyer.id,
+                shares: data.shares,
+                purchasePrice: totalPurchasePrice,
+              })
+              .returning();
+
+        if (!ownership) {
+          throw new Error('Failed to persist share ownership');
+        }
+
+        await tx.insert(transactions).values({
+          type: 'buy_shares',
+          hash: transactionHash,
+          fromUserId: buyer.id,
+          toUserId: property.ownerId,
+          amount: totalPurchasePrice,
+          asset: property.tokenAddress ?? 'USDC',
+          status: 'confirmed',
+          metadata: {
+            propertyId: property.id,
+            shares: data.shares,
+          },
+        });
+
+        return {
+          newBalance: ownership.shares,
+        };
+      });
+
+      logger.info('Share purchase completed successfully', {
+        operation: 'BUY_SHARES',
+        entity: 'property',
+        entityId: id,
+        userId: data.buyer,
+        shares: data.shares,
+        duration: Date.now() - startTime,
+      });
+
+      return {
+        transactionHash,
+        newBalance: result.newBalance,
+      };
+    } catch (error) {
+      logger.error('Failed to purchase shares', {
+        error,
+        operation: 'BUY_SHARES',
+        entity: 'property',
+        entityId: id,
+      });
+      throw error;
+    }
   }
 
   /**
    * Get user's share ownership for a property
    * Note: This feature is planned for Cycle 2
    */
-  static async getUserShares(id: string, owner: string): Promise<never> {
+  static async getUserShares(id: string, owner: string): Promise<SharedShareOwnership | null> {
+    const startTime = Date.now();
+
+    if (!id) {
+      throw new ValidationError('Property ID is required', [
+        { field: 'id', message: 'Property ID is required' },
+      ]);
+    }
+
+    if (!owner || owner.trim().length === 0) {
+      throw new ValidationError('Owner wallet address is required', [
+        { field: 'owner', message: 'Owner wallet address is required' },
+      ]);
+    }
+
     logger.info('Share ownership lookup attempted', {
       operation: 'GET_SHARES',
       entity: 'property',
@@ -492,6 +651,39 @@ export class PropertyController {
       userId: owner,
     });
 
-    throw new NotImplementedError('Share ownership lookup');
+    try {
+      const property = await propertyRepository.findById(id);
+      if (!property) {
+        throw new NotFoundError('Property', id);
+      }
+
+      const user = await userRepository.findByWalletAddress(owner);
+      if (!user) {
+        return null;
+      }
+
+      const [ownership] = await db
+        .select()
+        .from(shareOwnerships)
+        .where(and(eq(shareOwnerships.propertyId, id), eq(shareOwnerships.ownerId, user.id)))
+        .limit(1);
+
+      logger.info('Share ownership lookup completed', {
+        operation: 'GET_SHARES',
+        entity: 'property',
+        entityId: id,
+        duration: Date.now() - startTime,
+      });
+
+      return ownership ? mapShareOwnershipToShared(ownership, owner) : null;
+    } catch (error) {
+      logger.error('Failed to fetch share ownership', {
+        error,
+        operation: 'GET_SHARES',
+        entity: 'property',
+        entityId: id,
+      });
+      throw error;
+    }
   }
 }

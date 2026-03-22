@@ -90,12 +90,13 @@ export const propertyApi = {
    */
   async buyShares(
     id: string,
+    buyer: string,
     shares: number,
   ): Promise<{ transactionHash: string; newBalance: number }> {
     const response = await apiClient.post<{
       transactionHash: string;
       newBalance: number;
-    }>(`/properties/${id}/buy-shares`, { shares });
+    }>(`/properties/${id}/buy-shares`, { buyer, shares });
     return response.data;
   },
 
