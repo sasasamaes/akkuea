@@ -31,7 +31,9 @@ export function getPropertyRegion(country: string): string {
   return REGION_BY_COUNTRY[country] ?? "Global";
 }
 
-export function getPropertyTypeLabel(propertyType: PropertyInfo["propertyType"]): string {
+export function getPropertyTypeLabel(
+  propertyType: PropertyInfo["propertyType"],
+): string {
   return propertyType.charAt(0).toUpperCase() + propertyType.slice(1);
 }
 
@@ -41,7 +43,10 @@ export function getFundingProgress(property: PropertyInfo): number {
   }
 
   const soldShares = property.totalShares - property.availableShares;
-  return Math.max(0, Math.min(100, Math.round((soldShares / property.totalShares) * 100)));
+  return Math.max(
+    0,
+    Math.min(100, Math.round((soldShares / property.totalShares) * 100)),
+  );
 }
 
 export function getRegions(properties: PropertyInfo[]): string[] {
@@ -100,7 +105,9 @@ export function filterAndSortProperties(
         case "Recently Added":
           return Date.parse(right.listedAt) - Date.parse(left.listedAt);
         case "Lowest Price":
-          return parseFloat(left.pricePerShare) - parseFloat(right.pricePerShare);
+          return (
+            parseFloat(left.pricePerShare) - parseFloat(right.pricePerShare)
+          );
         case "Most Funded":
           return getFundingProgress(right) - getFundingProgress(left);
         case "Highest Value":

@@ -1,7 +1,12 @@
 /* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unused-vars */
 import "@/test/setup-dom";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
-import type { ButtonHTMLAttributes, HTMLAttributes, ImgHTMLAttributes, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  HTMLAttributes,
+  ImgHTMLAttributes,
+  ReactNode,
+} from "react";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import type { PropertyInfo } from "@real-estate-defi/shared";
 import { propertyApi } from "@/services/api/properties";
@@ -15,7 +20,9 @@ const buySharesMock = mock(() =>
 const originalBuyShares = propertyApi.buyShares;
 
 mock.module("next/image", () => ({
-  default: (props: ImgHTMLAttributes<HTMLImageElement>) => <img {...props} alt={props.alt ?? ""} />,
+  default: (props: ImgHTMLAttributes<HTMLImageElement>) => (
+    <img {...props} alt={props.alt ?? ""} />
+  ),
 }));
 
 mock.module("framer-motion", () => {
@@ -29,7 +36,9 @@ mock.module("framer-motion", () => {
     transition: _transition,
     variants: _variants,
     ...props
-  }: HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => <div {...props}>{children}</div>;
+  }: HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => (
+    <div {...props}>{children}</div>
+  );
   const passthroughButton = ({
     children,
     whileHover: _whileHover,
@@ -53,7 +62,9 @@ mock.module("framer-motion", () => {
       },
       {
         get: (target, property) =>
-          property in target ? target[property as keyof typeof target] : passthroughDiv,
+          property in target
+            ? target[property as keyof typeof target]
+            : passthroughDiv,
       },
     ),
   };
@@ -109,7 +120,9 @@ describe("InvestModal", () => {
     );
 
     expect(view.queryByText(/Connect your wallet to invest/i)).not.toBeNull();
-    fireEvent.click(view.getAllByRole("button", { name: /Connect Wallet/i })[0]!);
+    fireEvent.click(
+      view.getAllByRole("button", { name: /Connect Wallet/i })[0]!,
+    );
     expect(connectWallet).toHaveBeenCalledTimes(1);
   });
 

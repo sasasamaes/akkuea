@@ -29,7 +29,13 @@ import {
   sortOptions,
   type MarketplaceSortOption,
 } from "@/components/marketplace/marketplace.utils";
-import { Badge, Button, Card, Input, SkeletonPropertyCard } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  SkeletonPropertyCard,
+} from "@/components/ui";
 import {
   pageTransition,
   staggerContainer,
@@ -62,9 +68,15 @@ function ErrorState({ error, onRetry }: ErrorStateProps) {
       className="rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center"
     >
       <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-300" />
-      <h2 className="mb-2 text-lg font-semibold text-white">Could not load the marketplace</h2>
+      <h2 className="mb-2 text-lg font-semibold text-white">
+        Could not load the marketplace
+      </h2>
       <p className="mx-auto mb-6 max-w-xl text-sm text-red-100/80">{error}</p>
-      <Button variant="accent" onClick={() => void onRetry()} leftIcon={<RefreshCw className="h-4 w-4" />}>
+      <Button
+        variant="accent"
+        onClick={() => void onRetry()}
+        leftIcon={<RefreshCw className="h-4 w-4" />}
+      >
         Retry
       </Button>
     </motion.div>
@@ -75,8 +87,12 @@ function EmptyState() {
   return (
     <motion.div variants={staggerItem} className="py-16 text-center">
       <Building2 className="mx-auto mb-4 h-16 w-16 text-neutral-700" />
-      <h3 className="mb-2 text-lg font-semibold text-white">No properties found</h3>
-      <p className="text-sm text-neutral-500">Try adjusting your filters or search query</p>
+      <h3 className="mb-2 text-lg font-semibold text-white">
+        No properties found
+      </h3>
+      <p className="text-sm text-neutral-500">
+        Try adjusting your filters or search query
+      </p>
     </motion.div>
   );
 }
@@ -93,7 +109,12 @@ function PropertyCard({
 
   return (
     <motion.div variants={staggerItem}>
-      <Card noPadding hoverable className="group overflow-hidden" onClick={() => onSelect(property)}>
+      <Card
+        noPadding
+        hoverable
+        className="group overflow-hidden"
+        onClick={() => onSelect(property)}
+      >
         <div className="relative h-48 overflow-hidden">
           <Image
             src={getPropertyImage(property)}
@@ -103,7 +124,9 @@ function PropertyCard({
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute left-3 top-3 flex gap-2">
-            <Badge variant="outline">{getPropertyRegion(property.location.country)}</Badge>
+            <Badge variant="outline">
+              {getPropertyRegion(property.location.country)}
+            </Badge>
             {property.verified && <Badge variant="success">Verified</Badge>}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black to-transparent" />
@@ -120,13 +143,17 @@ function PropertyCard({
                 {property.location.city}, {property.location.country}
               </p>
             </div>
-            <Badge variant="outline">{getPropertyTypeLabel(property.propertyType)}</Badge>
+            <Badge variant="outline">
+              {getPropertyTypeLabel(property.propertyType)}
+            </Badge>
           </div>
 
           <div className="mt-4">
             <div className="mb-1.5 flex items-center justify-between text-xs">
               <span className="text-neutral-500">Funding Progress</span>
-              <span className="font-mono font-medium text-white">{fundingProgress}%</span>
+              <span className="font-mono font-medium text-white">
+                {fundingProgress}%
+              </span>
             </div>
             <div className="h-1 overflow-hidden rounded-full bg-[#1a1a1a]">
               <motion.div
@@ -143,23 +170,33 @@ function PropertyCard({
               <p className="font-mono text-sm font-bold text-white">
                 {formatCurrency(parseFloat(property.pricePerShare))}
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-neutral-600">Per Share</p>
+              <p className="text-[10px] uppercase tracking-wider text-neutral-600">
+                Per Share
+              </p>
             </div>
             <div className="text-center">
-              <p className="font-mono text-sm font-bold text-white">{soldShares.toLocaleString()}</p>
-              <p className="text-[10px] uppercase tracking-wider text-neutral-600">Sold</p>
+              <p className="font-mono text-sm font-bold text-white">
+                {soldShares.toLocaleString()}
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-neutral-600">
+                Sold
+              </p>
             </div>
             <div className="text-center">
               <p className="font-mono text-sm font-bold text-white">
                 {property.availableShares.toLocaleString()}
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-neutral-600">Available</p>
+              <p className="text-[10px] uppercase tracking-wider text-neutral-600">
+                Available
+              </p>
             </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between rounded-lg border border-[#1a1a1a] bg-[#0a0a0a] p-3">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-neutral-600">Listed</p>
+              <p className="text-[10px] uppercase tracking-wider text-neutral-600">
+                Listed
+              </p>
               <p className="text-xs font-medium text-white">
                 {new Date(property.listedAt).toLocaleDateString("en-US", {
                   month: "short",
@@ -189,7 +226,9 @@ export default function MarketplacePage() {
   const [selectedType, setSelectedType] = useState(MARKETPLACE_ALL_TYPES);
   const [sortBy, setSortBy] = useState<MarketplaceSortOption>("Recently Added");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<PropertyInfo | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyInfo | null>(
+    null,
+  );
 
   const filteredProperties = useMemo(
     () =>
@@ -203,7 +242,10 @@ export default function MarketplacePage() {
   );
 
   const regions = useMemo(() => getRegions(properties), [properties]);
-  const propertyTypes = useMemo(() => getPropertyTypes(properties), [properties]);
+  const propertyTypes = useMemo(
+    () => getPropertyTypes(properties),
+    [properties],
+  );
 
   return (
     <motion.div
@@ -223,8 +265,8 @@ export default function MarketplacePage() {
           <motion.div variants={staggerItem}>
             <h1 className="text-2xl font-bold text-white">Marketplace</h1>
             <p className="mt-1 text-sm text-neutral-500">
-              Discover verified tokenized real estate and invest directly from your connected
-              wallet.
+              Discover verified tokenized real estate and invest directly from
+              your connected wallet.
             </p>
           </motion.div>
 
@@ -261,7 +303,9 @@ export default function MarketplacePage() {
                     </label>
                     <select
                       value={selectedRegion}
-                      onChange={(event) => setSelectedRegion(event.target.value)}
+                      onChange={(event) =>
+                        setSelectedRegion(event.target.value)
+                      }
                       className="w-full cursor-pointer rounded-lg border border-[#262626] bg-[#0a0a0a] px-3 py-2.5 text-sm text-white focus:border-[#404040] focus:outline-none"
                     >
                       {regions.map((region) => (
@@ -293,7 +337,9 @@ export default function MarketplacePage() {
                     </label>
                     <select
                       value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value as MarketplaceSortOption)}
+                      onChange={(event) =>
+                        setSortBy(event.target.value as MarketplaceSortOption)
+                      }
                       className="w-full cursor-pointer rounded-lg border border-[#262626] bg-[#0a0a0a] px-3 py-2.5 text-sm text-white focus:border-[#404040] focus:outline-none"
                     >
                       {sortOptions.map((option) => (
@@ -308,13 +354,21 @@ export default function MarketplacePage() {
             </AnimatePresence>
           </motion.div>
 
-          <motion.div variants={staggerItem} className="flex items-center justify-between">
+          <motion.div
+            variants={staggerItem}
+            className="flex items-center justify-between"
+          >
             <p className="font-mono text-xs text-neutral-500">
-              Showing <span className="font-medium text-white">{filteredProperties.length}</span>{" "}
+              Showing{" "}
+              <span className="font-medium text-white">
+                {filteredProperties.length}
+              </span>{" "}
               properties
             </p>
             {!isConnected && (
-              <p className="text-xs text-neutral-500">Connect your wallet to unlock investing.</p>
+              <p className="text-xs text-neutral-500">
+                Connect your wallet to unlock investing.
+              </p>
             )}
           </motion.div>
 
@@ -322,7 +376,10 @@ export default function MarketplacePage() {
             <ErrorState error={error} onRetry={refetch} />
           ) : (
             <>
-              <motion.div variants={staggerContainer} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <motion.div
+                variants={staggerContainer}
+                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              >
                 {isLoading ? (
                   <PropertyGridSkeleton />
                 ) : (

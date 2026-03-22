@@ -8,7 +8,13 @@ import type {
   ImgHTMLAttributes,
   ReactNode,
 } from "react";
-import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  waitFor,
+} from "@testing-library/react";
 import type { PropertyInfo } from "@real-estate-defi/shared";
 import { propertyApi } from "@/services/api/properties";
 
@@ -42,7 +48,9 @@ mock.module("next/image", () => ({
   default: ({
     fill: _fill,
     ...props
-  }: ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean }) => <img {...props} alt={props.alt ?? ""} />,
+  }: ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean }) => (
+    <img {...props} alt={props.alt ?? ""} />
+  ),
 }));
 
 mock.module("framer-motion", () => {
@@ -56,7 +64,9 @@ mock.module("framer-motion", () => {
     transition: _transition,
     variants: _variants,
     ...props
-  }: HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => <div {...props}>{children}</div>;
+  }: HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => (
+    <div {...props}>{children}</div>
+  );
   const passthroughButton = ({
     children,
     whileHover: _whileHover,
@@ -80,7 +90,9 @@ mock.module("framer-motion", () => {
     transition: _transition,
     variants: _variants,
     ...props
-  }: SpanHTMLAttributes<HTMLSpanElement> & Record<string, unknown>) => <span {...props}>{children}</span>;
+  }: SpanHTMLAttributes<HTMLSpanElement> & Record<string, unknown>) => (
+    <span {...props}>{children}</span>
+  );
 
   return {
     AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -92,7 +104,9 @@ mock.module("framer-motion", () => {
       },
       {
         get: (target, property) =>
-          property in target ? target[property as keyof typeof target] : passthroughDiv,
+          property in target
+            ? target[property as keyof typeof target]
+            : passthroughDiv,
       },
     ),
   };
@@ -162,7 +176,9 @@ describe("MarketplacePage", () => {
 
     const view = render(<MarketplacePage />);
 
-    expect(view.getAllByLabelText(/Loading property/i).length).toBeGreaterThan(0);
+    expect(view.getAllByLabelText(/Loading property/i).length).toBeGreaterThan(
+      0,
+    );
 
     await act(async () => {
       resolveRequest?.({
@@ -200,7 +216,9 @@ describe("MarketplacePage", () => {
 
     const view = render(<MarketplacePage />);
 
-    expect(await view.findByText(/Could not load the marketplace/i)).not.toBeNull();
+    expect(
+      await view.findByText(/Could not load the marketplace/i),
+    ).not.toBeNull();
     fireEvent.click(view.getByRole("button", { name: /Retry/i }));
 
     await waitFor(() => {
