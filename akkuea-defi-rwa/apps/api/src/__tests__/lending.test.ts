@@ -2,13 +2,7 @@ import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
 import { Elysia } from 'elysia';
 import { lendingRoutes } from '../routes/lending';
 import { errorHandler } from '../middleware/errorHandler';
-import {
-  CreatePoolDto,
-  DepositDto,
-  WithdrawDto,
-  BorrowDto,
-  RepayDto,
-} from '../dto/lending.dto';
+import { CreatePoolDto, DepositDto, WithdrawDto, BorrowDto, RepayDto } from '../dto/lending.dto';
 
 // Valid Stellar address for testing
 const VALID_STELLAR_ADDRESS = 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7';
@@ -268,7 +262,9 @@ describe('Lending Routes', () => {
   describe('GET /lending/pools/:id/user/:address/deposits', () => {
     it('should return 200 or 500 with valid params', async () => {
       const response = await app.handle(
-        new Request(`http://localhost/lending/pools/${VALID_UUID}/user/${VALID_STELLAR_ADDRESS}/deposits`),
+        new Request(
+          `http://localhost/lending/pools/${VALID_UUID}/user/${VALID_STELLAR_ADDRESS}/deposits`,
+        ),
       );
       // Without DB returns 500; with DB returns 200
       expect([200, 500]).toContain(response.status);
@@ -278,9 +274,22 @@ describe('Lending Routes', () => {
   describe('GET /lending/pools/:id/user/:address/borrows', () => {
     it('should return 200 or 500 with valid params', async () => {
       const response = await app.handle(
-        new Request(`http://localhost/lending/pools/${VALID_UUID}/user/${VALID_STELLAR_ADDRESS}/borrows`),
+        new Request(
+          `http://localhost/lending/pools/${VALID_UUID}/user/${VALID_STELLAR_ADDRESS}/borrows`,
+        ),
       );
       expect([200, 500]).toContain(response.status);
+    });
+  });
+
+  describe('GET /lending/pools/:id/user/:address/summary', () => {
+    it('should reject malformed Stellar addresses', async () => {
+      const response = await app.handle(
+        new Request(`http://localhost/lending/pools/${VALID_UUID}/user/INVALID_ADDRESS/summary`),
+      );
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.error).toBe('INVALID_ADDRESS');
     });
   });
 });
@@ -320,9 +329,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
   });
 
   it('should return paginated pools from database', async () => {
-    const response = await app.handle(
-      new Request('http://localhost/lending/pools?page=1&limit=5'),
-    );
+    const response = await app.handle(new Request('http://localhost/lending/pools?page=1&limit=5'));
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.data).toBeDefined();
@@ -334,9 +341,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
   });
 
   it('should return 404 for non-existent pool', async () => {
-    const response = await app.handle(
-      new Request(`http://localhost/lending/pools/${VALID_UUID}`),
-    );
+    const response = await app.handle(new Request(`http://localhost/lending/pools/${VALID_UUID}`));
     expect(response.status).toBe(404);
   });
 
@@ -369,9 +374,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
   });
 
   it('should get pool by ID', async () => {
-    const response = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}`),
-    );
+    const response = await app.handle(new Request(`http://localhost/lending/pools/${testPoolId}`));
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.id).toBe(testPoolId);
@@ -396,9 +399,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     expect(parseFloat(position.amount)).toBe(1000);
 
     // Verify pool balance updated
-    const poolRes = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}`),
-    );
+    const poolRes = await app.handle(new Request(`http://localhost/lending/pools/${testPoolId}`));
     const pool = await poolRes.json();
     expect(parseFloat(pool.totalDeposits)).toBe(1000);
     expect(parseFloat(pool.availableLiquidity)).toBe(1000);
@@ -427,9 +428,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     expect(parseFloat(position.collateralAmount)).toBe(500);
 
     // Verify pool balance updated
-    const poolRes = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}`),
-    );
+    const poolRes = await app.handle(new Request(`http://localhost/lending/pools/${testPoolId}`));
     const pool = await poolRes.json();
     expect(parseFloat(pool.totalBorrows)).toBe(300);
     expect(parseFloat(pool.availableLiquidity)).toBe(700);
@@ -451,9 +450,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     expect(parseFloat(position.principal)).toBe(200);
 
     // Verify pool balance updated
-    const poolRes = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}`),
-    );
+    const poolRes = await app.handle(new Request(`http://localhost/lending/pools/${testPoolId}`));
     const pool = await poolRes.json();
     expect(parseFloat(pool.totalBorrows)).toBe(200);
     expect(parseFloat(pool.availableLiquidity)).toBe(800);
@@ -475,9 +472,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     expect(parseFloat(position.amount)).toBe(800);
 
     // Verify pool balance updated
-    const poolRes = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}`),
-    );
+    const poolRes = await app.handle(new Request(`http://localhost/lending/pools/${testPoolId}`));
     const pool = await poolRes.json();
     expect(parseFloat(pool.totalDeposits)).toBe(800);
     expect(parseFloat(pool.availableLiquidity)).toBe(600);
@@ -501,7 +496,9 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
 
   it('should get user deposits in pool', async () => {
     const response = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/deposits`),
+      new Request(
+        `http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/deposits`,
+      ),
     );
     expect(response.status).toBe(200);
     const deposits = await response.json();
@@ -512,7 +509,9 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
 
   it('should get user borrows in pool', async () => {
     const response = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/borrows`),
+      new Request(
+        `http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/borrows`,
+      ),
     );
     expect(response.status).toBe(200);
     const borrows = await response.json();
@@ -529,5 +528,21 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     expect(response.status).toBe(200);
     const deposits = await response.json();
     expect(deposits).toEqual([]);
+  });
+
+  it('should return position summary for a seeded user', async () => {
+    const response = await app.handle(
+      new Request(`http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/summary`),
+    );
+    expect(response.status).toBe(200);
+    const summary = await response.json();
+    expect(summary.poolId).toBe(testPoolId);
+    expect(summary.userId).toBe(testUserId);
+    expect(summary.walletAddress).toBe(VALID_STELLAR_ADDRESS);
+    expect(summary.depositCount).toBeGreaterThan(0);
+    expect(summary.borrowCount).toBeGreaterThan(0);
+    expect(parseFloat(summary.totalDeposits)).toBeGreaterThan(0);
+    expect(parseFloat(summary.totalBorrows)).toBeGreaterThan(0);
+    expect(parseFloat(summary.netWorth)).toBeGreaterThan(0);
   });
 });
