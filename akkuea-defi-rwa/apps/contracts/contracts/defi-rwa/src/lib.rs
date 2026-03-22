@@ -484,14 +484,10 @@ impl PropertyTokenContract {
 
         accrue_interest_internal(&env, &pool_id);
 
-        let position =
-            PositionStorage::get_borrow(&env, &borrower, &pool_id).expect("borrow position not found");
-        let (
-            updated_position,
-            repaid_amount,
-            remaining_debt,
-            collateral_released,
-        ) = PositionStorage::apply_repayment(&env, &position, amount);
+        let position = PositionStorage::get_borrow(&env, &borrower, &pool_id)
+            .expect("borrow position not found");
+        let (updated_position, repaid_amount, remaining_debt, collateral_released) =
+            PositionStorage::apply_repayment(&env, &position, amount);
 
         let pool_token = token::Client::new(&env, &pool.asset_address);
         pool_token.transfer(&borrower, &env.current_contract_address(), &repaid_amount);
