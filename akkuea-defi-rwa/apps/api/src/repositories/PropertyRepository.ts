@@ -167,6 +167,53 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
   }
 
   /**
+   * Allocate the next on-chain property ID from the database sequence.
+   * Gaps are acceptable if a blockchain transaction fails after allocation.
+   */
+  async allocateSorobanPropertyId(): Promise<number> {
+    const [result] = await db.execute<{ soroban_property_id: number }>(
+      sql`SELECT nextval('properties_soroban_property_id_seq')::bigint AS soroban_property_id`,
+    );
+
+    if (!result?.soroban_property_id) {
+      throw new Error('Failed to allocate Soroban property ID');
+    }
+
+    return Number(result.soroban_property_id);
+  }
+
+  /**
+   * Persist tokenization details after a successful blockchain transaction.
+   */
+  async setTokenizationResult(
+    id: string,
+    data: { tokenAddress: string; sorobanPropertyId: number },
+  ): Promise<Property | undefined> {
+    return db.transaction(async (tx) => {
+      const [property] = await tx.select().from(properties).where(eq(properties.id, id)).limit(1);
+
+      if (!property) {
+        return undefined;
+      }
+
+      if (property.tokenAddress || property.sorobanPropertyId !== null) {
+        return property;
+      }
+
+      const results = await tx
+        .update(properties)
+        .set({
+          tokenAddress: data.tokenAddress,
+          sorobanPropertyId: data.sorobanPropertyId,
+        })
+        .where(eq(properties.id, id))
+        .returning();
+
+      return results[0];
+    });
+  }
+
+  /**
    * Verify a property
    */
   async verify(id: string): Promise<Property | undefined> {
