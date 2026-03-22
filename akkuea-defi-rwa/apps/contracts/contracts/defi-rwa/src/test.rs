@@ -12,7 +12,7 @@ use soroban_sdk::{
 
 use crate::{
     InterestRateModel, PoolStorage, PositionStorage, PropertyTokenContract,
-    PropertyTokenContractClient, PRECISION,
+    PropertyTokenContractClient, PRECISION, SECONDS_PER_YEAR,
 };
 
 // ───────────────────────────────────────────────
@@ -163,6 +163,92 @@ fn test_store_and_retrieve_lending_pool() {
 fn mint_tokens(setup: &TestSetup, to: &Address, amount: i128) {
     let sac = StellarAssetClient::new(&setup.env, &setup.token_address);
     sac.mint(to, &amount);
+}
+
+struct BorrowTestSetup<'a> {
+    env: Env,
+    contract_id: Address,
+    contract_client: PropertyTokenContractClient<'a>,
+    borrower: Address,
+    pool_id: String,
+    usdc_address: Address,
+    xlm_address: Address,
+}
+
+fn setup_borrow_test() -> BorrowTestSetup<'static> {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let contract_client = PropertyTokenContractClient::new(&env, &contract_id);
+    let oracle_id = env.register(MockOracleContract, ());
+    let borrower = Address::generate(&env);
+
+    let usdc_admin = Address::generate(&env);
+    let usdc_contract = env.register_stellar_asset_contract_v2(usdc_admin.clone());
+    let usdc_token = StellarAssetClient::new(&env, &usdc_contract.address());
+
+    let xlm_admin = Address::generate(&env);
+    let xlm_contract = env.register_stellar_asset_contract_v2(xlm_admin.clone());
+    let xlm_token = StellarAssetClient::new(&env, &xlm_contract.address());
+
+    let pool_id = String::from_str(&env, "USDC-POOL");
+    let pool = LendingPool {
+        id: pool_id.clone(),
+        name: String::from_str(&env, "USDC Lending Pool"),
+        asset: String::from_str(&env, "USDC"),
+        asset_address: usdc_contract.address().clone(),
+        collateral_factor: 750_000_000_000_000_000,
+        liquidation_threshold: 800_000_000_000_000_000,
+        liquidation_penalty: 50_000_000_000_000_000,
+        reserve_factor: 1000,
+        is_active: true,
+        created_at: env.ledger().timestamp(),
+    };
+
+    env.as_contract(&contract_id, || {
+        PoolStorage::set(&env, &pool);
+        PoolStorage::set_total_deposits(&env, &pool_id, 10_000_000_000);
+        PoolStorage::set_total_borrows(&env, &pool_id, 0);
+
+        let model = InterestRateModel::default();
+        InterestStorage::set_model(&env, &pool_id, &model);
+        InterestStorage::set_interest_index(&env, &pool_id, PRECISION);
+        InterestStorage::set_last_accrual(&env, &pool_id, env.ledger().timestamp());
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+    });
+
+    env.as_contract(&oracle_id, || {
+        MockOracleContract::set_price(
+            env.clone(),
+            xlm_contract.address().clone(),
+            PRECISION,
+            env.ledger().timestamp(),
+        );
+    });
+
+    usdc_token.mint(&borrower, &2_000_000_000);
+    xlm_token.mint(&borrower, &2_000_000_000);
+    usdc_token.mint(&contract_id, &10_000_000_000);
+
+    contract_client.borrow(
+        &borrower,
+        &pool_id,
+        &1_000_000_000,
+        &xlm_contract.address(),
+        &2_000_000_000,
+    );
+
+    BorrowTestSetup {
+        env,
+        contract_id,
+        contract_client,
+        borrower,
+        pool_id,
+        usdc_address: usdc_contract.address().clone(),
+        xlm_address: xlm_contract.address().clone(),
+    }
 }
 
 // ═══════════════════════════════════════════════
@@ -1441,6 +1527,121 @@ fn test_borrow_with_zero_index() {
             collateral_amount,
         )
     });
+}
+
+#[test]
+fn test_repay_partial_releases_pro_rata_collateral() {
+    let s = setup_borrow_test();
+    let usdc_token = TokenClient::new(&s.env, &s.usdc_address);
+    let xlm_token = TokenClient::new(&s.env, &s.xlm_address);
+    let events_before = s.env.events().all().filter_by_contract(&s.contract_id).events().len();
+
+    let mut ledger = s.env.ledger().get();
+    ledger.timestamp += SECONDS_PER_YEAR;
+    s.env.ledger().set(ledger);
+
+    let debt_before = s.contract_client.get_borrow_position(&s.borrower, &s.pool_id);
+    let current_debt = s.env.as_contract(&s.contract_id, || {
+        PositionStorage::calculate_current_debt(&s.env, &debt_before)
+    });
+    let repay_amount = current_debt / 2;
+    let expected_collateral_release = (debt_before.collateral_amount * repay_amount) / current_debt;
+
+    let repaid_position = s
+        .contract_client
+        .repay(&s.borrower, &s.pool_id, &repay_amount);
+
+    assert_eq!(repaid_position.principal, current_debt - repay_amount);
+    assert_eq!(
+        repaid_position.collateral_amount,
+        debt_before.collateral_amount - expected_collateral_release
+    );
+
+    let borrower_xlm_balance = xlm_token.balance(&s.borrower);
+    assert_eq!(borrower_xlm_balance, expected_collateral_release);
+
+    let borrower_usdc_balance = usdc_token.balance(&s.borrower);
+    assert_eq!(borrower_usdc_balance, 3_000_000_000 - repay_amount);
+
+    let total_borrows = s.contract_client.get_total_borrows(&s.pool_id);
+    assert_eq!(total_borrows, current_debt - repay_amount);
+
+    assert!(
+        s.env
+            .events()
+            .all()
+            .filter_by_contract(&s.contract_id)
+            .events()
+            .len()
+            > events_before,
+        "expected repay event to be emitted"
+    );
+}
+
+#[test]
+fn test_repay_full_closes_position_and_releases_all_collateral() {
+    let s = setup_borrow_test();
+    let usdc_token = TokenClient::new(&s.env, &s.usdc_address);
+    let xlm_token = TokenClient::new(&s.env, &s.xlm_address);
+
+    let repaid_position = s
+        .contract_client
+        .repay(&s.borrower, &s.pool_id, &1_000_000_000);
+
+    assert_eq!(repaid_position.principal, 0);
+    assert_eq!(repaid_position.collateral_amount, 0);
+    assert_eq!(xlm_token.balance(&s.borrower), 2_000_000_000);
+    assert_eq!(usdc_token.balance(&s.borrower), 2_000_000_000);
+    assert_eq!(s.contract_client.get_total_borrows(&s.pool_id), 0);
+    assert_eq!(s.contract_client.get_user_borrows(&s.borrower).len(), 0);
+
+    let stored_position = s.env.as_contract(&s.contract_id, || {
+        PositionStorage::get_borrow(&s.env, &s.borrower, &s.pool_id)
+    });
+    assert!(stored_position.is_none(), "borrow position should be removed");
+}
+
+#[test]
+fn test_repay_overpayment_is_clamped_to_current_debt() {
+    let s = setup_borrow_test();
+    let usdc_token = TokenClient::new(&s.env, &s.usdc_address);
+
+    s.contract_client
+        .repay(&s.borrower, &s.pool_id, &2_000_000_000);
+
+    assert_eq!(usdc_token.balance(&s.borrower), 2_000_000_000);
+    assert_eq!(s.contract_client.get_total_borrows(&s.pool_id), 0);
+
+    let stored_position = s.env.as_contract(&s.contract_id, || {
+        PositionStorage::get_borrow(&s.env, &s.borrower, &s.pool_id)
+    });
+    assert!(stored_position.is_none(), "overpayment should fully close position");
+}
+
+#[test]
+#[should_panic]
+fn test_repay_without_authorization() {
+    let env = Env::default();
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let client = PropertyTokenContractClient::new(&env, &contract_id);
+
+    client.repay(
+        &Address::generate(&env),
+        &String::from_str(&env, "USDC-POOL"),
+        &100_i128,
+    );
+}
+
+#[test]
+#[should_panic(expected = "borrow position not found")]
+fn test_repay_nonexistent_position() {
+    let s = setup();
+    let pool_id = create_default_pool(&s);
+    let borrower = Address::generate(&s.env);
+
+    mint_tokens(&s, &borrower, 100_i128);
+    s.contract_client.repay(&borrower, &pool_id, &100_i128);
 }
 
 // =========================================================================

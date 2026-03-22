@@ -113,6 +113,7 @@ fn accrue_interest_internal(env: &Env, pool_id: &String) {
         let reserve_factor_precision = (pool.reserve_factor as i128) * PRECISION / 10_000;
         let interest_income = (total_borrows * (new_index - current_index)) / current_index;
         let reserve_income = (interest_income * reserve_factor_precision) / PRECISION;
+        PoolStorage::set_total_borrows(env, pool_id, total_borrows + interest_income);
         if reserve_income > 0 {
             PoolStorage::add_reserves(env, pool_id, reserve_income);
         }
@@ -467,6 +468,80 @@ impl PropertyTokenContract {
         position
     }
 
+    pub fn repay(env: Env, borrower: Address, pool_id: String, amount: i128) -> BorrowPosition {
+        borrower.require_auth();
+        if amount <= 0 {
+            panic!("amount must be positive");
+        }
+
+        let pool = PoolStorage::get(&env, &pool_id).expect("Pool not found");
+        if !pool.is_active {
+            panic!("Pool is not active");
+        }
+        if PoolStorage::is_paused(&env, &pool_id) {
+            panic!("Pool is paused");
+        }
+
+        accrue_interest_internal(&env, &pool_id);
+
+        let position =
+            PositionStorage::get_borrow(&env, &borrower, &pool_id).expect("borrow position not found");
+        let (
+            updated_position,
+            repaid_amount,
+            remaining_debt,
+            collateral_released,
+        ) = PositionStorage::apply_repayment(&env, &position, amount);
+
+        let pool_token = token::Client::new(&env, &pool.asset_address);
+        pool_token.transfer(&borrower, &env.current_contract_address(), &repaid_amount);
+
+        let collateral_token = token::Client::new(&env, &position.collateral_asset);
+        collateral_token.transfer(
+            &env.current_contract_address(),
+            &borrower,
+            &collateral_released,
+        );
+
+        let current_index = InterestStorage::get_interest_index(&env, &pool_id);
+        let result_position = match &updated_position {
+            Some(updated) => updated.clone(),
+            None => BorrowPosition {
+                pool_id: pool_id.clone(),
+                borrower: borrower.clone(),
+                principal: 0,
+                index_at_borrow: current_index,
+                collateral_amount: position.collateral_amount - collateral_released,
+                collateral_asset: position.collateral_asset.clone(),
+                borrowed_at: position.borrowed_at,
+            },
+        };
+
+        match updated_position {
+            Some(updated) => PositionStorage::set_borrow(&env, &updated),
+            None => PositionStorage::remove_borrow(&env, &borrower, &pool_id),
+        }
+
+        let total_borrows = PoolStorage::get_total_borrows(&env, &pool_id);
+        let updated_total_borrows = if repaid_amount > total_borrows {
+            0
+        } else {
+            total_borrows - repaid_amount
+        };
+        PoolStorage::set_total_borrows(&env, &pool_id, updated_total_borrows);
+
+        LendingEvents::repay(
+            &env,
+            pool_id.clone(),
+            borrower.clone(),
+            repaid_amount,
+            remaining_debt,
+            collateral_released,
+        );
+
+        result_position
+    }
+
     pub fn accrue_interest(env: Env, pool_id: String) {
         if !PoolStorage::exists(&env, &pool_id) {
             panic!("pool not found");
@@ -503,10 +578,16 @@ impl PropertyTokenContract {
     pub fn get_total_borrows(env: Env, pool_id: String) -> i128 {
         PoolStorage::get_total_borrows(&env, &pool_id)
     }
+    pub fn get_user_borrows(env: Env, user: Address) -> Vec<String> {
+        PositionStorage::get_user_borrows(&env, &user)
+    }
     pub fn get_interest_index(env: Env, pool_id: String) -> i128 {
         InterestStorage::get_interest_index(&env, &pool_id)
     }
     pub fn get_deposit_position(env: Env, user: Address, pool_id: String) -> DepositPosition {
         PositionStorage::get_deposit(&env, &user, &pool_id).expect("no deposit position")
+    }
+    pub fn get_borrow_position(env: Env, user: Address, pool_id: String) -> BorrowPosition {
+        PositionStorage::get_borrow(&env, &user, &pool_id).expect("borrow position not found")
     }
 }
