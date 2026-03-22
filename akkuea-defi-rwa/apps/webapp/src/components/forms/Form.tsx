@@ -40,7 +40,8 @@ export function Form<TSchema extends z.ZodSchema>({
   showFeedback = true,
 }: FormProps<TSchema>) {
   const methods = useForm<z.infer<TSchema>>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema as any),
     defaultValues,
     mode: "onBlur",
     reValidateMode: "onBlur",
