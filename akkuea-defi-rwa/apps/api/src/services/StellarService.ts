@@ -1,3 +1,5 @@
+import { StrKey } from 'stellar-sdk';
+
 export class StellarService {
   async getAccountBalance(_address: string): Promise<string> {
     // Placeholder implementation
@@ -33,7 +35,6 @@ export class StellarService {
   }
 
   validateAddress(address: string): boolean {
-    // Basic validation - should be 56 characters starting with 'G'
-    return /^[G][A-Z0-9]{55}$/.test(address);
+    return StrKey.isValidEd25519PublicKey(address);
   }
 }

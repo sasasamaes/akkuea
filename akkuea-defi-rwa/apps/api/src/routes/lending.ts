@@ -2,6 +2,7 @@ import { Elysia } from 'elysia';
 import { z } from 'zod';
 import { validate, uuidParamSchema, paginationQuerySchema } from '../middleware';
 import { LendingController } from '../controllers/LendingController';
+import { positionService } from '../services/PositionService';
 
 const poolQuerySchema = paginationQuerySchema.extend({
   asset: z.string().optional(),
@@ -10,9 +11,13 @@ const poolQuerySchema = paginationQuerySchema.extend({
 
 const poolIdParamSchema = uuidParamSchema;
 
+const stellarAddressSchema = z
+  .string()
+  .refine((value) => positionService.validateAddress(value), 'Invalid Stellar address format');
+
 const poolUserParamsSchema = z.object({
   id: z.string().uuid('Invalid UUID format'),
-  address: z.string().length(56).regex(/^G[A-Z2-7]{55}$/, 'Invalid Stellar address format'),
+  address: stellarAddressSchema,
 });
 
 const depositSchema = z.object({
@@ -26,7 +31,7 @@ const withdrawSchema = z.object({
 const borrowSchema = z.object({
   borrowAmount: z.string().regex(/^\d+(\.\d+)?$/, 'Must be a positive decimal string'),
   collateralAmount: z.string().regex(/^\d+(\.\d+)?$/, 'Must be a positive decimal string'),
-  collateralAsset: z.string().length(56).regex(/^G[A-Z2-7]{55}$/, 'Invalid Stellar address format'),
+  collateralAsset: stellarAddressSchema,
 });
 
 const repaySchema = z.object({
@@ -36,7 +41,7 @@ const repaySchema = z.object({
 const createPoolSchema = z.object({
   name: z.string().min(1).max(255),
   asset: z.string().min(1).max(20),
-  assetAddress: z.string().length(56).regex(/^G[A-Z2-7]{55}$/, 'Invalid Stellar address format'),
+  assetAddress: stellarAddressSchema,
   collateralFactor: z.string().regex(/^\d+(\.\d+)?$/),
   liquidationThreshold: z.string().regex(/^\d+(\.\d+)?$/),
   liquidationPenalty: z.string().regex(/^\d+(\.\d+)?$/),
@@ -78,4 +83,10 @@ export const lendingRoutes = new Elysia({ prefix: '/lending' })
 
   // GET /pools/:id/user/:address/borrows - Get user borrows
   .use(validate({ params: poolUserParamsSchema }))
-  .get('/pools/:id/user/:address/borrows', async (ctx) => LendingController.getUserBorrows(ctx));
+  .get('/pools/:id/user/:address/borrows', async (ctx) => LendingController.getUserBorrows(ctx))
+
+  // GET /pools/:id/user/:address/summary - Get user position summary
+  .use(validate({ params: poolUserParamsSchema }))
+  .get('/pools/:id/user/:address/summary', async (ctx) =>
+    LendingController.getUserPositionSummary(ctx),
+  );
