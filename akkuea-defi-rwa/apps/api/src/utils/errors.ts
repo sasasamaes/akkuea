@@ -1,3 +1,5 @@
+import { ApiError } from '../errors/ApiError';
+
 export class AppError extends Error {
   constructor(
     message: string,
@@ -47,6 +49,16 @@ export interface ErrorResponse {
 
 export function handleError(error: unknown): ErrorResponse {
   const timestamp = new Date().toISOString();
+
+  if (error instanceof ApiError) {
+    return {
+      success: false,
+      error: error.code,
+      message: error.message,
+      statusCode: error.statusCode,
+      timestamp,
+    };
+  }
 
   if (error instanceof AppError) {
     return {

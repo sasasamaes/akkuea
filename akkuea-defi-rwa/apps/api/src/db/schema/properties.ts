@@ -9,6 +9,7 @@ import {
   decimal,
   boolean,
   jsonb,
+  bigint,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
@@ -35,6 +36,7 @@ export const properties = pgTable('properties', {
   }>(),
   totalValue: decimal('total_value', { precision: 20, scale: 2 }).notNull(),
   tokenAddress: varchar('token_address', { length: 56 }),
+  sorobanPropertyId: bigint('soroban_property_id', { mode: 'number' }).unique(),
   totalShares: integer('total_shares').notNull(),
   availableShares: integer('available_shares').notNull(),
   pricePerShare: decimal('price_per_share', { precision: 20, scale: 2 }).notNull(),

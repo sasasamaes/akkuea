@@ -132,10 +132,7 @@ export class LendingRepository extends BaseRepository<
         .select()
         .from(depositPositions)
         .where(
-          and(
-            eq(depositPositions.poolId, poolId),
-            eq(depositPositions.depositorId, depositorId),
-          ),
+          and(eq(depositPositions.poolId, poolId), eq(depositPositions.depositorId, depositorId)),
         )
         .limit(1);
 
@@ -208,32 +205,58 @@ export class LendingRepository extends BaseRepository<
       const [existing] = await tx
         .select()
         .from(borrowPositions)
-        .where(
-          and(
-            eq(borrowPositions.poolId, poolId),
-            eq(borrowPositions.borrowerId, borrowerId),
-          ),
-        )
+        .where(and(eq(borrowPositions.poolId, poolId), eq(borrowPositions.borrowerId, borrowerId)))
         .limit(1);
 
       if (!existing) return undefined;
 
-      const newPrincipal = Math.max(0, parseFloat(existing.principal) - parseFloat(amount));
+      const requestedRepayment = parseFloat(amount);
+      const principal = parseFloat(existing.principal);
+      const accruedInterest = parseFloat(existing.accruedInterest);
+      const collateralAmount = parseFloat(existing.collateralAmount);
+      const totalDebt = principal + accruedInterest;
+      const repaidAmount = Math.min(requestedRepayment, totalDebt);
+      const interestRepaid = Math.min(repaidAmount, accruedInterest);
+      const principalRepaid = repaidAmount - interestRepaid;
+      const remainingInterest = Math.max(0, accruedInterest - interestRepaid);
+      const remainingPrincipal = Math.max(0, principal - principalRepaid);
+      const remainingDebt = remainingPrincipal + remainingInterest;
+      const collateralReleased =
+        totalDebt === 0 ? 0 : (collateralAmount * repaidAmount) / totalDebt;
 
-      const [updated] = await tx
-        .update(borrowPositions)
-        .set({
-          principal: newPrincipal.toFixed(7),
-        })
-        .where(eq(borrowPositions.id, existing.id))
-        .returning();
+      let updated: BorrowPosition;
+      if (remainingDebt === 0) {
+        await tx.delete(borrowPositions).where(eq(borrowPositions.id, existing.id));
+        updated = {
+          ...existing,
+          principal: '0.0000000',
+          accruedInterest: '0.0000000',
+          collateralAmount: '0.0000000',
+        };
+      } else {
+        const [updatedRecord] = await tx
+          .update(borrowPositions)
+          .set({
+            principal: remainingPrincipal.toFixed(7),
+            accruedInterest: remainingInterest.toFixed(7),
+            collateralAmount: Math.max(0, collateralAmount - collateralReleased).toFixed(7),
+          })
+          .where(eq(borrowPositions.id, existing.id))
+          .returning();
+
+        if (!updatedRecord) {
+          throw new Error('Borrow position update failed during repayment');
+        }
+
+        updated = updatedRecord;
+      }
 
       await tx
         .update(lendingPools)
         .set({
-          totalBorrows: sql`GREATEST(${lendingPools.totalBorrows}::numeric - ${amount}::numeric, 0)`,
-          availableLiquidity: sql`${lendingPools.availableLiquidity}::numeric + ${amount}::numeric`,
-          utilizationRate: sql`CASE WHEN ${lendingPools.totalDeposits}::numeric = 0 THEN 0 ELSE (GREATEST(${lendingPools.totalBorrows}::numeric - ${amount}::numeric, 0) / ${lendingPools.totalDeposits}::numeric) * 100 END`,
+          totalBorrows: sql`GREATEST(${lendingPools.totalBorrows}::numeric - ${principalRepaid.toFixed(7)}::numeric, 0)`,
+          availableLiquidity: sql`${lendingPools.availableLiquidity}::numeric + ${principalRepaid.toFixed(7)}::numeric`,
+          utilizationRate: sql`CASE WHEN ${lendingPools.totalDeposits}::numeric = 0 THEN 0 ELSE (GREATEST(${lendingPools.totalBorrows}::numeric - ${principalRepaid.toFixed(7)}::numeric, 0) / ${lendingPools.totalDeposits}::numeric) * 100 END`,
         })
         .where(eq(lendingPools.id, poolId));
 
@@ -246,10 +269,7 @@ export class LendingRepository extends BaseRepository<
       .select()
       .from(depositPositions)
       .where(
-        and(
-          eq(depositPositions.poolId, poolId),
-          eq(depositPositions.depositorId, depositorId),
-        ),
+        and(eq(depositPositions.poolId, poolId), eq(depositPositions.depositorId, depositorId)),
       );
   }
 
@@ -257,12 +277,7 @@ export class LendingRepository extends BaseRepository<
     return db
       .select()
       .from(borrowPositions)
-      .where(
-        and(
-          eq(borrowPositions.poolId, poolId),
-          eq(borrowPositions.borrowerId, borrowerId),
-        ),
-      );
+      .where(and(eq(borrowPositions.poolId, poolId), eq(borrowPositions.borrowerId, borrowerId)));
   }
 
   private buildFilterConditions(filter: LendingPoolFilter): SQL[] {
