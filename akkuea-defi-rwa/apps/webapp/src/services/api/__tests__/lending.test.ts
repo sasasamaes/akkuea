@@ -6,10 +6,13 @@ import type {
   DepositPosition,
   LendingPool,
 } from "@real-estate-defi/shared";
-
-// Valid Stellar address for tests
-const VALID_STELLAR_ADDRESS =
-  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+import {
+  VALID_STELLAR_ADDRESS,
+  VALID_UUID,
+  createLendingPool,
+  createDepositPosition,
+  createBorrowPosition,
+} from "@real-estate-defi/shared";
 
 describe("Lending API", () => {
   beforeEach(() => {
@@ -23,11 +26,9 @@ describe("Lending API", () => {
   describe("getPools", () => {
     it("fetches all lending pools", async () => {
       const mockPools: LendingPool[] = [
-        {
-          id: "550e8400-e29b-41d4-a716-446655440001",
+        createLendingPool({
           name: "USD Pool",
           asset: "USD",
-          assetAddress: VALID_STELLAR_ADDRESS,
           totalDeposits: "1000000",
           totalBorrows: "500000",
           availableLiquidity: "500000",
@@ -35,18 +36,10 @@ describe("Lending API", () => {
           supplyAPY: 2.5,
           borrowAPY: 5.0,
           collateralFactor: 60,
-          liquidationThreshold: 80,
-          liquidationPenalty: 5,
-          reserveFactor: 1000,
-          isActive: true,
-          isPaused: false,
-          createdAt: "2024-01-01T00:00:00Z",
-        },
-        {
-          id: "550e8400-e29b-41d4-a716-446655440002",
+        }),
+        createLendingPool({
           name: "EUR Pool",
           asset: "EUR",
-          assetAddress: VALID_STELLAR_ADDRESS,
           totalDeposits: "2000000",
           totalBorrows: "1200000",
           availableLiquidity: "800000",
@@ -55,12 +48,7 @@ describe("Lending API", () => {
           borrowAPY: 6.5,
           collateralFactor: 65,
           liquidationThreshold: 85,
-          liquidationPenalty: 5,
-          reserveFactor: 1000,
-          isActive: true,
-          isPaused: false,
-          createdAt: "2024-01-02T00:00:00Z",
-        },
+        }),
       ];
 
       const { fetchMock, calls } = setupMockFetch({
@@ -79,11 +67,9 @@ describe("Lending API", () => {
 
   describe("getPool", () => {
     it("fetches pool by ID", async () => {
-      const mockPool: LendingPool = {
-        id: "550e8400-e29b-41d4-a716-446655440001",
+      const mockPool = createLendingPool({
         name: "USD Pool",
         asset: "USD",
-        assetAddress: VALID_STELLAR_ADDRESS,
         totalDeposits: "1000000",
         totalBorrows: "500000",
         availableLiquidity: "500000",
@@ -91,13 +77,7 @@ describe("Lending API", () => {
         supplyAPY: 2.5,
         borrowAPY: 5.0,
         collateralFactor: 60,
-        liquidationThreshold: 80,
-        liquidationPenalty: 5,
-        reserveFactor: 1000,
-        isActive: true,
-        isPaused: false,
-        createdAt: "2024-01-01T00:00:00Z",
-      };
+      });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -106,7 +86,7 @@ describe("Lending API", () => {
       global.fetch = fetchMock;
 
       const result = await lendingApi.getPool(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
       );
 
       expect(result).toEqual(mockPool);
@@ -124,16 +104,7 @@ describe("Lending API", () => {
         amount: 1000,
       };
 
-      const mockResponse: DepositPosition = {
-        id: "550e8400-e29b-41d4-a716-446655440010",
-        poolId: "550e8400-e29b-41d4-a716-446655440001",
-        depositor: VALID_STELLAR_ADDRESS,
-        amount: "1000",
-        shares: "1000",
-        depositedAt: "2024-01-15T10:00:00Z",
-        lastAccrualAt: "2024-01-15T10:00:00Z",
-        accruedInterest: "12.5",
-      };
+      const mockResponse = createDepositPosition({ accruedInterest: "12.5" });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -142,7 +113,7 @@ describe("Lending API", () => {
       global.fetch = fetchMock;
 
       const result = await lendingApi.deposit(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         depositPayload,
       );
 
@@ -169,18 +140,11 @@ describe("Lending API", () => {
         borrowAmount: 5000,
       };
 
-      const mockResponse: BorrowPosition = {
-        id: "550e8400-e29b-41d4-a716-446655440020",
-        poolId: "550e8400-e29b-41d4-a716-446655440001",
-        borrower: VALID_STELLAR_ADDRESS,
+      const mockResponse = createBorrowPosition({
         principal: "5000",
         accruedInterest: "0",
         collateralAmount: "10000",
-        collateralAsset: VALID_STELLAR_ADDRESS,
-        healthFactor: 1.8,
-        borrowedAt: "2024-01-15T12:00:00Z",
-        lastAccrualAt: "2024-01-15T12:00:00Z",
-      };
+      });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -189,7 +153,7 @@ describe("Lending API", () => {
       global.fetch = fetchMock;
 
       const result = await lendingApi.borrow(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         borrowPayload,
       );
 
@@ -211,16 +175,7 @@ describe("Lending API", () => {
 
   describe("withdraw", () => {
     it("withdraws from pool", async () => {
-      const mockResponse: DepositPosition = {
-        id: "550e8400-e29b-41d4-a716-446655440010",
-        poolId: "550e8400-e29b-41d4-a716-446655440001",
-        depositor: VALID_STELLAR_ADDRESS,
-        amount: "500",
-        shares: "500",
-        depositedAt: "2024-01-15T10:00:00Z",
-        lastAccrualAt: "2024-01-15T10:00:00Z",
-        accruedInterest: "12.5",
-      };
+      const mockResponse = createDepositPosition({ amount: "500", shares: "500", accruedInterest: "12.5" });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -229,7 +184,7 @@ describe("Lending API", () => {
       global.fetch = fetchMock;
 
       const result = await lendingApi.withdraw(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         {
           userAddress: VALID_STELLAR_ADDRESS,
           amount: 500,
@@ -251,18 +206,12 @@ describe("Lending API", () => {
 
   describe("repay", () => {
     it("repays a borrow position", async () => {
-      const mockResponse: BorrowPosition = {
-        id: "550e8400-e29b-41d4-a716-446655440020",
-        poolId: "550e8400-e29b-41d4-a716-446655440001",
-        borrower: VALID_STELLAR_ADDRESS,
+      const mockResponse = createBorrowPosition({
         principal: "4500",
         accruedInterest: "10",
         collateralAmount: "9000",
-        collateralAsset: VALID_STELLAR_ADDRESS,
         healthFactor: 1.9,
-        borrowedAt: "2024-01-15T12:00:00Z",
-        lastAccrualAt: "2024-01-15T12:00:00Z",
-      };
+      });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -271,7 +220,7 @@ describe("Lending API", () => {
       global.fetch = fetchMock;
 
       const result = await lendingApi.repay(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         {
           userAddress: VALID_STELLAR_ADDRESS,
           amount: 500,
@@ -294,26 +243,8 @@ describe("Lending API", () => {
   describe("getUserDeposits", () => {
     it("gets user deposit positions", async () => {
       const mockDeposits: DepositPosition[] = [
-        {
-          id: "550e8400-e29b-41d4-a716-446655440030",
-          poolId: "550e8400-e29b-41d4-a716-446655440001",
-          depositor: VALID_STELLAR_ADDRESS,
-          amount: "1000",
-          shares: "1000",
-          depositedAt: "2024-01-10T08:00:00Z",
-          lastAccrualAt: "2024-01-15T08:00:00Z",
-          accruedInterest: "5.2",
-        },
-        {
-          id: "550e8400-e29b-41d4-a716-446655440031",
-          poolId: "550e8400-e29b-41d4-a716-446655440001",
-          depositor: VALID_STELLAR_ADDRESS,
-          amount: "2000",
-          shares: "2000",
-          depositedAt: "2024-01-12T10:00:00Z",
-          lastAccrualAt: "2024-01-15T10:00:00Z",
-          accruedInterest: "8.1",
-        },
+        createDepositPosition({ accruedInterest: "5.2" }),
+        createDepositPosition({ amount: "2000", shares: "2000", accruedInterest: "8.1" }),
       ];
 
       const { fetchMock, calls } = setupMockFetch({
@@ -323,7 +254,7 @@ describe("Lending API", () => {
       global.fetch = fetchMock;
 
       const result = await lendingApi.getUserDeposits(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         VALID_STELLAR_ADDRESS,
       );
 
@@ -338,18 +269,12 @@ describe("Lending API", () => {
   describe("getUserBorrows", () => {
     it("gets user borrow positions", async () => {
       const mockBorrows: BorrowPosition[] = [
-        {
-          id: "550e8400-e29b-41d4-a716-446655440040",
-          poolId: "550e8400-e29b-41d4-a716-446655440001",
-          borrower: VALID_STELLAR_ADDRESS,
+        createBorrowPosition({
           principal: "5000",
           accruedInterest: "21",
           collateralAmount: "10000",
-          collateralAsset: VALID_STELLAR_ADDRESS,
           healthFactor: 1.75,
-          borrowedAt: "2024-01-08T14:00:00Z",
-          lastAccrualAt: "2024-01-15T14:00:00Z",
-        },
+        }),
       ];
 
       const { fetchMock, calls } = setupMockFetch({
@@ -359,7 +284,7 @@ describe("Lending API", () => {
       global.fetch = fetchMock;
 
       const result = await lendingApi.getUserBorrows(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         VALID_STELLAR_ADDRESS,
       );
 

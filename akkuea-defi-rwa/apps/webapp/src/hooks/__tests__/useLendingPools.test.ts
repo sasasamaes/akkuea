@@ -1,39 +1,30 @@
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { LendingPool, DepositPosition } from "@real-estate-defi/shared";
+import {
+  VALID_STELLAR_ADDRESS,
+  createLendingPool,
+  createDepositPosition,
+} from "@real-estate-defi/shared";
 import { lendingApi } from "@/services/api";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const VALID_STELLAR_ADDRESS =
-  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
-
-const mockPool: LendingPool = {
-  id: "550e8400-e29b-41d4-a716-446655440001",
+const mockPool = createLendingPool({
   name: "USDC Stable Pool",
   asset: "USDC",
-  assetAddress: VALID_STELLAR_ADDRESS,
   totalDeposits: "5000000",
   totalBorrows: "3600000",
   availableLiquidity: "1400000",
   utilizationRate: 72,
   supplyAPY: 5.2,
   borrowAPY: 7.8,
-  collateralFactor: 75,
-  liquidationThreshold: 80,
-  liquidationPenalty: 5,
-  reserveFactor: 1000,
-  isActive: true,
-  isPaused: false,
-  createdAt: "2024-01-01T00:00:00Z",
-};
+});
 
-const mockPool2: LendingPool = {
-  id: "550e8400-e29b-41d4-a716-446655440002",
+const mockPool2 = createLendingPool({
   name: "XLM Native Pool",
   asset: "XLM",
-  assetAddress: VALID_STELLAR_ADDRESS,
   totalDeposits: "2000000",
   totalBorrows: "1300000",
   availableLiquidity: "700000",
@@ -41,13 +32,7 @@ const mockPool2: LendingPool = {
   supplyAPY: 4.5,
   borrowAPY: 6.5,
   collateralFactor: 70,
-  liquidationThreshold: 80,
-  liquidationPenalty: 5,
-  reserveFactor: 1000,
-  isActive: true,
-  isPaused: false,
-  createdAt: "2024-01-02T00:00:00Z",
-};
+});
 
 // ---------------------------------------------------------------------------
 // Direct tests of lendingApi — mirrors the unit-test approach used by the
@@ -113,16 +98,12 @@ describe("useLendingPools — service integration", () => {
   });
 
   it("fetches user deposit positions per pool when address is provided", async () => {
-    const mockDeposit: DepositPosition = {
-      id: "dep-001",
+    const mockDeposit = createDepositPosition({
       poolId: mockPool.id,
-      depositor: VALID_STELLAR_ADDRESS,
       amount: "25000",
       shares: "25000",
-      depositedAt: "2024-01-15T10:00:00Z",
-      lastAccrualAt: "2024-01-15T10:00:00Z",
       accruedInterest: "12.5",
-    };
+    });
 
     mockGetUserDeposits.mockImplementationOnce(
       async (): Promise<DepositPosition[]> => [mockDeposit],

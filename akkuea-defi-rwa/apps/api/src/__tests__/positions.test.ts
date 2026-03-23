@@ -4,9 +4,12 @@ import type { BorrowPosition, DepositPosition, LendingPool, User } from '../db/s
 import { errorHandler } from '../middleware/errorHandler';
 import { lendingRoutes } from '../routes/lending';
 import { PositionService } from '../services/PositionService';
+import {
+  VALID_STELLAR_ADDRESS,
+  VALID_STELLAR_ADDRESS_2,
+  VALID_UUID as VALID_POOL_ID,
+} from '@real-estate-defi/shared';
 
-const VALID_POOL_ID = '550e8400-e29b-41d4-a716-446655440000';
-const VALID_STELLAR_ADDRESS = 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7';
 const INVALID_STELLAR_ADDRESS = 'NOT_A_VALID_STELLAR_ADDRESS';
 const FIXED_NOW = new Date('2026-03-22T12:00:00.000Z');
 
@@ -119,15 +122,15 @@ describe('PositionService', () => {
   it('returns an empty snapshot when the wallet has no local user record', async () => {
     const deposits = await service.getUserDeposits(
       VALID_POOL_ID,
-      'GBXGQJWVLWOYHFLVTKWV5FGHA3LNYY2JQKM7OAJAUEQFU6LPCSEFVXON',
+      VALID_STELLAR_ADDRESS_2,
     );
     const borrows = await service.getUserBorrows(
       VALID_POOL_ID,
-      'GBXGQJWVLWOYHFLVTKWV5FGHA3LNYY2JQKM7OAJAUEQFU6LPCSEFVXON',
+      VALID_STELLAR_ADDRESS_2,
     );
     const summary = await service.getPositionSummary(
       VALID_POOL_ID,
-      'GBXGQJWVLWOYHFLVTKWV5FGHA3LNYY2JQKM7OAJAUEQFU6LPCSEFVXON',
+      VALID_STELLAR_ADDRESS_2,
     );
 
     expect(deposits).toEqual([]);

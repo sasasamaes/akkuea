@@ -2,10 +2,7 @@ import { describe, it, expect, beforeEach, mock } from "bun:test";
 import { propertyApi } from "../properties";
 import { setupMockFetch, wrapFetchMock } from "./helpers";
 import type { PropertyInfo, ShareOwnership } from "@real-estate-defi/shared";
-
-// Valid Stellar address for tests
-const VALID_STELLAR_ADDRESS =
-  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+import { VALID_STELLAR_ADDRESS, VALID_UUID, createProperty } from "@real-estate-defi/shared";
 
 describe("Property API", () => {
   beforeEach(() => {
@@ -18,58 +15,16 @@ describe("Property API", () => {
 
   describe("getAll", () => {
     it("fetches all properties with pagination", async () => {
-      const mockResponse: {
-        data: PropertyInfo[];
-        pagination: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
-        };
-      } = {
+      const mockResponse = {
         data: [
-          {
-            id: "550e8400-e29b-41d4-a716-446655440001",
-            name: "Property 1",
-            description: "A beautiful residential property in downtown",
-            propertyType: "residential",
-            location: {
-              address: "123 Main St",
-              city: "New York",
-              country: "USA",
-              postalCode: "10001",
-            },
-            totalValue: "1000000",
-            totalShares: 1000,
-            availableShares: 500,
-            pricePerShare: "1000",
-            images: ["https://example.com/image1.jpg"],
-            documents: [],
-            verified: true,
-            listedAt: "2024-01-01T00:00:00Z",
-            owner: VALID_STELLAR_ADDRESS,
-          },
-          {
-            id: "550e8400-e29b-41d4-a716-446655440002",
+          createProperty({ name: "Property 1" }),
+          createProperty({
             name: "Property 2",
-            description: "A commercial property in the business district",
             propertyType: "commercial",
-            location: {
-              address: "456 Business Ave",
-              city: "Los Angeles",
-              country: "USA",
-              postalCode: "90001",
-            },
             totalValue: "2000000",
             totalShares: 2000,
             availableShares: 1500,
-            pricePerShare: "1000",
-            images: ["https://example.com/image2.jpg"],
-            documents: [],
-            verified: true,
-            listedAt: "2024-01-02T00:00:00Z",
-            owner: VALID_STELLAR_ADDRESS,
-          },
+          }),
         ],
         pagination: {
           page: 1,
@@ -138,26 +93,7 @@ describe("Property API", () => {
 
   describe("getById", () => {
     it("fetches property by ID", async () => {
-      const mockProperty: PropertyInfo = {
-        id: "550e8400-e29b-41d4-a716-446655440001",
-        name: "Test Property",
-        description: "A test property for unit testing purposes",
-        propertyType: "residential",
-        location: {
-          address: "123 Test St",
-          city: "Test City",
-          country: "USA",
-        },
-        totalValue: "1000000",
-        totalShares: 1000,
-        availableShares: 800,
-        pricePerShare: "1000",
-        images: ["https://example.com/test.jpg"],
-        documents: [],
-        verified: true,
-        listedAt: "2024-01-01T00:00:00Z",
-        owner: VALID_STELLAR_ADDRESS,
-      };
+      const mockProperty = createProperty({ name: "Test Property", availableShares: 800 });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -165,13 +101,11 @@ describe("Property API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await propertyApi.getById(
-        "550e8400-e29b-41d4-a716-446655440001",
-      );
+      const result = await propertyApi.getById(mockProperty.id);
 
       expect(result).toEqual(mockProperty);
       expect(calls[0].url).toBe(
-        "http://localhost:3001/properties/550e8400-e29b-41d4-a716-446655440001",
+        `http://localhost:3001/properties/${mockProperty.id}`,
       );
       expect(calls[0].options.method).toBe("GET");
     });
@@ -195,22 +129,17 @@ describe("Property API", () => {
         images: ["https://example.com/image1.jpg"],
       };
 
-      const mockResponse: PropertyInfo = {
-        id: "550e8400-e29b-41d4-a716-446655440001",
+      const mockResponse = createProperty({
         name: createPayload.name,
         description: createPayload.description,
-        propertyType: "residential",
         location: createPayload.location,
         totalValue: createPayload.totalValue,
         totalShares: createPayload.totalShares,
         availableShares: createPayload.totalShares,
         pricePerShare: createPayload.pricePerShare,
         images: createPayload.images,
-        documents: [],
         verified: false,
-        listedAt: "2024-01-15T10:00:00Z",
-        owner: VALID_STELLAR_ADDRESS,
-      };
+      });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 201,
@@ -243,7 +172,7 @@ describe("Property API", () => {
       global.fetch = fetchMock;
 
       const result = await propertyApi.tokenize(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
       );
 
       expect(result).toEqual(mockResponse);
@@ -268,7 +197,7 @@ describe("Property API", () => {
       global.fetch = fetchMock;
 
       const result = await propertyApi.buyShares(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         VALID_STELLAR_ADDRESS,
         50,
       );
@@ -291,7 +220,7 @@ describe("Property API", () => {
   describe("getShares", () => {
     it("gets user share holdings for a property", async () => {
       const mockShareOwnership: ShareOwnership = {
-        propertyId: "550e8400-e29b-41d4-a716-446655440001",
+        propertyId: VALID_UUID,
         owner: VALID_STELLAR_ADDRESS,
         shares: 100,
         purchasePrice: "10000",
@@ -305,7 +234,7 @@ describe("Property API", () => {
       global.fetch = fetchMock;
 
       const result = await propertyApi.getShares(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         VALID_STELLAR_ADDRESS,
       );
 
@@ -325,7 +254,7 @@ describe("Property API", () => {
       global.fetch = fetchMock;
 
       const result = await propertyApi.getShares(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
         VALID_STELLAR_ADDRESS,
       );
 

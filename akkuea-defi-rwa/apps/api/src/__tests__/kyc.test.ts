@@ -2,11 +2,12 @@ import { describe, expect, it } from 'bun:test';
 import { Elysia } from 'elysia';
 import { kycRoutes } from '../routes/kyc';
 import { errorHandler } from '../middleware/errorHandler';
+import { VALID_UUID, NON_EXISTENT_UUID } from '@real-estate-defi/shared';
 
 const skipIfNoDatabase = !process.env.DATABASE_URL;
-const VALID_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
-const NON_EXISTENT_USER_ID = '550e8400-e29b-41d4-a716-446655440099';
-const NON_EXISTENT_DOC_ID = '550e8400-e29b-41d4-a716-446655440099';
+const VALID_USER_ID = VALID_UUID;
+const NON_EXISTENT_USER_ID = NON_EXISTENT_UUID;
+const NON_EXISTENT_DOC_ID = NON_EXISTENT_UUID;
 
 function createApp() {
   return new Elysia().use(errorHandler).use(kycRoutes);

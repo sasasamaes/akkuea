@@ -3,10 +3,7 @@ import { Elysia } from 'elysia';
 import { lendingRoutes } from '../routes/lending';
 import { errorHandler } from '../middleware/errorHandler';
 import { CreatePoolDto, DepositDto, WithdrawDto, BorrowDto, RepayDto } from '../dto/lending.dto';
-
-// Valid Stellar address for testing
-const VALID_STELLAR_ADDRESS = 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7';
-const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
+import { VALID_STELLAR_ADDRESS, VALID_UUID } from '@real-estate-defi/shared';
 
 describe('Lending DTO Validation', () => {
   describe('CreatePoolDto', () => {

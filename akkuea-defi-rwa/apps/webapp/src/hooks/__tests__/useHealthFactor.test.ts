@@ -1,13 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { useHealthFactor } from "../useHealthFactor";
 import type { BorrowPosition } from "@real-estate-defi/shared";
-
-// ---------------------------------------------------------------------------
-// Test helpers
-// ---------------------------------------------------------------------------
-
-const VALID_STELLAR_ADDRESS =
-  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+import { createBorrowPosition } from "@real-estate-defi/shared";
 
 /**
  * useHealthFactor is a pure useMemo hook — calling it with a React ref is
@@ -55,19 +49,7 @@ function computeHealthFactor(borrows: BorrowPosition[]) {
 }
 
 function makeBorrow(overrides: Partial<BorrowPosition> = {}): BorrowPosition {
-  return {
-    id: "borrow-001",
-    poolId: "550e8400-e29b-41d4-a716-446655440001",
-    borrower: VALID_STELLAR_ADDRESS,
-    principal: "10000",
-    accruedInterest: "0",
-    collateralAmount: "20000",
-    collateralAsset: VALID_STELLAR_ADDRESS,
-    healthFactor: 2.0,
-    borrowedAt: "2024-01-15T10:00:00Z",
-    lastAccrualAt: "2024-01-15T10:00:00Z",
-    ...overrides,
-  };
+  return createBorrowPosition({ principal: "10000", accruedInterest: "0", healthFactor: 2.0, ...overrides });
 }
 
 // ---------------------------------------------------------------------------
