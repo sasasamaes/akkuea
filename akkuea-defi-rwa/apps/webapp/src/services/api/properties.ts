@@ -96,7 +96,11 @@ export const propertyApi = {
     const response = await apiClient.post<{
       transactionHash: string;
       newBalance: number;
-    }>(`/properties/${id}/buy-shares`, { buyer, shares });
+    }>(`/properties/${id}/buy-shares`, { buyer, shares }, {
+      headers: {
+        "x-user-address": buyer,
+      },
+    });
     return response.data;
   },
 

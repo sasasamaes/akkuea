@@ -151,12 +151,17 @@ const tokenizePropertyRoute = new Elysia()
 const buySharesRoute = new Elysia()
   .use(validateParams(uuidParamSchema))
   .use(validateBody(buySharesSchema))
-  .post('/:id/buy-shares', async ({ validatedParams, validatedBody, set }) => {
+  .post('/:id/buy-shares', async ({ validatedParams, validatedBody, headers, set }) => {
     try {
+      const userAddress = headers['x-user-address'] as string | undefined;
+      if (!userAddress) {
+        throw new UnauthorizedError('User address is required for authentication');
+      }
+
       return await PropertyController.buyShares(validatedParams!.id, {
         buyer: validatedBody!.buyer,
         shares: validatedBody!.shares,
-      });
+      }, userAddress);
     } catch (error) {
       const errorResponse = handleError(error);
       set.status = errorResponse.statusCode;

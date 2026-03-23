@@ -489,6 +489,7 @@ export class PropertyController {
   static async buyShares(
     id: string,
     data: { buyer: string; shares: number },
+    authenticatedAddress: string,
   ): Promise<{ transactionHash: string; newBalance: number }> {
     const startTime = Date.now();
 
@@ -500,6 +501,10 @@ export class PropertyController {
 
     if (!data.buyer || data.buyer.trim().length === 0) {
       throw new AuthenticationError('Buyer wallet address is required');
+    }
+
+    if (data.buyer !== authenticatedAddress) {
+      throw new AuthorizationError('Authenticated wallet does not match buyer address');
     }
 
     if (!Number.isInteger(data.shares) || data.shares <= 0) {
@@ -586,7 +591,7 @@ export class PropertyController {
           toUserId: property.ownerId,
           amount: totalPurchasePrice,
           asset: property.tokenAddress ?? 'USDC',
-          status: 'confirmed',
+          status: 'pending',
           metadata: {
             propertyId: property.id,
             shares: data.shares,

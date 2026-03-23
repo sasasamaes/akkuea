@@ -120,16 +120,11 @@ describe("Lending API", () => {
   describe("deposit", () => {
     it("deposits into pool", async () => {
       const depositPayload = {
-        user: VALID_STELLAR_ADDRESS,
+        userAddress: VALID_STELLAR_ADDRESS,
         amount: 1000,
       };
 
-      const mockResponse: {
-        transactionHash: string;
-        position: DepositPosition;
-      } = {
-        transactionHash: "0xtx123456",
-        position: {
+      const mockResponse: DepositPosition = {
           id: "550e8400-e29b-41d4-a716-446655440010",
           poolId: "550e8400-e29b-41d4-a716-446655440001",
           depositor: VALID_STELLAR_ADDRESS,
@@ -138,7 +133,6 @@ describe("Lending API", () => {
           depositedAt: "2024-01-15T10:00:00Z",
           lastAccrualAt: "2024-01-15T10:00:00Z",
           accruedInterest: "12.5",
-        },
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -157,8 +151,11 @@ describe("Lending API", () => {
         "http://localhost:3001/lending/pools/550e8400-e29b-41d4-a716-446655440001/deposit",
       );
       expect(calls[0].options.method).toBe("POST");
-      expect(JSON.parse(calls[0].options.body as string)).toEqual(
-        depositPayload,
+      expect(JSON.parse(calls[0].options.body as string)).toEqual({
+        amount: "1000",
+      });
+      expect(new Headers(calls[0].options.headers).get("x-user-address")).toBe(
+        VALID_STELLAR_ADDRESS,
       );
     });
   });
@@ -166,18 +163,13 @@ describe("Lending API", () => {
   describe("borrow", () => {
     it("borrows from pool", async () => {
       const borrowPayload = {
-        borrower: VALID_STELLAR_ADDRESS,
-        collateralPropertyId: "550e8400-e29b-41d4-a716-446655440050",
-        collateralShares: 10,
+        userAddress: VALID_STELLAR_ADDRESS,
+        collateralAmount: 10000,
+        collateralAsset: VALID_STELLAR_ADDRESS,
         borrowAmount: 5000,
       };
 
-      const mockResponse: {
-        transactionHash: string;
-        position: BorrowPosition;
-      } = {
-        transactionHash: "0xtx789012",
-        position: {
+      const mockResponse: BorrowPosition = {
           id: "550e8400-e29b-41d4-a716-446655440020",
           poolId: "550e8400-e29b-41d4-a716-446655440001",
           borrower: VALID_STELLAR_ADDRESS,
@@ -188,7 +180,6 @@ describe("Lending API", () => {
           healthFactor: 1.8,
           borrowedAt: "2024-01-15T12:00:00Z",
           lastAccrualAt: "2024-01-15T12:00:00Z",
-        },
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -207,8 +198,95 @@ describe("Lending API", () => {
         "http://localhost:3001/lending/pools/550e8400-e29b-41d4-a716-446655440001/borrow",
       );
       expect(calls[0].options.method).toBe("POST");
-      expect(JSON.parse(calls[0].options.body as string)).toEqual(
-        borrowPayload,
+      expect(JSON.parse(calls[0].options.body as string)).toEqual({
+        borrowAmount: "5000",
+        collateralAmount: "10000",
+        collateralAsset: VALID_STELLAR_ADDRESS,
+      });
+      expect(new Headers(calls[0].options.headers).get("x-user-address")).toBe(
+        VALID_STELLAR_ADDRESS,
+      );
+    });
+  });
+
+  describe("withdraw", () => {
+    it("withdraws from pool", async () => {
+      const mockResponse: DepositPosition = {
+        id: "550e8400-e29b-41d4-a716-446655440010",
+        poolId: "550e8400-e29b-41d4-a716-446655440001",
+        depositor: VALID_STELLAR_ADDRESS,
+        amount: "500",
+        shares: "500",
+        depositedAt: "2024-01-15T10:00:00Z",
+        lastAccrualAt: "2024-01-15T10:00:00Z",
+        accruedInterest: "12.5",
+      };
+
+      const { fetchMock, calls } = setupMockFetch({
+        status: 200,
+        body: mockResponse,
+      });
+      global.fetch = fetchMock;
+
+      const result = await lendingApi.withdraw(
+        "550e8400-e29b-41d4-a716-446655440001",
+        {
+          userAddress: VALID_STELLAR_ADDRESS,
+          amount: 500,
+        },
+      );
+
+      expect(result).toEqual(mockResponse);
+      expect(calls[0].url).toBe(
+        "http://localhost:3001/lending/pools/550e8400-e29b-41d4-a716-446655440001/withdraw",
+      );
+      expect(JSON.parse(calls[0].options.body as string)).toEqual({
+        amount: "500",
+      });
+      expect(new Headers(calls[0].options.headers).get("x-user-address")).toBe(
+        VALID_STELLAR_ADDRESS,
+      );
+    });
+  });
+
+  describe("repay", () => {
+    it("repays a borrow position", async () => {
+      const mockResponse: BorrowPosition = {
+        id: "550e8400-e29b-41d4-a716-446655440020",
+        poolId: "550e8400-e29b-41d4-a716-446655440001",
+        borrower: VALID_STELLAR_ADDRESS,
+        principal: "4500",
+        accruedInterest: "10",
+        collateralAmount: "9000",
+        collateralAsset: VALID_STELLAR_ADDRESS,
+        healthFactor: 1.9,
+        borrowedAt: "2024-01-15T12:00:00Z",
+        lastAccrualAt: "2024-01-15T12:00:00Z",
+      };
+
+      const { fetchMock, calls } = setupMockFetch({
+        status: 200,
+        body: mockResponse,
+      });
+      global.fetch = fetchMock;
+
+      const result = await lendingApi.repay(
+        "550e8400-e29b-41d4-a716-446655440001",
+        {
+          userAddress: VALID_STELLAR_ADDRESS,
+          amount: 500,
+        },
+      );
+
+      expect(result).toEqual(mockResponse);
+      expect(calls[0].url).toBe(
+        "http://localhost:3001/lending/pools/550e8400-e29b-41d4-a716-446655440001/repay",
+      );
+      expect(JSON.parse(calls[0].options.body as string)).toEqual({
+        amount: "500",
+      });
+      expect(new Headers(calls[0].options.headers).get("x-user-address")).toBe(
+        VALID_STELLAR_ADDRESS,
       );
     });
   });
