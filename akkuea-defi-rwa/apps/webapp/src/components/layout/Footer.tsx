@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Building2,
   Github,
   Twitter,
   MessageCircle,
   Mail,
   ArrowUpRight,
 } from "lucide-react";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 
 const footerLinks = {
   product: [
@@ -77,14 +77,7 @@ export function Footer() {
         >
           {/* Brand */}
           <motion.div variants={itemVariants} className="col-span-2">
-            <Link href="/" className="flex items-center gap-3 mb-4 group">
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-black" />
-              </div>
-              <span className="text-sm font-semibold text-white tracking-tight group-hover:text-neutral-300 transition-colors">
-                AKKUEA
-              </span>
-            </Link>
+            <BrandLogo className="mb-4" />
             <p className="text-xs text-neutral-500 mb-6 max-w-xs leading-relaxed">
               Democratizing real estate investment through blockchain
               technology. Fractional ownership for everyone.

@@ -6,6 +6,13 @@ export const metadata: Metadata = {
   title: "Akkuea DeFi RWA | Real Estate Tokenization Platform",
   description:
     "Democratizing real estate investment through blockchain tokenization. Fractional ownership, DeFi lending, and institutional-grade security on Stellar.",
+  icons: {
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+      { url: "/logo.png", rel: "shortcut icon", type: "image/png" },
+    ],
+    apple: [{ url: "/logo.png", type: "image/png" }],
+  },
   keywords: [
     "real estate tokenization",
     "DeFi",

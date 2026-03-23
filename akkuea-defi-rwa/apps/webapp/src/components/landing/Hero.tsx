@@ -100,7 +100,7 @@ export function Hero() {
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-[#0a0a0a] border border-[#262626] rounded-full">
               <span className="status-dot status-dot-pulse" />
               <span className="text-xs font-mono text-neutral-400 tracking-wider uppercase">
-                Live on Stellar Mainnet
+                Live on Stellar Testnet
               </span>
             </div>
           </motion.div>

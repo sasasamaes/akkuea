@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
 import { useWallet } from "@/components/auth/hooks";
 import { cn, truncateAddress } from "@/lib/utils";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -44,18 +45,10 @@ export function Navbar() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-8 h-8 rounded-lg bg-white flex items-center justify-center"
-            >
-              <Building2 className="w-4 h-4 text-black" />
-            </motion.div>
-            <span className="text-sm font-semibold text-white tracking-tight hidden sm:block group-hover:text-neutral-300 transition-colors">
-              AKKUEA
-            </span>
-          </Link>
+          <BrandLogo
+            animateIcon
+            textClassName="hidden sm:block"
+          />
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
