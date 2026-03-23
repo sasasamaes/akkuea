@@ -6,6 +6,24 @@ import { CreatePoolDto, DepositDto, WithdrawDto, BorrowDto, RepayDto } from '../
 import { positionService } from '../services/PositionService';
 
 export class LendingController {
+  private static async resolveAuthenticatedUser(
+    ctx: Context,
+  ): Promise<{ id: string; walletAddress?: string }> {
+    const userId = ctx.headers['x-user-id'];
+    if (userId) {
+      return { id: userId };
+    }
+
+    const walletAddress = ctx.headers['x-user-address'];
+    if (walletAddress) {
+      const user = await userRepository.getOrCreateByWallet(walletAddress);
+
+      return { id: user.id, walletAddress: user.walletAddress };
+    }
+
+    throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
+  }
+
   /**
    * Helper method to create JSON responses
    */
@@ -51,10 +69,7 @@ export class LendingController {
    * Create a new lending pool (auth required)
    */
   static async createPool(ctx: Context): Promise<Response> {
-    const userId = ctx.headers['x-user-id'];
-    if (!userId) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
-    }
+    await this.resolveAuthenticatedUser(ctx);
 
     const validationResult = CreatePoolDto.safeParse(ctx.body);
     if (!validationResult.success) {
@@ -83,11 +98,7 @@ export class LendingController {
    */
   static async deposit(ctx: Context<{ params: { id: string } }>): Promise<Response> {
     const { id: poolId } = ctx.params;
-
-    const userId = ctx.headers['x-user-id'];
-    if (!userId) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
-    }
+    const user = await this.resolveAuthenticatedUser(ctx);
 
     const validationResult = DepositDto.safeParse(ctx.body);
     if (!validationResult.success) {
@@ -103,11 +114,6 @@ export class LendingController {
       throw new ApiError(404, 'NOT_FOUND', `Active pool with id ${poolId} not found`);
     }
 
-    const user = await userRepository.findById(userId);
-    if (!user) {
-      throw new ApiError(404, 'NOT_FOUND', 'User not found');
-    }
-
     const position = await lendingRepository.deposit(poolId, user.id, amount, amount);
 
     return this.jsonResponse(position);
@@ -118,11 +124,7 @@ export class LendingController {
    */
   static async withdraw(ctx: Context<{ params: { id: string } }>): Promise<Response> {
     const { id: poolId } = ctx.params;
-
-    const userId = ctx.headers['x-user-id'];
-    if (!userId) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
-    }
+    const user = await this.resolveAuthenticatedUser(ctx);
 
     const validationResult = WithdrawDto.safeParse(ctx.body);
     if (!validationResult.success) {
@@ -142,11 +144,6 @@ export class LendingController {
       throw new ApiError(400, 'INSUFFICIENT_LIQUIDITY', 'Insufficient liquidity in pool');
     }
 
-    const user = await userRepository.findById(userId);
-    if (!user) {
-      throw new ApiError(404, 'NOT_FOUND', 'User not found');
-    }
-
     const position = await lendingRepository.withdraw(poolId, user.id, amount);
     if (!position) {
       throw new ApiError(404, 'NOT_FOUND', 'No deposit position found for this user in this pool');
@@ -160,11 +157,7 @@ export class LendingController {
    */
   static async borrow(ctx: Context<{ params: { id: string } }>): Promise<Response> {
     const { id: poolId } = ctx.params;
-
-    const userId = ctx.headers['x-user-id'];
-    if (!userId) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
-    }
+    const user = await this.resolveAuthenticatedUser(ctx);
 
     const validationResult = BorrowDto.safeParse(ctx.body);
     if (!validationResult.success) {
@@ -184,11 +177,6 @@ export class LendingController {
       throw new ApiError(400, 'INSUFFICIENT_LIQUIDITY', 'Insufficient liquidity in pool');
     }
 
-    const user = await userRepository.findById(userId);
-    if (!user) {
-      throw new ApiError(404, 'NOT_FOUND', 'User not found');
-    }
-
     const position = await lendingRepository.borrow(poolId, user.id, {
       borrowAmount,
       collateralAmount,
@@ -203,11 +191,7 @@ export class LendingController {
    */
   static async repay(ctx: Context<{ params: { id: string } }>): Promise<Response> {
     const { id: poolId } = ctx.params;
-
-    const userId = ctx.headers['x-user-id'];
-    if (!userId) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
-    }
+    const user = await this.resolveAuthenticatedUser(ctx);
 
     const validationResult = RepayDto.safeParse(ctx.body);
     if (!validationResult.success) {
@@ -221,11 +205,6 @@ export class LendingController {
     const pool = await lendingRepository.findById(poolId);
     if (!pool) {
       throw new ApiError(404, 'NOT_FOUND', `Pool with id ${poolId} not found`);
-    }
-
-    const user = await userRepository.findById(userId);
-    if (!user) {
-      throw new ApiError(404, 'NOT_FOUND', 'User not found');
     }
 
     const position = await lendingRepository.repay(poolId, user.id, amount);

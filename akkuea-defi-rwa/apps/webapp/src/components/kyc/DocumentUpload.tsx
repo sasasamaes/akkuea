@@ -22,7 +22,7 @@ export default function DocumentUpload({
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
   }>({});
-  const { setValue } = useFormContext<KycFormData>();
+  useFormContext<KycFormData>();
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const [fileError, setFileError] = useState<string | null>(null);
 

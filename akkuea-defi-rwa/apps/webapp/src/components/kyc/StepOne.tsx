@@ -1,4 +1,4 @@
-import { Calendar, Globe, House, Mail, Phone, User } from "lucide-react";
+import { Calendar, House, Mail, Phone, User } from "lucide-react";
 import { Input } from "../ui";
 import { useFormContext } from "react-hook-form";
 import { KycFormData } from "@/schemas/kyc.schema";

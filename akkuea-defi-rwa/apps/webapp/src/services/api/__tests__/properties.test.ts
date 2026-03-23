@@ -282,6 +282,9 @@ describe("Property API", () => {
         buyer: VALID_STELLAR_ADDRESS,
         shares: 50,
       });
+      expect(new Headers(calls[0].options.headers).get("x-user-address")).toBe(
+        VALID_STELLAR_ADDRESS,
+      );
     });
   });
 

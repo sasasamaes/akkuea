@@ -1,7 +1,7 @@
 import { logger } from './logger';
 import { transactionRepository } from '../repositories/TransactionRepository';
 import { ApiError } from '../errors/ApiError';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export interface WebhookPayload {
     transactionHash: string;
@@ -14,10 +14,17 @@ export class WebhookService {
     private readonly webhookSecret: string;
 
     constructor() {
-        this.webhookSecret = process.env.WEBHOOK_SECRET || 'default-secret-for-dev';
-        if (!process.env.WEBHOOK_SECRET && process.env.NODE_ENV === 'production') {
-            logger.error('WEBHOOK_SECRET is not set in production!');
+        const configuredSecret = process.env.WEBHOOK_SECRET;
+        if (configuredSecret) {
+            this.webhookSecret = configuredSecret;
+            return;
         }
+
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('WEBHOOK_SECRET must be configured in production');
+        }
+
+        this.webhookSecret = 'default-secret-for-dev';
     }
 
     /**
@@ -27,7 +34,14 @@ export class WebhookService {
     validateSignature(payload: string, signature: string): boolean {
         const hmac = createHmac('sha256', this.webhookSecret);
         const digest = hmac.update(payload).digest('hex');
-        return digest === signature;
+        const expected = Buffer.from(digest, 'hex');
+        const received = Buffer.from(signature, 'hex');
+
+        if (expected.length !== received.length) {
+            return false;
+        }
+
+        return timingSafeEqual(expected, received);
     }
 
     /**

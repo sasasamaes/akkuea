@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Shield, Coins, CheckCircle2, ExternalLink } from "lucide-react";
 import type { LendingPool } from "@real-estate-defi/shared";
@@ -87,38 +87,60 @@ export function PoolActionModal({
   onSuccess,
 }: PoolActionModalProps) {
   const [txHash, setTxHash] = useState<string | null>(null);
+  const successMessage = useMemo(() => {
+    switch (action) {
+      case "supply":
+        return "Supply submitted successfully.";
+      case "withdraw":
+        return "Withdrawal submitted successfully.";
+      case "borrow":
+        return "Borrow submitted successfully.";
+      case "repay":
+        return "Repayment submitted successfully.";
+    }
+  }, [action]);
 
   if (!pool) return null;
 
   const cfg = ACTION_CONFIG[action];
   const apy = pool[cfg.apyKey];
   const maxAmount = parseFloat(pool.availableLiquidity);
+  const canSubmit = Boolean(userAddress);
 
   const handleSubmit = async (values: LendingActionFormValues) => {
-    const amount = parseFloat(values.amount);
-    const user = userAddress ?? "anonymous";
-
-    let hash: string;
-
-    if (action === "supply" || action === "withdraw") {
-      const result = await lendingApi.deposit(pool.id, {
-        user,
-        amount,
-      });
-      hash = result.transactionHash;
-    } else {
-      // borrow / repay both hit the borrow endpoint
-      // (repay is the same flow but the backend differentiates by sign)
-      const result = await lendingApi.borrow(pool.id, {
-        borrower: user,
-        collateralPropertyId: pool.id,
-        collateralShares: amount,
-        borrowAmount: amount,
-      });
-      hash = result.transactionHash;
+    if (!userAddress) {
+      throw new Error(
+        "Connect your wallet before submitting a lending action.",
+      );
     }
 
-    setTxHash(hash);
+    const amount = parseFloat(values.amount);
+
+    if (action === "supply") {
+      await lendingApi.deposit(pool.id, {
+        userAddress,
+        amount,
+      });
+    } else if (action === "withdraw") {
+      await lendingApi.withdraw(pool.id, {
+        userAddress,
+        amount,
+      });
+    } else if (action === "borrow") {
+      await lendingApi.borrow(pool.id, {
+        userAddress,
+        collateralAmount: amount,
+        collateralAsset: pool.assetAddress,
+        borrowAmount: amount,
+      });
+    } else {
+      await lendingApi.repay(pool.id, {
+        userAddress,
+        amount,
+      });
+    }
+
+    setTxHash(`submitted-${Date.now()}`);
     onSuccess?.();
 
     // Auto-close after showing the hash
@@ -146,21 +168,15 @@ export function PoolActionModal({
           </div>
           <div>
             <p className="text-base font-semibold text-white mb-1">
-              Transaction Submitted
+              Action submitted
             </p>
-            <p className="text-xs text-neutral-500 mb-3">
-              Your transaction has been sent to the Stellar network.
-            </p>
-            <a
-              href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`View transaction ${txHash} on Stellar Explorer`}
-              className="inline-flex items-center gap-1.5 text-xs text-[#ff3e00] hover:underline font-mono"
-            >
-              {shortenTxHash(txHash)}
-              <ExternalLink className="w-3 h-3" aria-hidden="true" />
-            </a>
+            <p className="text-xs text-neutral-500 mb-3">{successMessage}</p>
+            {txHash ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-[#ff3e00] font-mono">
+                {shortenTxHash(txHash)}
+                <ExternalLink className="w-3 h-3" aria-hidden="true" />
+              </span>
+            ) : null}
           </div>
         </div>
       ) : (
@@ -170,7 +186,7 @@ export function PoolActionModal({
             asset: pool.asset,
           })}
           defaultValues={{ amount: "", zkPrivacy: false }}
-          successMessage="Transaction submitted."
+          successMessage={successMessage}
           onSubmit={handleSubmit}
         >
           {({ watch, setValue, formState }) => {
@@ -178,6 +194,12 @@ export function PoolActionModal({
             return (
               <div className="space-y-6">
                 {/* Pool identity banner */}
+                {!canSubmit ? (
+                  <div className="rounded-lg border border-[#ff3e00]/30 bg-[#ff3e00]/10 p-4 text-sm text-neutral-200">
+                    Connect your wallet before submitting this action.
+                  </div>
+                ) : null}
+
                 <div
                   className="flex items-center gap-3 p-4 bg-[#1a1a1a] border border-[#262626] rounded-lg"
                   aria-label={`Pool: ${pool.name}`}
@@ -258,7 +280,9 @@ export function PoolActionModal({
                   isSecure
                   type="submit"
                   isLoading={formState.isSubmitting}
-                  disabled={!formState.isValid || formState.isSubmitting}
+                  disabled={
+                    !canSubmit || !formState.isValid || formState.isSubmitting
+                  }
                   aria-label={`${cfg.buttonText} ${pool.asset} from ${pool.name}`}
                 >
                   {cfg.buttonText}
