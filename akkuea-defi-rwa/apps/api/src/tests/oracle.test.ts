@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from 'bun:test';
+import { describe, test, expect } from 'bun:test';
 import { OracleService } from '../services/OracleService';
 import { ValuationRepository } from '../repositories/ValuationRepository';
 import type { RealEstateValuationPayload } from '@real-estate-defi/shared';
@@ -151,7 +151,7 @@ describe('OracleService.getValuationHistory', () => {
     const history = OracleService.getValuationHistory(propertyId);
     expect(history.length).toBe(3);
     // Should be sorted most recent first
-    expect(history[0].price).toBe(120_000);
+    expect(history[0]!.price).toBe(120_000);
   });
 
   test('respects limit parameter', () => {
