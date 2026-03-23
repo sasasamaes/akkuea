@@ -39,8 +39,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd akkuea-defi-rwa/apps/webapp
-          bun install
+          cd akkuea-defi-rwa
+          bun install --frozen-lockfile
 
       - name: Type checking
         run: |
@@ -121,8 +121,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd akkuea-defi-rwa/apps/webapp
-          bun install
+          cd akkuea-defi-rwa
+          bun install --frozen-lockfile
 
       - name: Audit dependencies
         run: |
