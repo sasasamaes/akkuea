@@ -3,6 +3,7 @@ import { ApiError } from '../errors/ApiError';
 import { lendingRepository } from '../repositories/LendingRepository';
 import { userRepository } from '../repositories/UserRepository';
 import { CreatePoolDto, DepositDto, WithdrawDto, BorrowDto, RepayDto } from '../dto/lending.dto';
+import { positionService } from '../services/PositionService';
 
 export class LendingController {
   /**
@@ -238,15 +239,15 @@ export class LendingController {
   /**
    * Get user's deposit positions in a pool
    */
-  static async getUserDeposits(ctx: Context<{ params: { id: string; address: string } }>): Promise<Response> {
+  static async getUserDeposits(
+    ctx: Context<{ params: { id: string; address: string } }>,
+  ): Promise<Response> {
     const { id: poolId, address } = ctx.params;
-
-    const user = await userRepository.findByWalletAddress(address);
-    if (!user) {
-      return this.jsonResponse([]);
+    if (!positionService.validateAddress(address)) {
+      throw new ApiError(400, 'INVALID_ADDRESS', 'Invalid Stellar address format');
     }
 
-    const deposits = await lendingRepository.getUserDeposits(poolId, user.id);
+    const deposits = await positionService.getUserDeposits(poolId, address);
 
     return this.jsonResponse(deposits);
   }
@@ -254,16 +255,32 @@ export class LendingController {
   /**
    * Get user's borrow positions in a pool
    */
-  static async getUserBorrows(ctx: Context<{ params: { id: string; address: string } }>): Promise<Response> {
+  static async getUserBorrows(
+    ctx: Context<{ params: { id: string; address: string } }>,
+  ): Promise<Response> {
     const { id: poolId, address } = ctx.params;
-
-    const user = await userRepository.findByWalletAddress(address);
-    if (!user) {
-      return this.jsonResponse([]);
+    if (!positionService.validateAddress(address)) {
+      throw new ApiError(400, 'INVALID_ADDRESS', 'Invalid Stellar address format');
     }
 
-    const borrows = await lendingRepository.getUserBorrows(poolId, user.id);
+    const borrows = await positionService.getUserBorrows(poolId, address);
 
     return this.jsonResponse(borrows);
+  }
+
+  /**
+   * Get user position summary in a pool
+   */
+  static async getUserPositionSummary(
+    ctx: Context<{ params: { id: string; address: string } }>,
+  ): Promise<Response> {
+    const { id: poolId, address } = ctx.params;
+    if (!positionService.validateAddress(address)) {
+      throw new ApiError(400, 'INVALID_ADDRESS', 'Invalid Stellar address format');
+    }
+
+    const summary = await positionService.getPositionSummary(poolId, address);
+
+    return this.jsonResponse(summary);
   }
 }

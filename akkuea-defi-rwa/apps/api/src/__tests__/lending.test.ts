@@ -281,6 +281,17 @@ describe('Lending Routes', () => {
       expect([200, 500]).toContain(response.status);
     });
   });
+
+  describe('GET /lending/pools/:id/user/:address/summary', () => {
+    it('should reject malformed Stellar addresses', async () => {
+      const response = await app.handle(
+        new Request(`http://localhost/lending/pools/${VALID_UUID}/user/INVALID_ADDRESS/summary`),
+      );
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.error).toBe('INVALID_ADDRESS');
+    });
+  });
 });
 
 describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB required)', () => {
@@ -549,5 +560,21 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     expect(response.status).toBe(200);
     const deposits = await response.json();
     expect(deposits).toEqual([]);
+  });
+
+  it('should return position summary for a seeded user', async () => {
+    const response = await app.handle(
+      new Request(`http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/summary`),
+    );
+    expect(response.status).toBe(200);
+    const summary = await response.json();
+    expect(summary.poolId).toBe(testPoolId);
+    expect(summary.userId).toBe(testUserId);
+    expect(summary.walletAddress).toBe(VALID_STELLAR_ADDRESS);
+    expect(summary.depositCount).toBeGreaterThan(0);
+    expect(summary.borrowCount).toBeGreaterThan(0);
+    expect(parseFloat(summary.totalDeposits)).toBeGreaterThan(0);
+    expect(parseFloat(summary.totalBorrows)).toBeGreaterThan(0);
+    expect(parseFloat(summary.netWorth)).toBeGreaterThan(0);
   });
 });

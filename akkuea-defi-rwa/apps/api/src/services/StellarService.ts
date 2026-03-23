@@ -50,15 +50,15 @@ export class StellarService {
       );
     }
 
-    this.validateContractId(contractId);
-    this.validateAddress(adminPublicKey);
+    this.assertValidContractId(contractId);
+    this.assertValidAddress(adminPublicKey);
 
     return { contractId, adminPublicKey, adminSecret };
   }
 
   async getAccountBalance(address: string): Promise<string> {
     try {
-      this.validateAddress(address);
+      this.assertValidAddress(address);
       const account = await this.server.accounts().accountId(address).call();
       const nativeBalance = account.balances.find((balance) => balance.asset_type === 'native');
       return nativeBalance?.balance ?? '0';
@@ -104,8 +104,8 @@ export class StellarService {
     }
 
     try {
-      this.validateContractId(contractId);
-      this.validateAddress(sourceAccount);
+      this.assertValidContractId(contractId);
+      this.assertValidAddress(sourceAccount);
 
       const accountRecord = await this.server.accounts().accountId(sourceAccount).call();
       const account = new Account(accountRecord.id, accountRecord.sequence);
@@ -131,9 +131,9 @@ export class StellarService {
       throw ApiError.badRequest('Tokenization amount must be greater than zero');
     }
 
-    this.validateAddress(params.adminPublicKey);
-    this.validateAddress(params.recipient);
-    this.validateContractId(params.contractId);
+    this.assertValidAddress(params.adminPublicKey);
+    this.assertValidAddress(params.recipient);
+    this.assertValidContractId(params.contractId);
 
     let signedXdr: string;
 
@@ -178,20 +178,23 @@ export class StellarService {
   }
 
   validateAddress(address: string): boolean {
-    try {
-      StrKey.decodeEd25519PublicKey(address);
-      return true;
-    } catch {
+    return StrKey.isValidEd25519PublicKey(address);
+  }
+
+  assertValidAddress(address: string): void {
+    if (!this.validateAddress(address)) {
       throw ApiError.badRequest('Invalid Stellar address format');
     }
   }
 
   validateContractId(contractId: string): boolean {
-    if (!/^C[A-Z2-7]{55}$/.test(contractId)) {
+    return /^C[A-Z2-7]{55}$/.test(contractId);
+  }
+
+  assertValidContractId(contractId: string): void {
+    if (!this.validateContractId(contractId)) {
       throw ApiError.badRequest('Invalid Soroban contract ID format');
     }
-
-    return true;
   }
 }
 
