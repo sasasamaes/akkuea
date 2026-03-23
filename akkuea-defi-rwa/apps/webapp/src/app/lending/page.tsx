@@ -26,6 +26,7 @@ import {
   CardContent,
   Button,
   Badge,
+  FreshnessIndicator,
   Input,
   Modal,
 } from "@/components/ui";
@@ -196,9 +197,16 @@ function StatCardSkeleton() {
 export default function LendingPage() {
   const { isConnected, connect, isConnecting, address } = useWallet();
 
-  const { pools, userPositions, isLoading, error, refetch } = useLendingPools(
-    isConnected ? address : null,
-  );
+  const {
+    pools,
+    userPositions,
+    isLoading,
+    error,
+    refetch,
+    connectionStatus,
+    lastUpdatedAt,
+    isPolling,
+  } = useLendingPools(isConnected ? address : null);
 
   // Flatten all borrow positions across all pools for health factor computation
   const allBorrows = useMemo(
@@ -393,8 +401,16 @@ export default function LendingPage() {
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div>
-              <h1 className="text-2xl font-bold text-white">DeFi Lending</h1>
-              <p className="text-sm text-neutral-500 mt-1">
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold text-white">DeFi Lending</h1>
+                <FreshnessIndicator
+                  lastUpdatedAt={lastUpdatedAt}
+                  connectionStatus={connectionStatus}
+                  isPolling={isPolling}
+                  onRefresh={refetch}
+                />
+              </div>
+              <p className="text-sm text-neutral-500">
                 Supply liquidity to earn yields or borrow against your RWA
                 collateral
               </p>

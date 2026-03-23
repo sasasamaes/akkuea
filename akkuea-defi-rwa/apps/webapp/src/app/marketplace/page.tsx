@@ -33,6 +33,7 @@ import {
   Badge,
   Button,
   Card,
+  FreshnessIndicator,
   Input,
   SkeletonPropertyCard,
 } from "@/components/ui";
@@ -218,7 +219,15 @@ function PropertyCard({
 }
 
 export default function MarketplacePage() {
-  const { properties, isLoading, error, refetch } = useProperties();
+  const {
+    properties,
+    isLoading,
+    error,
+    refetch,
+    connectionStatus,
+    lastUpdatedAt,
+    isPolling,
+  } = useProperties();
   const { isConnected, connect, isConnecting, address } = useWallet();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -356,15 +365,23 @@ export default function MarketplacePage() {
 
           <motion.div
             variants={staggerItem}
-            className="flex items-center justify-between"
+            className="flex flex-wrap items-center justify-between gap-4"
           >
-            <p className="font-mono text-xs text-neutral-500">
-              Showing{" "}
-              <span className="font-medium text-white">
-                {filteredProperties.length}
-              </span>{" "}
-              properties
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="font-mono text-xs text-neutral-500">
+                Showing{" "}
+                <span className="font-medium text-white">
+                  {filteredProperties.length}
+                </span>{" "}
+                properties
+              </p>
+              <FreshnessIndicator
+                lastUpdatedAt={lastUpdatedAt}
+                connectionStatus={connectionStatus}
+                isPolling={isPolling}
+                onRefresh={() => void refetch()}
+              />
+            </div>
             {!isConnected && (
               <p className="text-xs text-neutral-500">
                 Connect your wallet to unlock investing.
