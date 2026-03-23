@@ -5,11 +5,11 @@ import {
   NotFoundError,
   AuthenticationError,
   AuthorizationError,
-  NotImplementedError,
 } from '@real-estate-defi/shared';
 import { and, eq } from 'drizzle-orm';
 import { logger } from '../services/logger';
 import { db } from '../db';
+import { tokenizationService, type TokenizationResponse } from '../services/TokenizationService';
 import {
   propertyRepository,
   type PropertyFilter,
@@ -474,15 +474,12 @@ export class PropertyController {
    * Tokenize a property on the blockchain
    * Note: This feature is planned for Cycle 2
    */
-  static async tokenizeProperty(id: string, _data: unknown, userAddress?: string): Promise<never> {
-    logger.info('Tokenization attempted', {
-      operation: 'TOKENIZE',
-      entity: 'property',
-      entityId: id,
-      userId: userAddress,
-    });
-
-    throw new NotImplementedError('Property tokenization');
+  static async tokenizeProperty(
+    id: string,
+    _data: unknown,
+    userAddress?: string,
+  ): Promise<TokenizationResponse> {
+    return tokenizationService.tokenizeProperty(id, userAddress);
   }
 
   /**
