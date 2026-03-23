@@ -1,20 +1,20 @@
-import { render, screen } from "@testing-library/react";
+import "@/test/setup-dom";
+import { render } from "@testing-library/react";
 import KYCStatus from "../KYCStatus";
-import "@testing-library/jest-dom";
 
 describe("KYCStatus", () => {
   it("displays pending status", () => {
-    render(<KYCStatus status="pending" />);
-    expect(screen.getByText(/Verification Pending/i)).toBeInTheDocument();
+    const view = render(<KYCStatus status="pending" />);
+    expect(view.queryByText(/Verification Pending/i)).not.toBeNull();
   });
 
   it("displays approved status", () => {
-    render(<KYCStatus status="approved" />);
-    expect(screen.getByText(/KYC Approved/i)).toBeInTheDocument();
+    const view = render(<KYCStatus status="approved" />);
+    expect(view.queryByText(/KYC Approved/i)).not.toBeNull();
   });
 
   it("displays rejected status", () => {
-    render(<KYCStatus status="rejected" />);
-    expect(screen.getByText(/KYC Rejected/i)).toBeInTheDocument();
+    const view = render(<KYCStatus status="rejected" />);
+    expect(view.queryByText(/KYC Rejected/i)).not.toBeNull();
   });
 });
