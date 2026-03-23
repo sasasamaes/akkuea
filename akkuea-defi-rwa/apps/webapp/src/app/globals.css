@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  --font-geist-sans:
+    "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-geist-mono:
+    "SFMono-Regular", "IBM Plex Mono", "Menlo", "Monaco", monospace;
   --background: #000000;
   --foreground: #fafafa;
   --card: #0a0a0a;

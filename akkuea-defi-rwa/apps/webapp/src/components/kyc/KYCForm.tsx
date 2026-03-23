@@ -44,7 +44,7 @@ export default function KYCForm() {
     } catch {
       console.error("Invalid form data");
     }
-  }, []);
+  }, [reset]);
 
   // Auto-save form changes
   useEffect(() => {

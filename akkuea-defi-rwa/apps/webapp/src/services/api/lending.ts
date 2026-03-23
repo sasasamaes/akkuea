@@ -111,10 +111,7 @@ export const lendingApi = {
     return response.data;
   },
 
-  async repay(
-    poolId: string,
-    payload: RepayPayload,
-  ): Promise<BorrowPosition> {
+  async repay(poolId: string, payload: RepayPayload): Promise<BorrowPosition> {
     const response = await apiClient.post<BorrowPosition>(
       `/lending/pools/${poolId}/repay`,
       { amount: payload.amount.toString() },

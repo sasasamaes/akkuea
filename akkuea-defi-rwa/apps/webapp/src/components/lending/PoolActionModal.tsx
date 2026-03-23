@@ -109,7 +109,9 @@ export function PoolActionModal({
 
   const handleSubmit = async (values: LendingActionFormValues) => {
     if (!userAddress) {
-      throw new Error("Connect your wallet before submitting a lending action.");
+      throw new Error(
+        "Connect your wallet before submitting a lending action.",
+      );
     }
 
     const amount = parseFloat(values.amount);
@@ -155,8 +157,8 @@ export function PoolActionModal({
         setTxHash(null);
         onClose();
       }}
-          title={cfg.title}
-          description={cfg.description}
+      title={cfg.title}
+      description={cfg.description}
     >
       {/* Success state — show TX hash */}
       {txHash ? (
@@ -168,9 +170,7 @@ export function PoolActionModal({
             <p className="text-base font-semibold text-white mb-1">
               Action submitted
             </p>
-            <p className="text-xs text-neutral-500 mb-3">
-              {successMessage}
-            </p>
+            <p className="text-xs text-neutral-500 mb-3">{successMessage}</p>
             {txHash ? (
               <span className="inline-flex items-center gap-1.5 text-xs text-[#ff3e00] font-mono">
                 {shortenTxHash(txHash)}
@@ -280,7 +280,9 @@ export function PoolActionModal({
                   isSecure
                   type="submit"
                   isLoading={formState.isSubmitting}
-                  disabled={!canSubmit || !formState.isValid || formState.isSubmitting}
+                  disabled={
+                    !canSubmit || !formState.isValid || formState.isSubmitting
+                  }
                   aria-label={`${cfg.buttonText} ${pool.asset} from ${pool.name}`}
                 >
                   {cfg.buttonText}

@@ -125,14 +125,14 @@ describe("Lending API", () => {
       };
 
       const mockResponse: DepositPosition = {
-          id: "550e8400-e29b-41d4-a716-446655440010",
-          poolId: "550e8400-e29b-41d4-a716-446655440001",
-          depositor: VALID_STELLAR_ADDRESS,
-          amount: "1000",
-          shares: "1000",
-          depositedAt: "2024-01-15T10:00:00Z",
-          lastAccrualAt: "2024-01-15T10:00:00Z",
-          accruedInterest: "12.5",
+        id: "550e8400-e29b-41d4-a716-446655440010",
+        poolId: "550e8400-e29b-41d4-a716-446655440001",
+        depositor: VALID_STELLAR_ADDRESS,
+        amount: "1000",
+        shares: "1000",
+        depositedAt: "2024-01-15T10:00:00Z",
+        lastAccrualAt: "2024-01-15T10:00:00Z",
+        accruedInterest: "12.5",
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -170,16 +170,16 @@ describe("Lending API", () => {
       };
 
       const mockResponse: BorrowPosition = {
-          id: "550e8400-e29b-41d4-a716-446655440020",
-          poolId: "550e8400-e29b-41d4-a716-446655440001",
-          borrower: VALID_STELLAR_ADDRESS,
-          principal: "5000",
-          accruedInterest: "0",
-          collateralAmount: "10000",
-          collateralAsset: VALID_STELLAR_ADDRESS,
-          healthFactor: 1.8,
-          borrowedAt: "2024-01-15T12:00:00Z",
-          lastAccrualAt: "2024-01-15T12:00:00Z",
+        id: "550e8400-e29b-41d4-a716-446655440020",
+        poolId: "550e8400-e29b-41d4-a716-446655440001",
+        borrower: VALID_STELLAR_ADDRESS,
+        principal: "5000",
+        accruedInterest: "0",
+        collateralAmount: "10000",
+        collateralAsset: VALID_STELLAR_ADDRESS,
+        healthFactor: 1.8,
+        borrowedAt: "2024-01-15T12:00:00Z",
+        lastAccrualAt: "2024-01-15T12:00:00Z",
       };
 
       const { fetchMock, calls } = setupMockFetch({
