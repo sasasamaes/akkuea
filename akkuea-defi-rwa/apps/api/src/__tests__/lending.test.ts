@@ -456,6 +456,38 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
     expect(parseFloat(pool.availableLiquidity)).toBe(800);
   });
 
+  it('should clamp overpayment and close the borrow position cleanly', async () => {
+    const response = await app.handle(
+      new Request(`http://localhost/lending/pools/${testPoolId}/repay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': testUserId,
+        },
+        body: JSON.stringify({ amount: '9999' }),
+      }),
+    );
+    expect(response.status).toBe(200);
+
+    const position = await response.json();
+    expect(parseFloat(position.principal)).toBe(0);
+    expect(parseFloat(position.collateralAmount)).toBe(0);
+
+    const poolRes = await app.handle(new Request(`http://localhost/lending/pools/${testPoolId}`));
+    const pool = await poolRes.json();
+    expect(parseFloat(pool.totalBorrows)).toBe(0);
+    expect(parseFloat(pool.availableLiquidity)).toBe(1000);
+
+    const borrowsRes = await app.handle(
+      new Request(
+        `http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/borrows`,
+      ),
+    );
+    const borrows = await borrowsRes.json();
+    expect(Array.isArray(borrows)).toBe(true);
+    expect(borrows).toHaveLength(0);
+  });
+
   it('should withdraw and update pool balance', async () => {
     const response = await app.handle(
       new Request(`http://localhost/lending/pools/${testPoolId}/withdraw`, {

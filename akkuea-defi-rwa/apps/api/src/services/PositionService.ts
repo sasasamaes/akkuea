@@ -40,7 +40,15 @@ export interface PositionSummary {
 export interface PositionServiceDependencies {
   lendingRepository: Pick<LendingRepository, 'findById' | 'getUserDeposits' | 'getUserBorrows'>;
   userRepository: Pick<UserRepository, 'findByWalletAddress'>;
-  stellarService: Pick<StellarService, 'validateAddress' | 'callContract'>;
+  stellarService: {
+    validateAddress(address: string): boolean;
+    callContract(
+      contractId: string,
+      method: string,
+      args?: unknown[],
+      sourceAccount?: string,
+    ): Promise<unknown>;
+  };
   now: () => Date;
 }
 
