@@ -179,6 +179,59 @@ impl PositionStorage {
         Self::remove_from_user_borrows(env, borrower, pool_id);
     }
 
+    /// Apply a repayment to a borrow position.
+    ///
+    /// Returns `(updated_position, repaid_amount, remaining_debt, collateral_released)`.
+    /// When the repayment fully closes the debt, `updated_position` is `None`.
+    pub fn apply_repayment(
+        env: &Env,
+        position: &BorrowPosition,
+        amount: i128,
+    ) -> (Option<BorrowPosition>, i128, i128, i128) {
+        if amount <= 0 {
+            panic!("amount must be positive");
+        }
+
+        let current_debt = Self::calculate_current_debt(env, position);
+        if current_debt <= 0 {
+            panic!("borrow position has no debt");
+        }
+
+        let repaid_amount = if amount > current_debt {
+            current_debt
+        } else {
+            amount
+        };
+        let remaining_debt = current_debt - repaid_amount;
+
+        let collateral_released = if remaining_debt == 0 {
+            position.collateral_amount
+        } else {
+            (position.collateral_amount * repaid_amount) / current_debt
+        };
+
+        if remaining_debt == 0 {
+            return (None, repaid_amount, 0, collateral_released);
+        }
+
+        let updated_position = BorrowPosition {
+            pool_id: position.pool_id.clone(),
+            borrower: position.borrower.clone(),
+            principal: remaining_debt,
+            index_at_borrow: InterestStorage::get_interest_index(env, &position.pool_id),
+            collateral_amount: position.collateral_amount - collateral_released,
+            collateral_asset: position.collateral_asset.clone(),
+            borrowed_at: position.borrowed_at,
+        };
+
+        (
+            Some(updated_position),
+            repaid_amount,
+            remaining_debt,
+            collateral_released,
+        )
+    }
+
     /// Get user's borrow pool IDs
     pub fn get_user_borrows(env: &Env, user: &Address) -> Vec<String> {
         let key = LendingKey::UserBorrows(user.clone());
