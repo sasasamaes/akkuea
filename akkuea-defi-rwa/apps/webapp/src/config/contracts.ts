@@ -28,22 +28,22 @@ interface NetworkConfig {
  */
 const NETWORKS: Record<string, NetworkConfig> = {
   testnet: {
-    name: 'testnet',
-    rpcUrl: 'https://soroban-testnet.stellar.org',
-    horizonUrl: 'https://horizon-testnet.stellar.org',
-    passphrase: 'Test SDF Network ; September 2015',
+    name: "testnet",
+    rpcUrl: "https://soroban-testnet.stellar.org",
+    horizonUrl: "https://horizon-testnet.stellar.org",
+    passphrase: "Test SDF Network ; September 2015",
   },
   mainnet: {
-    name: 'mainnet',
-    rpcUrl: 'https://rpc.mainnet.stellar.org',
-    horizonUrl: 'https://horizon.stellar.org',
-    passphrase: 'Public Global Stellar Network ; September 2015',
+    name: "mainnet",
+    rpcUrl: "https://rpc.mainnet.stellar.org",
+    horizonUrl: "https://horizon.stellar.org",
+    passphrase: "Public Global Stellar Network ; September 2015",
   },
   standalone: {
-    name: 'standalone',
-    rpcUrl: 'http://localhost:8000/soroban/rpc',
-    horizonUrl: 'http://localhost:8000',
-    passphrase: 'Standalone Network ; February 2017',
+    name: "standalone",
+    rpcUrl: "http://localhost:8000/soroban/rpc",
+    horizonUrl: "http://localhost:8000",
+    passphrase: "Standalone Network ; February 2017",
   },
 };
 
@@ -51,28 +51,22 @@ const NETWORKS: Record<string, NetworkConfig> = {
  * Get the current network configuration with fallback to defaults
  */
 function getNetworkConfig(): NetworkConfig {
-  const networkName =
-    process.env.NEXT_PUBLIC_STELLAR_NETWORK || 'testnet';
+  const networkName = process.env.NEXT_PUBLIC_STELLAR_NETWORK || "testnet";
   const network = NETWORKS[networkName];
 
   if (!network) {
-    console.warn(
-      `Unknown network: ${networkName}. Falling back to testnet.`,
-    );
+    console.warn(`Unknown network: ${networkName}. Falling back to testnet.`);
     return NETWORKS.testnet;
   }
 
   // Allow environment variable overrides
   return {
     name: networkName,
-    rpcUrl:
-      process.env.NEXT_PUBLIC_STELLAR_RPC_URL || network.rpcUrl,
+    rpcUrl: process.env.NEXT_PUBLIC_STELLAR_RPC_URL || network.rpcUrl,
     horizonUrl:
-      process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL ||
-      network.horizonUrl,
+      process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL || network.horizonUrl,
     passphrase:
-      process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE ||
-      network.passphrase,
+      process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE || network.passphrase,
   };
 }
 
@@ -98,9 +92,7 @@ function validateContractConfig(config: ContractConfig): string[] {
   const errors: string[] = [];
 
   if (!config.rwaDefiContractId) {
-    errors.push(
-      'NEXT_PUBLIC_RWA_DEFI_CONTRACT_ID is not configured',
-    );
+    errors.push("NEXT_PUBLIC_RWA_DEFI_CONTRACT_ID is not configured");
   }
 
   return errors;
@@ -115,9 +107,9 @@ const contractConfig = loadContractConfig();
 const validationErrors = validateContractConfig(contractConfig);
 if (validationErrors.length > 0) {
   console.warn(
-    '[Contract Config] Configuration incomplete:\n' +
-      validationErrors.map((e) => `  - ${e}`).join('\n') +
-      '\n\nSee docs/contracts/deployment.md for setup instructions.',
+    "[Contract Config] Configuration incomplete:\n" +
+      validationErrors.map((e) => `  - ${e}`).join("\n") +
+      "\n\nSee docs/contracts/deployment.md for setup instructions.",
   );
 }
 
@@ -146,13 +138,13 @@ export const NETWORK_CONFIG = {
  * Helper function to get contract ID with runtime validation
  * Throws error if contract is not configured
  */
-export function getContractId(contractName: 'rwa-defi'): string {
+export function getContractId(_contractName: "rwa-defi"): string {
   const id = CONTRACTS.RWA_DEFI_CONTRACT_ID;
 
   if (!id) {
     throw new Error(
-      `Contract ID for ${contractName} is not configured. ` +
-        'Ensure NEXT_PUBLIC_RWA_DEFI_CONTRACT_ID environment variable is set.',
+      `Contract ID for ${_contractName} is not configured. ` +
+        "Ensure NEXT_PUBLIC_RWA_DEFI_CONTRACT_ID environment variable is set.",
     );
   }
 
@@ -162,7 +154,8 @@ export function getContractId(contractName: 'rwa-defi'): string {
 /**
  * Helper to check if contracts are configured
  */
-export function isContractConfigured(contractName: 'rwa-defi'): boolean {
+export function isContractConfigured(_contractName: "rwa-defi"): boolean {
+  void _contractName;
   return !!CONTRACTS.RWA_DEFI_CONTRACT_ID;
 }
 
@@ -171,7 +164,7 @@ export function isContractConfigured(contractName: 'rwa-defi'): boolean {
  * Returns null if contracts are not configured
  */
 export function useContractConfig() {
-  const configured = isContractConfigured('rwa-defi');
+  const configured = isContractConfigured("rwa-defi");
 
   if (!configured) {
     return null;
