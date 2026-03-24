@@ -32,7 +32,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        cd akkuea-defi-rwa
+        cd akkuea-defi-rwa/apps/api
         bun install --frozen-lockfile || {
           echo "Dependency installation failed, trying without frozen lockfile..."
           bun install
@@ -71,7 +71,7 @@ jobs:
       
     - name: Install dependencies
       run: |
-        cd akkuea-defi-rwa
+        cd akkuea-defi-rwa/apps/api
         bun install
         
     - name: Audit dependencies
@@ -79,10 +79,7 @@ jobs:
         cd akkuea-defi-rwa/apps/api
         
         # Check for vulnerabilities in dependencies
-        bun audit || {
-          echo "bun audit reported vulnerabilities or the audit service was unavailable"
-          exit 0
-        }
+        bun audit
 
   code-quality:
     name: Code Quality
@@ -97,7 +94,7 @@ jobs:
       
     - name: Install dependencies
       run: |
-        cd akkuea-defi-rwa
+        cd akkuea-defi-rwa/apps/api
         bun install
         
     - name: Complexity analysis
