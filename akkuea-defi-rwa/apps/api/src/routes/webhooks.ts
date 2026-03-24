@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { webhookController } from '../controllers/WebhookController';
 import type { WebhookPayload } from '../services/WebhookService';
+import { rateLimit } from '../middleware';
 
 export const webhookRoutes = new Elysia({ prefix: '/webhooks' })
     .post(
@@ -15,6 +16,7 @@ export const webhookRoutes = new Elysia({ prefix: '/webhooks' })
                 network: t.Optional(t.String()),
                 timestamp: t.Optional(t.String()),
             }),
+            beforeHandle: [rateLimit()],
             detail: {
                 summary: 'Handle transaction webhooks',
                 description: 'Receives notifications from Stellar network and updates transaction status',
