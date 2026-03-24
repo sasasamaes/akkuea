@@ -1,8 +1,10 @@
 pub mod admin;
+pub mod emergency;
 pub mod roles;
 
 pub use admin::{AdminControl, PauseControl};
-pub use roles::{Role, RoleStorage};
+pub use emergency::TimelockControl;
+pub use roles::{PendingRecoveryData, Role, RoleStorage};
 
 use soroban_sdk::{Address, Env};
 
