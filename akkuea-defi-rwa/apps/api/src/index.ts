@@ -1,6 +1,6 @@
-import { Elysia } from 'elysia';
-import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
+import app from './app';
+import { checkDatabaseHealth, closeDatabaseConnection } from './db';
 import { propertyRoutes } from './routes/properties';
 import { lendingRoutes } from './routes/lending';
 import { userRoutes } from './routes/users';
@@ -9,8 +9,7 @@ import { oracleRoutes } from './routes/oracle';
 import { riskMonitoringRoutes } from './routes/riskMonitoring';
 import { errorHandler } from './middleware/errorHandler';
 
-const app = new Elysia()
-  .use(cors())
+app
   .use(
     swagger({
       documentation: {
@@ -30,16 +29,39 @@ const app = new Elysia()
   .use(kycRoutes)
   .use(oracleRoutes)
   .use(riskMonitoringRoutes)
-  .get('/health', () => ({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
-  }))
-  .listen(process.env.PORT || 3001);
+  .get('/health', async () => {
+    const dbHealth = await checkDatabaseHealth();
 
-// eslint-disable-next-line no-console
+    return {
+      status: dbHealth.healthy ? 'healthy' : 'unhealthy',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      services: {
+        database: {
+          healthy: dbHealth.healthy,
+          latency: dbHealth.latency,
+          ...(dbHealth.error && { error: dbHealth.error }),
+        },
+      },
+    };
+  })
+  .listen({
+    port: Number(process.env.PORT) || 3001,
+    hostname: '0.0.0.0',
+  });
+
 console.log(`🚀 Real Estate DeFi API is running on port ${process.env.PORT || 3001}`);
-// eslint-disable-next-line no-console
 console.log(`📚 Swagger docs available at http://localhost:${process.env.PORT || 3001}/swagger`);
+
+const shutdown = async (signal: string) => {
+  console.log(`\n${signal} received, closing database connections...`);
+  await closeDatabaseConnection();
+
+  console.log('Database connections closed. Exiting...');
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 export default app;

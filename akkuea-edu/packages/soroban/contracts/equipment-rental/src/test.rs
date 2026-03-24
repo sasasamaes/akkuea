@@ -380,10 +380,11 @@ fn test_payment_same_equipmnent_available_after_completed() {
     let _ = test.contract.get_rentals_by_equipment_id(&(1 as u64));
 
     let next_timestamp = test.env.ledger().timestamp() + duration + 10;
+    let current_ledger = test.env.ledger().get();
 
     test.env.ledger().set(LedgerInfo {
         timestamp: next_timestamp,
-        protocol_version: 22,
+        protocol_version: current_ledger.protocol_version,
         sequence_number: test.env.ledger().sequence(),
         network_id: Default::default(),
         base_reserve: 0,

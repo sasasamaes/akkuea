@@ -2,36 +2,52 @@
   "name": "@real-estate-defi/api",
   "version": "1.0.0",
   "description": "Backend API for Real Estate DeFi platform",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch index.ts",
-    "build": "bun build index.ts --target bun --outdir dist",
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir dist",
     "start": "bun run dist/index.js",
     "test": "bun test",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,json}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run src/db/migrate.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.1",
     "@elysiajs/swagger": "^1.3.1",
     "@real-estate-defi/shared": "workspace:*",
-    "elysia": "^1.4.26",
+    "bun": "^1.3.9",
+    "drizzle-orm": "^0.38.4",
+    "elysia": "^1.4.25",
     "file-type": "^21.3.4",
+    "install": "^0.13.0",
+    "postgres": "^3.4.8",
     "soroban-client": "^1.0.1",
-    "stellar-sdk": "^13.3.0"
+    "stellar-sdk": "^13.3.0",
+    "zod": "3.24.4"
+  },
+  "resolutions": {
+    "zod": "3.24.4"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.3",
     "@types/bun": "latest",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
     "complexity-report": "^2.0.0-alpha",
-    "eslint": "^8.57.1",
+    "drizzle-kit": "^1.0.0-beta.9-e89174b",
+    "eslint": "^9.39.3",
     "eslint-config-prettier": "^9.1.2",
-    "prettier": "^3.7.4",
-    "typescript": "^5.9.3"
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0"
   },
   "peerDependencies": {
     "typescript": "^5"

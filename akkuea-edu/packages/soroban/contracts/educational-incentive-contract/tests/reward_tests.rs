@@ -50,7 +50,7 @@ fn test_event_emission() {
     );
 
     let events = env.events().all();
-    assert!(!events.is_empty(), "No events emitted for ContentCreation");
+    assert!(!events.events().is_empty(), "No events emitted for ContentCreation");
 }
 
 #[test]
@@ -63,7 +63,7 @@ fn test_raw_event_emission() {
     let user = Address::generate(&env);
     client.log_reward_event(&user, &RewardType::ContentCreation, &100);
     let events = env.events().all();
-    assert!(!events.is_empty(), "No raw events emitted");
+    assert!(!events.events().is_empty(), "No raw events emitted");
 }
 
 #[test]
@@ -75,12 +75,8 @@ fn test_alternative_event_emission() {
 
     let user = Address::generate(&env);
     client.distribute_rewards(&user, &RewardType::ContentCreation, &100);
-    let events: soroban_sdk::Vec<(
-        Address,
-        soroban_sdk::Vec<soroban_sdk::Val>,
-        soroban_sdk::Val,
-    )> = env.events().all();
-    assert!(!events.is_empty(), "No alternative events emitted");
+    let events = env.events().all();
+    assert!(!events.events().is_empty(), "No alternative events emitted");
 }
 
 #[test]
@@ -93,7 +89,7 @@ fn test_contract_event_emission() {
     let user = Address::generate(&env);
     client.distribute_rewards(&user, &RewardType::ContentCreation, &100);
     let events = env.events().all();
-    assert!(!events.is_empty(), "No contract events emitted");
+    assert!(!events.events().is_empty(), "No contract events emitted");
 }
 
 #[test]
@@ -163,7 +159,7 @@ fn test_reward_invalid_amount() {
 
         let events = env.events().all();
         assert!(
-            events.is_empty(),
+            events.events().is_empty(),
             "No events should be emitted for invalid amount {}",
             amount
         );

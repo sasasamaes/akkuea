@@ -675,7 +675,7 @@ fn test_events_nft_issuance() {
 
     // Verify events were emitted
     let events = env.events().all();
-    let event_count = events.len();
+    let event_count = events.events().len();
 
     // Should have events for: initialize_progress, update_progress, and issue_course_nft
     assert!(event_count > 0);
@@ -708,7 +708,7 @@ fn test_events_prerequisite_verification() {
     contract.verify_prerequisites(&user, &2u64);
 
     let events = env.events().all();
-    assert!(events.len() > 0);
+    assert!(events.events().len() > 0);
 }
 
 #[test]
@@ -730,7 +730,7 @@ fn test_events_platform_management() {
 
     let events = env.events().all();
     // Should have events for add and remove (at least 1)
-    assert!(events.len() >= 1);
+    assert!(events.events().len() >= 1);
 }
 
 #[test]
@@ -755,7 +755,7 @@ fn test_events_progress_update() {
 
     let events = env.events().all();
     // Should have multiple progress update events (at least 1)
-    assert!(events.len() >= 1);
+    assert!(events.events().len() >= 1);
 }
 
 // ============= COMPREHENSIVE INTEGRATION TEST =============

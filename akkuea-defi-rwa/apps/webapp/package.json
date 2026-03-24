@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
     "clean": "rm -rf .next"
   },
   "dependencies": {
@@ -16,18 +19,27 @@
     "react-dom": "19.2.3",
     "stellar-sdk": "^13.3.0",
     "soroban-client": "^1.0.1",
-    "@real-estate-defi/shared": "workspace:*"
+    "@real-estate-defi/shared": "workspace:*",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.468.0",
+    "react-hook-form": "^7.71.1",
+    "zod": "^3.25.76",
+    "@hookform/resolvers": "^3.10.0",
+    "@creit.tech/stellar-wallets-kit": "^1.9.5",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^25.0.3",
-    "@types/react": "^19.2.7",
+    "@types/node": "^25.2.0",
+    "@types/react": "^19.2.11",
     "@types/react-dom": "^19.2.3",
     "bun-types": "latest",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.7",
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-xss": "^0.1.12",
+    "jsdom": "^29.0.1",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
   }

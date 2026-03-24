@@ -1,6 +1,36 @@
 import { Elysia } from 'elysia';
+import { ApiError } from '../errors/ApiError';
 
-export const errorHandler = new Elysia().onError(({ error, code, set }) => {
+function isApiErrorLike(e: unknown): e is { statusCode: number; code: string; message: string } {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'statusCode' in e &&
+    'code' in e &&
+    typeof (e as { statusCode: unknown }).statusCode === 'number' &&
+    typeof (e as { code: unknown }).code === 'string'
+  );
+}
+
+export const errorHandler = new Elysia().onError({ as: 'global' }, ({ error, code, set }) => {
+  // Handle custom ApiError instances (including duck-typed for cross-module tests)
+  if (error instanceof ApiError || isApiErrorLike(error)) {
+    const err = error as {
+      statusCode: number;
+      code: string;
+      message: string;
+      details?: Record<string, unknown>;
+    };
+    set.status = err.statusCode;
+    return {
+      success: false,
+      error: err.code,
+      message: err.message,
+      ...(err.details && { details: err.details }),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   if (code === 'VALIDATION') {
     set.status = 400;
     return {

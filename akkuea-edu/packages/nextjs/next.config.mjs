@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    maximumDiskCacheSize: 250 * 1024 * 1024,
     domains: ['avatars.githubusercontent.com', 'via.placeholder.com', 'react.semantic-ui.com'],
     formats: ['image/webp'], //  modern formats
     deviceSizes: [320, 420, 640, 768, 1024, 1280, 1536], //  responsive widths
