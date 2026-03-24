@@ -586,4 +586,40 @@ impl PropertyTokenContract {
     pub fn get_borrow_position(env: Env, user: Address, pool_id: String) -> BorrowPosition {
         PositionStorage::get_borrow(&env, &user, &pool_id).expect("borrow position not found")
     }
+
+    //  Emergency Controls
+
+    pub fn emergency_pause(env: Env, caller: Address) {
+        caller.require_auth();
+        PauseControl::require_can_pause(&env, &caller);
+        PauseControl::pause(&env, &caller);
+        EmergencyEvents::emergency_paused(&env, caller);
+    }
+
+    pub fn schedule_recovery(env: Env, caller: Address) {
+        caller.require_auth();
+        TimelockControl::schedule_recovery(&env, &caller);
+    }
+
+    pub fn cancel_recovery(env: Env, caller: Address) {
+        caller.require_auth();
+        TimelockControl::cancel_recovery(&env, &caller);
+    }
+
+    pub fn execute_recovery(env: Env, caller: Address) {
+        caller.require_auth();
+        TimelockControl::execute_recovery(&env, &caller);
+    }
+
+    pub fn grant_emergency_role(env: Env, admin: Address, target: Address) {
+        admin.require_auth();
+        AdminControl::require_admin(&env, &admin);
+        RoleStorage::grant_role(&env, &target, &Role::EmergencyGuard);
+    }
+
+    pub fn revoke_emergency_role(env: Env, admin: Address, target: Address) {
+        admin.require_auth();
+        AdminControl::require_admin(&env, &admin);
+        RoleStorage::revoke_role(&env, &target, &Role::EmergencyGuard);
+    }
 }

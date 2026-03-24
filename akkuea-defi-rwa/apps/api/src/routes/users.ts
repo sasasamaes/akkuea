@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia';
 import { z } from 'zod';
-import { validate, uuidParamSchema } from '../middleware';
+import { validate, uuidParamSchema, rateLimit } from '../middleware';
 import { UserController } from '../controllers/UserController';
 
 const walletParamSchema = z.object({
@@ -50,4 +50,4 @@ export const userRoutes = new Elysia({ prefix: '/users' })
 
   // POST /users/auth - Authenticate by wallet (get or create)
   .use(validate({ body: authWalletSchema }))
-  .post('/auth', async (ctx) => UserController.authenticateByWallet(ctx));
+  .post('/auth', async (ctx) => UserController.authenticateByWallet(ctx), { beforeHandle: [rateLimit()] });

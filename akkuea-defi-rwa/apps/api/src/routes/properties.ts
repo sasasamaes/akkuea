@@ -7,6 +7,7 @@ import {
   uuidParamSchema,
   paginationQuerySchema,
   ownerParamSchema,
+  rateLimit,
 } from '../middleware';
 import { PropertyController } from '../controllers/PropertyController';
 import { handleError, UnauthorizedError } from '../utils/errors';
@@ -88,7 +89,7 @@ const createPropertyRoute = new Elysia()
       set.status = errorResponse.statusCode;
       return errorResponse;
     }
-  });
+  }, { beforeHandle: [rateLimit()] });
 
 // PUT /properties/:id - update property
 const updatePropertyRoute = new Elysia()
@@ -145,7 +146,7 @@ const tokenizePropertyRoute = new Elysia()
       set.status = errorResponse.statusCode;
       return errorResponse;
     }
-  });
+  }, { beforeHandle: [rateLimit()] });
 
 // POST /properties/:id/buy-shares - buy property shares
 const buySharesRoute = new Elysia()
@@ -167,7 +168,7 @@ const buySharesRoute = new Elysia()
       set.status = errorResponse.statusCode;
       return errorResponse;
     }
-  });
+  }, { beforeHandle: [rateLimit()] });
 
 // GET /properties/:id/shares/:owner - get user shares
 const getUserSharesRoute = new Elysia()

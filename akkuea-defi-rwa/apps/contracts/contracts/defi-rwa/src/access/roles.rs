@@ -1,5 +1,8 @@
 use soroban_sdk::{contracttype, Address, Env, Vec};
 
+// Minimum seconds that must elapse between scheduling and executing recovery
+pub const TIMELOCK_DURATION: u64 = 86_400; // 24 hours
+
 #[derive(Debug, PartialEq, Clone)]
 #[contracttype]
 pub enum Role {
@@ -13,6 +16,16 @@ pub enum Role {
     Verifier,
     // Right to execute liquidations
     Liquidator,
+    // Right to initiate emergency pause
+    EmergencyGuard,
+}
+
+#[derive(Clone)]
+#[contracttype]
+pub struct PendingRecoveryData {
+    pub scheduled_by: Address,
+    pub scheduled_at: u64,
+    pub earliest_execution: u64,
 }
 
 #[derive(Clone)]
@@ -23,6 +36,7 @@ pub enum RoleKey {
     HasRole(Address, Role),
     RoleMembers(Role),
     PendingAdmin,
+    PendingRecovery,
 }
 
 pub struct RoleStorage;
