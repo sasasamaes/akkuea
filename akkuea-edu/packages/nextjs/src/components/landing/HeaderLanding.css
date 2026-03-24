@@ -268,6 +268,12 @@
     justify-content: flex-start;
   }
 
+  .card-nav.open {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 3rem);
+
+  }
+
   .nav-card {
     height: auto;
     min-height: 60px;

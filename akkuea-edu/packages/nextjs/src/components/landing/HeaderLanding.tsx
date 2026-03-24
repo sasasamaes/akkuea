@@ -71,6 +71,17 @@ export default function HeaderLanding() {
 
   useEffect(() => setMounted(true), []);
 
+  useEffect(() => {
+    if (isExpanded) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isExpanded]);
+
   const calculateHeight = () => {
     const navEl = navRef.current;
     if (!navEl) return 260;
