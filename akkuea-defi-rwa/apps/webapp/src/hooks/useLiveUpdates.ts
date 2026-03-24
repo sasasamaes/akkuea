@@ -5,32 +5,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export type ConnectionStatus = "connected" | "connecting" | "disconnected";
 
 export interface LiveUpdateOptions<T> {
-  /** SSE endpoint URL for live updates */
   endpoint?: string;
-  /** Fallback polling interval in ms (default: 30000) */
   pollingInterval?: number;
-  /** Called when new data is received */
   onUpdate?: (data: T) => void;
-  /** Whether live updates are enabled */
   enabled?: boolean;
-  /** Maximum reconnection attempts before falling back to polling */
   maxReconnectAttempts?: number;
-  /** Delay between reconnection attempts in ms */
   reconnectDelay?: number;
 }
 
 export interface UseLiveUpdatesReturn<T> {
-  /** Current connection status */
   connectionStatus: ConnectionStatus;
-  /** Last update timestamp */
   lastUpdatedAt: Date | null;
-  /** Whether using fallback polling mode */
   isPolling: boolean;
-  /** Latest data received from live updates */
   data: T | null;
-  /** Manually trigger a refresh */
   refresh: () => void;
-  /** Re-establish connection */
   reconnect: () => void;
 }
 
@@ -66,16 +54,19 @@ export function useLiveUpdates<T>(
     null,
   );
   const mountedRef = useRef(true);
+  const onUpdateRef = useRef(onUpdate);
+  const connectSSERef = useRef<() => void>(() => {});
 
-  const updateData = useCallback(
-    (newData: T) => {
-      if (!mountedRef.current) return;
-      setData(newData);
-      setLastUpdatedAt(new Date());
-      onUpdate?.(newData);
-    },
-    [onUpdate],
-  );
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
+
+  const updateData = useCallback((newData: T) => {
+    if (!mountedRef.current) return;
+    setData(newData);
+    setLastUpdatedAt(new Date());
+    onUpdateRef.current?.(newData);
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!mountedRef.current) return;
@@ -87,20 +78,6 @@ export function useLiveUpdates<T>(
     }
   }, [fetchFn, updateData]);
 
-  const startPolling = useCallback(() => {
-    if (pollingIntervalRef.current) return;
-
-    setIsPolling(true);
-    setConnectionStatus("connected");
-    fetchData();
-
-    pollingIntervalRef.current = setInterval(() => {
-      if (mountedRef.current) {
-        fetchData();
-      }
-    }, pollingInterval);
-  }, [fetchData, pollingInterval]);
-
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -109,6 +86,20 @@ export function useLiveUpdates<T>(
     setIsPolling(false);
   }, []);
 
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) return;
+
+    setIsPolling(true);
+    setConnectionStatus("connected");
+    void fetchData();
+
+    pollingIntervalRef.current = setInterval(() => {
+      if (mountedRef.current) {
+        void fetchData();
+      }
+    }, pollingInterval);
+  }, [fetchData, pollingInterval]);
+
   const closeEventSource = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -116,79 +107,63 @@ export function useLiveUpdates<T>(
     }
   }, []);
 
-  const connectSSE = useCallback(() => {
-    if (!endpoint || typeof window === "undefined") {
-      startPolling();
-      return;
-    }
-
-    closeEventSource();
-    setConnectionStatus("connecting");
-
-    try {
-      const eventSource = new EventSource(endpoint);
-      eventSourceRef.current = eventSource;
-
-      eventSource.onopen = () => {
-        if (!mountedRef.current) return;
-        setConnectionStatus("connected");
-        reconnectAttemptsRef.current = 0;
-        stopPolling();
-      };
-
-      eventSource.onmessage = (event) => {
-        if (!mountedRef.current) return;
-        try {
-          const parsedData = JSON.parse(event.data) as T;
-          updateData(parsedData);
-        } catch {
-          // Invalid JSON, ignore
-        }
-      };
-
-      eventSource.onerror = () => {
-        if (!mountedRef.current) return;
-
-        closeEventSource();
-        setConnectionStatus("disconnected");
-
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          reconnectAttemptsRef.current += 1;
-          setConnectionStatus("connecting");
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (mountedRef.current) {
-              connectSSE();
-            }
-          }, reconnectDelay);
-        } else {
-          startPolling();
-        }
-      };
-    } catch {
-      startPolling();
-    }
-  }, [
-    endpoint,
-    closeEventSource,
-    stopPolling,
-    startPolling,
-    updateData,
-    maxReconnectAttempts,
-    reconnectDelay,
-  ]);
-
-  const reconnect = useCallback(() => {
-    reconnectAttemptsRef.current = 0;
-    stopPolling();
-    connectSSE();
-  }, [stopPolling, connectSSE]);
-
-  const refresh = useCallback(() => {
-    fetchData();
-  }, [fetchData]);
-
   useEffect(() => {
+    const connectSSE = () => {
+      if (!endpoint || typeof window === "undefined") {
+        startPolling();
+        return;
+      }
+
+      closeEventSource();
+      setConnectionStatus("connecting");
+
+      try {
+        const eventSource = new EventSource(endpoint);
+        eventSourceRef.current = eventSource;
+
+        eventSource.onopen = () => {
+          if (!mountedRef.current) return;
+          setConnectionStatus("connected");
+          reconnectAttemptsRef.current = 0;
+          stopPolling();
+        };
+
+        eventSource.onmessage = (event) => {
+          if (!mountedRef.current) return;
+          try {
+            const parsedData = JSON.parse(event.data) as T;
+            updateData(parsedData);
+          } catch {
+            // Invalid JSON, ignore
+          }
+        };
+
+        eventSource.onerror = () => {
+          if (!mountedRef.current) return;
+
+          closeEventSource();
+          setConnectionStatus("disconnected");
+
+          if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+            reconnectAttemptsRef.current += 1;
+            setConnectionStatus("connecting");
+
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (mountedRef.current) {
+                connectSSERef.current();
+              }
+            }, reconnectDelay);
+          } else {
+            startPolling();
+          }
+        };
+      } catch {
+        startPolling();
+      }
+    };
+
+    connectSSERef.current = connectSSE;
+
     mountedRef.current = true;
 
     if (enabled) {
@@ -204,7 +179,26 @@ export function useLiveUpdates<T>(
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [enabled, connectSSE, closeEventSource, stopPolling]);
+  }, [
+    enabled,
+    endpoint,
+    closeEventSource,
+    stopPolling,
+    startPolling,
+    updateData,
+    maxReconnectAttempts,
+    reconnectDelay,
+  ]);
+
+  const reconnect = useCallback(() => {
+    reconnectAttemptsRef.current = 0;
+    stopPolling();
+    connectSSERef.current();
+  }, [stopPolling]);
+
+  const refresh = useCallback(() => {
+    void fetchData();
+  }, [fetchData]);
 
   return {
     connectionStatus,
