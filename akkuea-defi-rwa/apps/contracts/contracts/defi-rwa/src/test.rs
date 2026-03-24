@@ -2333,7 +2333,7 @@ fn test_oracle_configurable_max_age() {
 
     // Set price 120 seconds old (would be fine under default 3600, but stale under 60)
     let now = t.env.ledger().timestamp();
-    let old_timestamp = if now > 120 { now - 120 } else { 0 };
+    let old_timestamp = now.saturating_sub(120);
     t.env.as_contract(&t.oracle_id, || {
         MockOracleContract::set_price(
             t.env.clone(),
