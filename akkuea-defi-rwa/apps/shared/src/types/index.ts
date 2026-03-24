@@ -31,3 +31,6 @@ export type {
 
 // Keep pagination types (schema-independent)
 export * from "./pagination";
+
+// Observability contracts
+export * from "./observability";
