@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, gt, sql, type SQL } from 'drizzle-orm';
+import { eq, and, gte, lte, gt, sql, inArray, type SQL } from 'drizzle-orm';
 import { db } from '../db';
 import {
   properties,
@@ -13,6 +13,13 @@ import { BaseRepository } from './BaseRepository';
 /**
  * Filter options for querying properties
  */
+export type PropertyReviewStatus =
+  | 'pending_review'
+  | 'approved'
+  | 'rejected'
+  | 'changes_requested'
+  | 'on_hold';
+
 export interface PropertyFilter {
   ownerId?: string;
   city?: string;
@@ -23,6 +30,7 @@ export interface PropertyFilter {
   minAvailableShares?: number;
   hasAvailableShares?: boolean;
   verified?: boolean;
+  reviewStatuses?: PropertyReviewStatus[];
 }
 
 /**
@@ -214,12 +222,32 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
   }
 
   /**
+   * Document counts per property (for operations queue summaries)
+   */
+  async countDocumentsByPropertyIds(propertyIds: string[]): Promise<Record<string, number>> {
+    if (propertyIds.length === 0) {
+      return {};
+    }
+
+    const rows = await db
+      .select({
+        propertyId: propertyDocuments.propertyId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(propertyDocuments)
+      .where(inArray(propertyDocuments.propertyId, propertyIds))
+      .groupBy(propertyDocuments.propertyId);
+
+    return Object.fromEntries(rows.map((r) => [r.propertyId, r.count]));
+  }
+
+  /**
    * Verify a property
    */
   async verify(id: string): Promise<Property | undefined> {
     const results = await db
       .update(properties)
-      .set({ verified: true })
+      .set({ verified: true, reviewStatus: 'approved' })
       .where(eq(properties.id, id))
       .returning();
 
@@ -302,6 +330,10 @@ export class PropertyRepository extends BaseRepository<typeof properties, Proper
 
     if (filter.verified !== undefined) {
       conditions.push(eq(properties.verified, filter.verified));
+    }
+
+    if (filter.reviewStatuses && filter.reviewStatuses.length > 0) {
+      conditions.push(inArray(properties.reviewStatus, filter.reviewStatuses));
     }
 
     if (filter.minPricePerShare !== undefined) {
