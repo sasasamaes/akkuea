@@ -59,6 +59,21 @@ jspm_packages/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
+apps/api/.env
+apps/api/.env.*
+apps/webapp/.env.local
+apps/webapp/.env.*.local
+
+# Deployment artifacts (auto-generated, should not be committed)
+deployed-contracts/*.json
+deployed-contracts/*_rwa-defi-contract.txt
+deployment-backups/*
+
+# Contract build artifacts
+target/
+**/*.rs.bk
+Cargo.lock
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
