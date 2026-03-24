@@ -108,14 +108,15 @@ jobs:
         cd akkuea-defi-rwa
         
         # Install root dependencies
-        bun install --frozen-lockfile || bun install
+        bun install
+        bun install --workspaces
         
         # Audit Bun workspaces
         bun audit --workspaces || true
         
-        # Audit critical workspaces individually without mutating dependencies
-        cd apps/api && bun audit || true
-        cd ../shared && bun audit || true
+        # Audit Bun workspaces
+        cd apps/api && bun install && bun audit || true
+        cd ../shared && bun install && bun audit || true
         
     - name: Check for license conflicts
       run: |
@@ -159,23 +160,25 @@ jobs:
         cd akkuea-defi-rwa
         
         echo "Testing build performance..."
-        bun install --frozen-lockfile || bun install
         
         # Record build times
         START_TIME=$(date +%s)
         
         # Build webapp
         cd apps/webapp
+        bun install
         bun run build
         WEBAPP_BUILD_TIME=$(date +%s)
         
         # Build API
         cd ../api
+        bun install
         bun run build
         API_BUILD_TIME=$(date +%s)
         
         # Build shared
         cd ../shared
+        bun install
         bun run build
         SHARED_BUILD_TIME=$(date +%s)
         
@@ -245,15 +248,18 @@ jobs:
         echo "Running cross-workspace integration tests..."
         
         # Install all dependencies
-        bun install --frozen-lockfile || bun install
+        bun install
+        bun install --workspaces
         
         # Build shared library first
         cd apps/shared
+        bun install
         bun run build
         cd ../..
         
         # Test API imports from shared
         cd apps/api
+        bun install
         node -e "
         const shared = require('../shared/dist/index.js');
         console.log('✅ API can import shared library');
@@ -264,6 +270,7 @@ jobs:
         
         # Test webapp imports from shared
         cd apps/webapp
+        bun install
         node -e "
         const shared = require('../shared/dist/index.js');
         console.log('✅ WebApp can import shared library');
