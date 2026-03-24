@@ -69,7 +69,16 @@ pub enum LendingKey {
     Admin,
 
     /// Oracle Address
+    /// Storage: Instance
     OracleAddress,
+
+    /// Maximum age (in seconds) before a price is considered stale
+    /// Storage: Instance
+    OracleMaxAge,
+
+    /// Minimum acceptable normalized price (floor)
+    /// Storage: Instance
+    OracleMinPrice,
 }
 
 /// TTL bump amounts for lending storage
