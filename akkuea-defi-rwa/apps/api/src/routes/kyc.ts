@@ -145,7 +145,7 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
       const { buffer, contentType, fileName } = await KYCController.getDocumentFile(documentId);
       set.headers['Content-Type'] = contentType;
       set.headers['Content-Disposition'] = `inline; filename="${fileName}"`;
-      return new Response(buffer, {
+      return new Response(new Uint8Array(buffer), {
         status: 200,
         headers: {
           'Content-Type': contentType,
