@@ -1,10 +1,10 @@
 import type {
-  BorrowPosition,
   PositionHealth,
   RiskLevel,
   RiskStateTransition,
   LiquidationReadiness,
 } from '@real-estate-defi/shared';
+import type { BorrowPosition } from '../db/schema';
 import { RiskMonitoringRepository } from '../repositories/RiskMonitoringRepository';
 
 export class RiskMonitoringService {
@@ -18,7 +18,7 @@ export class RiskMonitoringService {
     this.repository = repository || new RiskMonitoringRepository();
   }
 
-  async evaluatePositions(
+  async assessPositions(
     positions: BorrowPosition[],
     collateralPrices: Map<string, number>,
   ): Promise<PositionHealth[]> {
@@ -38,14 +38,14 @@ export class RiskMonitoringService {
     position: BorrowPosition,
     collateralPrices: Map<string, number>,
   ): PositionHealth {
-    const collateralPrice = collateralPrices.get(position.collateralPropertyId) || 0;
-    const collateralValue = position.collateralShares * collateralPrice;
-    const borrowValue = position.borrowAmount * (1 + position.interestRate);
+    const collateralPrice = collateralPrices.get(position.collateralAsset) || 0;
+    const collateralValue = parseFloat(position.collateralAmount) * collateralPrice;
+    const borrowValue = parseFloat(position.principal) + parseFloat(position.accruedInterest);
     const healthFactor = borrowValue > 0 ? collateralValue / borrowValue : Infinity;
 
     return {
-      positionId: `${position.poolId}-${position.borrower}`,
-      borrower: position.borrower,
+      positionId: `${position.poolId}-${position.borrowerId}`,
+      borrower: position.borrowerId,
       poolId: position.poolId,
       healthFactor,
       riskLevel: this.determineRiskLevel(healthFactor),

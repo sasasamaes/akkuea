@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { RiskMonitoringService } from '../services/RiskMonitoringService';
-import type { BorrowPosition } from '@real-estate-defi/shared';
+import type { BorrowPosition } from '../db/schema';
 
 describe('RiskMonitoringService', () => {
   let service: RiskMonitoringService;
@@ -9,75 +9,81 @@ describe('RiskMonitoringService', () => {
     service = new RiskMonitoringService();
   });
 
-  test('Healthy positions are evaluated as safe', async () => {
+  test('Healthy positions are assessed as safe', async () => {
     const positions: BorrowPosition[] = [
       {
+        id: 'pos-1',
         poolId: 'pool-1',
-        borrower: 'borrower-1',
-        collateralPropertyId: 'prop-1',
-        collateralShares: 10,
-        borrowAmount: 50000,
-        borrowDate: new Date(),
-        interestRate: 0.05,
-        isLiquidated: false,
+        borrowerId: 'borrower-1',
+        principal: '50000',
+        accruedInterest: '2500',
+        collateralAmount: '100',
+        collateralAsset: 'GDEF456',
+        healthFactor: '1.9',
+        borrowedAt: new Date(),
+        lastAccrualAt: new Date(),
       },
     ];
 
-    const collateralPrices = new Map([['prop-1', 10000]]);
-    const results = await service.evaluatePositions(positions, collateralPrices);
+    const collateralPrices = new Map([['GDEF456', 1000]]);
+    const results = await service.assessPositions(positions, collateralPrices);
 
     expect(results).toHaveLength(1);
-    expect(results[0].riskLevel).toBe('safe');
-    expect(results[0].healthFactor).toBeGreaterThan(1.25);
+    expect(results[0]?.riskLevel).toBe('safe');
+    expect(results[0]?.healthFactor).toBeGreaterThan(1.25);
   });
 
   test('Warning threshold breached', async () => {
     const positions: BorrowPosition[] = [
       {
+        id: 'pos-2',
         poolId: 'pool-1',
-        borrower: 'borrower-1',
-        collateralPropertyId: 'prop-1',
-        collateralShares: 10,
-        borrowAmount: 90000,
-        borrowDate: new Date(),
-        interestRate: 0.05,
-        isLiquidated: false,
+        borrowerId: 'borrower-1',
+        principal: '80000',
+        accruedInterest: '4000',
+        collateralAmount: '100',
+        collateralAsset: 'GDEF456',
+        healthFactor: '1.19',
+        borrowedAt: new Date(),
+        lastAccrualAt: new Date(),
       },
     ];
 
-    const collateralPrices = new Map([['prop-1', 10000]]);
-    const results = await service.evaluatePositions(positions, collateralPrices);
+    const collateralPrices = new Map([['GDEF456', 1000]]);
+    const results = await service.assessPositions(positions, collateralPrices);
 
-    expect(results[0].riskLevel).toBe('warning');
-    expect(results[0].healthFactor).toBeLessThanOrEqual(1.25);
-    expect(results[0].healthFactor).toBeGreaterThan(1.1);
+    expect(results[0]?.riskLevel).toBe('warning');
+    expect(results[0]?.healthFactor).toBeLessThanOrEqual(1.25);
+    expect(results[0]?.healthFactor).toBeGreaterThan(1.1);
   });
 
   test('Critical threshold breached', async () => {
     const positions: BorrowPosition[] = [
       {
+        id: 'pos-3',
         poolId: 'pool-1',
-        borrower: 'borrower-1',
-        collateralPropertyId: 'prop-1',
-        collateralShares: 10,
-        borrowAmount: 95000,
-        borrowDate: new Date(),
-        interestRate: 0.05,
-        isLiquidated: false,
+        borrowerId: 'borrower-1',
+        principal: '90000',
+        accruedInterest: '5000',
+        collateralAmount: '100',
+        collateralAsset: 'GDEF456',
+        healthFactor: '1.05',
+        borrowedAt: new Date(),
+        lastAccrualAt: new Date(),
       },
     ];
 
-    const collateralPrices = new Map([['prop-1', 10000]]);
-    const results = await service.evaluatePositions(positions, collateralPrices);
+    const collateralPrices = new Map([['GDEF456', 1000]]);
+    const results = await service.assessPositions(positions, collateralPrices);
 
-    expect(results[0].riskLevel).toBe('critical');
-    expect(results[0].healthFactor).toBeLessThanOrEqual(1.1);
+    expect(results[0]?.riskLevel).toBe('critical');
+    expect(results[0]?.healthFactor).toBeLessThanOrEqual(1.1);
   });
 
   test('No positions exist - empty result returned safely', async () => {
     const positions: BorrowPosition[] = [];
     const collateralPrices = new Map();
-    const results = await service.evaluatePositions(positions, collateralPrices);
+    const results = await service.assessPositions(positions, collateralPrices);
 
     expect(results).toHaveLength(0);
   });

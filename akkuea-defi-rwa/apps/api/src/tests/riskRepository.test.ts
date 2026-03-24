@@ -24,9 +24,9 @@ describe('RiskMonitoringRepository', () => {
     const transitions = await repository.getTransitionsByPosition('pos-1');
 
     expect(transitions).toHaveLength(1);
-    expect(transitions[0].id).toBe('trans-1');
-    expect(transitions[0].fromRiskLevel).toBe('safe');
-    expect(transitions[0].toRiskLevel).toBe('warning');
+    expect(transitions[0]?.id).toBe('trans-1');
+    expect(transitions[0]?.fromRiskLevel).toBe('safe');
+    expect(transitions[0]?.toRiskLevel).toBe('warning');
   });
 
   test('Multiple transitions for same position', async () => {
