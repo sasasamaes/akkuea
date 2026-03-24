@@ -15,7 +15,7 @@ const DEFAULT_MAX = 10;
 function getClientIP(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    return forwarded.split(',')[0]?.trim() ?? 'unknown';
   }
   return request.headers.get('x-real-ip') ?? 'unknown';
 }
@@ -77,7 +77,8 @@ export function rateLimit(options: RateLimitOptions = {}) {
   const { windowMs = DEFAULT_WINDOW_MS, max = DEFAULT_MAX, keyGenerator } = options;
   const store = createRateLimitStore();
 
-  return function rateLimitMiddleware({ request, set }: { request: Request; set: { status?: number | string; headers?: Record<string, string> } }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return function rateLimitMiddleware({ request, set }: any) {
     const identifier = getIdentifier(request, keyGenerator);
     const result = store.checkLimit(identifier, windowMs, max);
 
