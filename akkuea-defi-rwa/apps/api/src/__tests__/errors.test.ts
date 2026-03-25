@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { NotFoundError as SharedNotFoundError } from '@real-estate-defi/shared';
 import {
   AppError,
   BadRequestError,
@@ -94,6 +95,15 @@ describe('Error Utilities', () => {
       expect(response.message).toBe('Invalid data');
       expect(response.statusCode).toBe(400);
       expect(response.timestamp).toBeDefined();
+    });
+
+    it('should handle shared package AppError subclasses', () => {
+      const error = new SharedNotFoundError('Property', 'abc');
+      const response = handleError(error);
+
+      expect(response.success).toBe(false);
+      expect(response.statusCode).toBe(404);
+      expect(response.message).toContain('abc');
     });
 
     it('should handle standard Error correctly', () => {
