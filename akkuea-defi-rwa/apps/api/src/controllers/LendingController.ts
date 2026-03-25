@@ -4,6 +4,7 @@ import { lendingRepository } from '../repositories/LendingRepository';
 import { userRepository } from '../repositories/UserRepository';
 import { CreatePoolDto, DepositDto, WithdrawDto, BorrowDto, RepayDto } from '../dto/lending.dto';
 import { positionService } from '../services/PositionService';
+import { NotificationService } from '../services/NotificationService';
 
 export class LendingController {
   private static async resolveAuthenticatedUser(
@@ -211,6 +212,10 @@ export class LendingController {
     if (!position) {
       throw new ApiError(404, 'NOT_FOUND', 'No borrow position found for this user in this pool');
     }
+
+    // Send repayment processed notification
+    const notificationService = new NotificationService();
+    await notificationService.notifyRepaymentProcessed(user.id, poolId, parseFloat(amount), 'IN_APP');
 
     return this.jsonResponse(position);
   }

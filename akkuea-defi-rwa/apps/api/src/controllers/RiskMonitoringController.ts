@@ -2,15 +2,31 @@ import type { PositionHealth, LiquidationReadiness } from '@real-estate-defi/sha
 import type { BorrowPosition } from '../db/schema';
 import { RiskMonitoringService } from '../services/RiskMonitoringService';
 import { lendingRepository } from '../repositories/LendingRepository';
+import { NotificationService } from '../services/NotificationService';
 
 export class RiskMonitoringController {
   private static service = new RiskMonitoringService();
+  private static notificationService = new NotificationService();
 
   static async assessAllPositions(): Promise<PositionHealth[]> {
     try {
       const positions = await this.getAllBorrowPositions();
       const collateralPrices = await this.getCollateralPrices(positions);
-      return await this.service.assessPositions(positions, collateralPrices);
+      const healthResults = await this.service.assessPositions(positions, collateralPrices);
+
+      // Send notifications for risk warnings and liquidation risks
+      for (const health of healthResults) {
+        const userId = this.extractUserIdFromPositionId(health.positionId);
+        if (userId) {
+          if (health.riskLevel === 'critical') {
+            await this.notificationService.notifyLiquidationRisk(userId, health.positionId, 'IN_APP');
+          } else if (health.riskLevel === 'warning') {
+            await this.notificationService.notifyRiskWarning(userId, health.positionId, 'warning', 'IN_APP');
+          }
+        }
+      }
+
+      return healthResults;
     } catch (error) {
       throw new Error(`Failed to assess positions: ${error}`);
     }
@@ -53,5 +69,11 @@ export class RiskMonitoringController {
     }
 
     return prices;
+  }
+
+  private static extractUserIdFromPositionId(positionId: string): string | null {
+    // positionId format is typically "poolId-borrowerId"
+    const parts = positionId.split('-');
+    return parts.length > 1 ? parts[1] : null;
   }
 }
