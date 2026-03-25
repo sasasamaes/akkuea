@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                         |
-| --------------- | ------------------------------------------------------------- |
-| Issue ID        | C3-008                                                        |
-| Title           | Implement risk monitoring and liquidation readiness service   |
-| Area            | API                                                           |
-| Difficulty      | Medium                                                        |
-| Labels          | api, monitoring, risk, lending                                |
-| Dependencies    | C2-012                                                        |
-| Estimated Lines | 160-240                                                       |
+| Attribute       | Value                                                       |
+| --------------- | ----------------------------------------------------------- |
+| Issue ID        | C3-008                                                      |
+| Title           | Implement risk monitoring and liquidation readiness service |
+| Area            | API                                                         |
+| Difficulty      | Medium                                                      |
+| Labels          | api, monitoring, risk, lending                              |
+| Dependencies    | C2-012                                                      |
+| Estimated Lines | 160-240                                                     |
 
 ## Overview
 

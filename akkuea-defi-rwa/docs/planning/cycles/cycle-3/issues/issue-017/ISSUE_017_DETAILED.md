@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                   |
-| --------------- | ------------------------------------------------------- |
-| Issue ID        | C3-017                                                  |
-| Title           | Deliver mobile navigation and responsive launch polish  |
-| Area            | WEBAPP                                                  |
-| Difficulty      | Trivial                                                 |
-| Labels          | frontend, responsive, mobile                            |
-| Dependencies    | None                                                    |
-| Estimated Lines | 80-120                                                  |
+| Attribute       | Value                                                  |
+| --------------- | ------------------------------------------------------ |
+| Issue ID        | C3-017                                                 |
+| Title           | Deliver mobile navigation and responsive launch polish |
+| Area            | WEBAPP                                                 |
+| Difficulty      | Trivial                                                |
+| Labels          | frontend, responsive, mobile                           |
+| Dependencies    | None                                                   |
+| Estimated Lines | 80-120                                                 |
 
 ## Overview
 

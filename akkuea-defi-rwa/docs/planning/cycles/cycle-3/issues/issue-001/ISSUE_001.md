@@ -28,22 +28,22 @@ Create a production-grade deployment workflow for the tokenized real estate cont
 
 ## Files to Create/Modify
 
-| File                                      | Action | Purpose                                 |
-| ----------------------------------------- | ------ | --------------------------------------- |
-| `scripts/deploy.sh`                       | Modify | Correct and harden deployment flow      |
-| `docs/contracts/deployment.md`            | Modify | Align deploy documentation with reality |
-| `apps/contracts/contracts/defi-rwa/src/`  | Review | Confirm callable entrypoints and config |
-| `apps/api/src/`                           | Modify | Read deployed contract configuration    |
-| `apps/webapp/src/`                        | Modify | Consume deployment environment safely   |
+| File                                     | Action | Purpose                                 |
+| ---------------------------------------- | ------ | --------------------------------------- |
+| `scripts/deploy.sh`                      | Modify | Correct and harden deployment flow      |
+| `docs/contracts/deployment.md`           | Modify | Align deploy documentation with reality |
+| `apps/contracts/contracts/defi-rwa/src/` | Review | Confirm callable entrypoints and config |
+| `apps/api/src/`                          | Modify | Read deployed contract configuration    |
+| `apps/webapp/src/`                       | Modify | Consume deployment environment safely   |
 
 ## Test Requirements
 
-| Test Case                                      | Expected Result                    |
-| ---------------------------------------------- | ---------------------------------- |
-| Deploy to testnet with valid credentials       | Contracts deploy and initialize    |
-| Run deploy with missing environment variables  | Script fails with actionable error |
-| Run post-deploy smoke checks                   | Expected contract reads succeed    |
-| Switch app config to deployed addresses        | Frontend and API boot successfully |
+| Test Case                                     | Expected Result                    |
+| --------------------------------------------- | ---------------------------------- |
+| Deploy to testnet with valid credentials      | Contracts deploy and initialize    |
+| Run deploy with missing environment variables | Script fails with actionable error |
+| Run post-deploy smoke checks                  | Expected contract reads succeed    |
+| Switch app config to deployed addresses       | Frontend and API boot successfully |
 
 - If you want to read more about this issue, you can read the https://github.com/akkuea/akkuea/tree/develop/akkuea-defi-rwa/docs/planning/cycles/cycle-3/issues/issue-001/ISSUE_001_DETAILED.md
 

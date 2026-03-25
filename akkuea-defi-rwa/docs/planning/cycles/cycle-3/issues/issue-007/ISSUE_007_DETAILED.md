@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                         |
-| --------------- | ------------------------------------------------------------- |
-| Issue ID        | C3-007                                                        |
-| Title           | Create admin operations dashboard for property verification   |
-| Area            | WEBAPP                                                        |
-| Difficulty      | Medium                                                        |
-| Labels          | frontend, admin, operations, real-estate                     |
-| Dependencies    | C2-003                                                        |
-| Estimated Lines | 180-260                                                       |
+| Attribute       | Value                                                       |
+| --------------- | ----------------------------------------------------------- |
+| Issue ID        | C3-007                                                      |
+| Title           | Create admin operations dashboard for property verification |
+| Area            | WEBAPP                                                      |
+| Difficulty      | Medium                                                      |
+| Labels          | frontend, admin, operations, real-estate                    |
+| Dependencies    | C2-003                                                      |
+| Estimated Lines | 180-260                                                     |
 
 ## Overview
 

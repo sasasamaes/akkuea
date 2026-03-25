@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                     |
-| --------------- | --------------------------------------------------------- |
-| Issue ID        | C3-015                                                    |
-| Title           | Add performance and operational observability utilities   |
-| Area            | SHARED                                                    |
-| Difficulty      | Trivial                                                   |
-| Labels          | shared, observability, performance                        |
-| Dependencies    | C1-017                                                    |
-| Estimated Lines | 60-100                                                    |
+| Attribute       | Value                                                   |
+| --------------- | ------------------------------------------------------- |
+| Issue ID        | C3-015                                                  |
+| Title           | Add performance and operational observability utilities |
+| Area            | SHARED                                                  |
+| Difficulty      | Trivial                                                 |
+| Labels          | shared, observability, performance                      |
+| Dependencies    | C1-017                                                  |
+| Estimated Lines | 60-100                                                  |
 
 ## Overview
 

@@ -63,19 +63,27 @@ export const lendingRoutes = new Elysia({ prefix: '/lending' })
 
   // POST /pools/:id/deposit - Deposit into pool (auth required)
   .use(validate({ body: depositSchema }))
-  .post('/pools/:id/deposit', async (ctx) => LendingController.deposit(ctx), { beforeHandle: [rateLimit()] })
+  .post('/pools/:id/deposit', async (ctx) => LendingController.deposit(ctx), {
+    beforeHandle: [rateLimit()],
+  })
 
   // POST /pools/:id/withdraw - Withdraw from pool (auth required)
   .use(validate({ body: withdrawSchema }))
-  .post('/pools/:id/withdraw', async (ctx) => LendingController.withdraw(ctx), { beforeHandle: [rateLimit()] })
+  .post('/pools/:id/withdraw', async (ctx) => LendingController.withdraw(ctx), {
+    beforeHandle: [rateLimit()],
+  })
 
   // POST /pools/:id/borrow - Borrow from pool (auth required)
   .use(validate({ body: borrowSchema }))
-  .post('/pools/:id/borrow', async (ctx) => LendingController.borrow(ctx), { beforeHandle: [rateLimit()] })
+  .post('/pools/:id/borrow', async (ctx) => LendingController.borrow(ctx), {
+    beforeHandle: [rateLimit()],
+  })
 
   // POST /pools/:id/repay - Repay loan (auth required)
   .use(validate({ body: repaySchema }))
-  .post('/pools/:id/repay', async (ctx) => LendingController.repay(ctx), { beforeHandle: [rateLimit()] })
+  .post('/pools/:id/repay', async (ctx) => LendingController.repay(ctx), {
+    beforeHandle: [rateLimit()],
+  })
 
   // GET /pools/:id/user/:address/deposits - Get user deposits
   .use(validate({ params: poolUserParamsSchema }))

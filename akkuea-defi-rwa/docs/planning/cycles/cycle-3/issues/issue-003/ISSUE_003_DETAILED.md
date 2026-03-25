@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                               |
-| --------------- | --------------------------------------------------- |
-| Issue ID        | C3-003                                              |
-| Title           | Add live property and market updates to the webapp  |
-| Area            | WEBAPP                                              |
-| Difficulty      | Medium                                              |
-| Labels          | frontend, realtime, investor-experience, medium     |
-| Dependencies    | C2-007                                              |
-| Estimated Lines | 140-220                                             |
+| Attribute       | Value                                              |
+| --------------- | -------------------------------------------------- |
+| Issue ID        | C3-003                                             |
+| Title           | Add live property and market updates to the webapp |
+| Area            | WEBAPP                                             |
+| Difficulty      | Medium                                             |
+| Labels          | frontend, realtime, investor-experience, medium    |
+| Dependencies    | C2-007                                             |
+| Estimated Lines | 140-220                                            |
 
 ## Overview
 

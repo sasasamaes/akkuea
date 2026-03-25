@@ -50,4 +50,6 @@ export const userRoutes = new Elysia({ prefix: '/users' })
 
   // POST /users/auth - Authenticate by wallet (get or create)
   .use(validate({ body: authWalletSchema }))
-  .post('/auth', async (ctx) => UserController.authenticateByWallet(ctx), { beforeHandle: [rateLimit()] });
+  .post('/auth', async (ctx) => UserController.authenticateByWallet(ctx), {
+    beforeHandle: [rateLimit()],
+  });

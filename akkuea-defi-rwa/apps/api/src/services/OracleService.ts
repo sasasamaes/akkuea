@@ -38,9 +38,10 @@ export class OracleService {
   }
 
   // REQ-001, REQ-002, REQ-003, REQ-006: Ingest and store a valuation
-  static ingestValuation(
-    payload: RealEstateValuationPayload,
-  ): { record: ValuationRecord; warnings: string[] } {
+  static ingestValuation(payload: RealEstateValuationPayload): {
+    record: ValuationRecord;
+    warnings: string[];
+  } {
     const { isValid, errors } = this.validatePayload(payload);
 
     if (!isValid) {
@@ -87,11 +88,7 @@ export class OracleService {
   }
 
   // REQ-005: Flag a valuation for manual review
-  static flagForManualReview(
-    id: string,
-    propertyId: string,
-    reason: string,
-  ): ValuationRecord {
+  static flagForManualReview(id: string, propertyId: string, reason: string): ValuationRecord {
     const updated = ValuationRepository.updateStatus(id, propertyId, 'manual_review', reason);
     if (!updated) {
       throw new Error(`Valuation ${id} not found for property ${propertyId}`);
@@ -119,9 +116,7 @@ export class OracleService {
     const record = this.getLatestValuation(propertyId);
 
     if (record.status !== 'active') {
-      throw new Error(
-        `Cannot build contract payload: valuation status is '${record.status}'`,
-      );
+      throw new Error(`Cannot build contract payload: valuation status is '${record.status}'`);
     }
 
     return {

@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                          |
-| --------------- | ---------------------------------------------- |
-| Issue ID        | C3-014                                         |
-| Title           | Complete theme system and brand presentation   |
-| Area            | WEBAPP                                         |
-| Difficulty      | Trivial                                        |
-| Labels          | frontend, design, branding                     |
-| Dependencies    | None                                           |
-| Estimated Lines | 60-100                                         |
+| Attribute       | Value                                        |
+| --------------- | -------------------------------------------- |
+| Issue ID        | C3-014                                       |
+| Title           | Complete theme system and brand presentation |
+| Area            | WEBAPP                                       |
+| Difficulty      | Trivial                                      |
+| Labels          | frontend, design, branding                   |
+| Dependencies    | None                                         |
+| Estimated Lines | 60-100                                       |
 
 ## Overview
 

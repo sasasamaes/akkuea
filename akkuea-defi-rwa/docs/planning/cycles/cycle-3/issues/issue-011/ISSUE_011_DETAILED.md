@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                         |
-| --------------- | ------------------------------------------------------------- |
-| Issue ID        | C3-011                                                        |
-| Title           | Build investor portfolio analytics and property reporting     |
-| Area            | WEBAPP                                                        |
-| Difficulty      | Medium                                                        |
-| Labels          | frontend, analytics, reporting, investor                      |
-| Dependencies    | C2-011                                                        |
-| Estimated Lines | 180-260                                                       |
+| Attribute       | Value                                                     |
+| --------------- | --------------------------------------------------------- |
+| Issue ID        | C3-011                                                    |
+| Title           | Build investor portfolio analytics and property reporting |
+| Area            | WEBAPP                                                    |
+| Difficulty      | Medium                                                    |
+| Labels          | frontend, analytics, reporting, investor                  |
+| Dependencies    | C2-011                                                    |
+| Estimated Lines | 180-260                                                   |
 
 ## Overview
 

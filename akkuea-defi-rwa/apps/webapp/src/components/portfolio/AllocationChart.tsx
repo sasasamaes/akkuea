@@ -19,8 +19,11 @@ const TYPE_COLORS: Record<string, string> = {
 
 const DEFAULT_COLOR = "#525252";
 
-export function AllocationChart({ allocation, totalValue, className }: AllocationChartProps) {
-
+export function AllocationChart({
+  allocation,
+  totalValue,
+  className,
+}: AllocationChartProps) {
   const [cumulative, setCumulative] = useState(0);
 
   const segments = useMemo(() => {
@@ -38,7 +41,12 @@ export function AllocationChart({ allocation, totalValue, className }: Allocatio
 
   if (segments.length === 0) {
     return (
-      <div className={cn("flex items-center justify-center h-20 text-xs text-neutral-600", className)}>
+      <div
+        className={cn(
+          "flex items-center justify-center h-20 text-xs text-neutral-600",
+          className,
+        )}
+      >
         No allocation data
       </div>
     );
@@ -47,7 +55,7 @@ export function AllocationChart({ allocation, totalValue, className }: Allocatio
   // Build conic-gradient stops
   const stops = segments.map((s) => {
     const start = cumulative;
-    setCumulative(prev => prev + s.pct)
+    setCumulative((prev) => prev + s.pct);
     return `${s.color} ${start.toFixed(1)}% ${cumulative.toFixed(1)}%`;
   });
   const gradient = `conic-gradient(${stops.join(", ")})`;
@@ -77,9 +85,13 @@ export function AllocationChart({ allocation, totalValue, className }: Allocatio
                 className="w-2 h-2 rounded-full shrink-0"
                 style={{ background: s.color }}
               />
-              <span className="text-xs text-neutral-400 capitalize">{s.type}</span>
+              <span className="text-xs text-neutral-400 capitalize">
+                {s.type}
+              </span>
             </div>
-            <span className="text-xs font-mono text-neutral-300">{s.pct.toFixed(1)}%</span>
+            <span className="text-xs font-mono text-neutral-300">
+              {s.pct.toFixed(1)}%
+            </span>
           </div>
         ))}
       </div>

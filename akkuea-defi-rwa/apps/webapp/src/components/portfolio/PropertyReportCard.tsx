@@ -19,7 +19,10 @@ const TYPE_BADGE: Record<string, "default" | "success" | "info" | "warning"> = {
   mixed: "default",
 };
 
-export function PropertyReportCard({ item, showValue }: PropertyReportCardProps) {
+export function PropertyReportCard({
+  item,
+  showValue,
+}: PropertyReportCardProps) {
   const { property, shares, estimatedValue, yieldRate } = item;
   const image = property.images[0];
   const ownershipPct = (shares / property.totalShares) * 100;
@@ -48,7 +51,9 @@ export function PropertyReportCard({ item, showValue }: PropertyReportCardProps)
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="text-sm font-medium text-white truncate">{property.name}</h3>
+          <h3 className="text-sm font-medium text-white truncate">
+            {property.name}
+          </h3>
           <Badge variant={TYPE_BADGE[property.propertyType] ?? "default"}>
             {property.propertyType}
           </Badge>

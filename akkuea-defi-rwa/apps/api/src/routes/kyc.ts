@@ -108,21 +108,25 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
     },
     { beforeHandle: [rateLimit()] },
   )
-  .post('/submit', async ({ body, set }) => {
-    try {
-      return await KYCController.submitKYC(
-        body as {
-          userId: string;
-          documents: {
-            type: 'passport' | 'id_card' | 'proof_of_address' | 'other';
-            documentUrl: string;
-          }[];
-        },
-      );
-    } catch (error) {
-      return handleKycError(error, set);
-    }
-  }, { beforeHandle: [rateLimit()] })
+  .post(
+    '/submit',
+    async ({ body, set }) => {
+      try {
+        return await KYCController.submitKYC(
+          body as {
+            userId: string;
+            documents: {
+              type: 'passport' | 'id_card' | 'proof_of_address' | 'other';
+              documentUrl: string;
+            }[];
+          },
+        );
+      } catch (error) {
+        return handleKycError(error, set);
+      }
+    },
+    { beforeHandle: [rateLimit()] },
+  )
   .post('/verify/:documentId', async ({ params: { documentId }, body, set }) => {
     try {
       return await KYCController.verifyDocument(

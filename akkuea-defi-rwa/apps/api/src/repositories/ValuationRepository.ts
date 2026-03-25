@@ -19,10 +19,7 @@ export class ValuationRepository {
     return latestValuations.get(propertyId);
   }
 
-  static findHistory(
-    propertyId: string,
-    limit?: number,
-  ): ValuationRecord[] {
+  static findHistory(propertyId: string, limit?: number): ValuationRecord[] {
     const history = valuationHistory.get(propertyId) ?? [];
     const sorted = history
       .map((record, index) => ({ record, index }))

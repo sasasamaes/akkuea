@@ -47,7 +47,10 @@ export const transactionSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
   // Stellar reconstruction fields
   ledger: z.number().int().positive().optional(),
-  fee: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  fee: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/)
+    .optional(),
   memo: z.string().optional(),
 });
 
@@ -67,10 +70,12 @@ export const transactionFilterSchema = z.object({
 /**
  * Query params with pagination for transaction list APIs
  */
-export const transactionQueryParamsSchema = z.object({
-  cursor: z.string().optional(),
-  limit: z.number().int().min(1).max(100).default(20),
-}).merge(transactionFilterSchema);
+export const transactionQueryParamsSchema = z
+  .object({
+    cursor: z.string().optional(),
+    limit: z.number().int().min(1).max(100).default(20),
+  })
+  .merge(transactionFilterSchema);
 
 /**
  * Paginated transaction list response
@@ -86,7 +91,9 @@ export type TransactionType = z.infer<typeof transactionTypeSchema>;
 export type TransactionStatus = z.infer<typeof transactionStatusSchema>;
 export type Transaction = z.infer<typeof transactionSchema>;
 export type TransactionFilter = z.infer<typeof transactionFilterSchema>;
-export type TransactionQueryParams = z.infer<typeof transactionQueryParamsSchema>;
+export type TransactionQueryParams = z.infer<
+  typeof transactionQueryParamsSchema
+>;
 export type PaginatedTransactionResponse = z.infer<
   typeof paginatedTransactionResponseSchema
 >;

@@ -564,7 +564,9 @@ describe.skipIf(!process.env.DATABASE_URL)('Lending Integration Tests (DB requir
 
   it('should return position summary for a seeded user', async () => {
     const response = await app.handle(
-      new Request(`http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/summary`),
+      new Request(
+        `http://localhost/lending/pools/${testPoolId}/user/${VALID_STELLAR_ADDRESS}/summary`,
+      ),
     );
     expect(response.status).toBe(200);
     const summary = await response.json();

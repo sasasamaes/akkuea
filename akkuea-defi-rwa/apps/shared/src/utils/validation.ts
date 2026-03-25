@@ -209,9 +209,7 @@ export class ValidationService {
     if (payload.price === undefined || payload.price <= 0) {
       errors.push("Price must be greater than 0");
     } else if (payload.price < minPrice || payload.price > maxPrice) {
-      errors.push(
-        `Price must be between ${minPrice} and ${maxPrice}`,
-      );
+      errors.push(`Price must be between ${minPrice} and ${maxPrice}`);
     }
 
     if (!payload.currency || payload.currency.trim().length === 0) {

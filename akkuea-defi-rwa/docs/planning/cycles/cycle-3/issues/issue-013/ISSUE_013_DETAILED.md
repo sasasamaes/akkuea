@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                          |
-| --------------- | -------------------------------------------------------------- |
-| Issue ID        | C3-013                                                         |
-| Title           | Finalize oracle consumer and price guardrails in contracts     |
-| Area            | CONTRACT                                                       |
-| Difficulty      | Medium                                                         |
-| Labels          | smart-contract, oracle, pricing, lending                       |
-| Dependencies    | C3-002                                                         |
-| Estimated Lines | 120-180                                                        |
+| Attribute       | Value                                                      |
+| --------------- | ---------------------------------------------------------- |
+| Issue ID        | C3-013                                                     |
+| Title           | Finalize oracle consumer and price guardrails in contracts |
+| Area            | CONTRACT                                                   |
+| Difficulty      | Medium                                                     |
+| Labels          | smart-contract, oracle, pricing, lending                   |
+| Dependencies    | C3-002                                                     |
+| Estimated Lines | 120-180                                                    |
 
 ## Overview
 

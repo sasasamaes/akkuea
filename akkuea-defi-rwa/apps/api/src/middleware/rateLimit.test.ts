@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'bun:test';
 import { rateLimit } from './rateLimit';
 
-function createMockRequest(options: {
-  headers?: Record<string, string>;
-} = {}) {
+function createMockRequest(
+  options: {
+    headers?: Record<string, string>;
+  } = {},
+) {
   const headers = new Headers(options.headers ?? {});
   return {
     headers,
@@ -143,8 +145,12 @@ describe('rateLimit middleware', () => {
         keyGenerator: (req) => `custom:${req.headers.get('x-api-key') ?? 'unknown'}`,
       });
 
-      const request1 = createMockRequest({ headers: { 'x-api-key': 'key1', 'x-forwarded-for': '192.0.2.1' } });
-      const request2 = createMockRequest({ headers: { 'x-api-key': 'key2', 'x-forwarded-for': '192.0.2.1' } });
+      const request1 = createMockRequest({
+        headers: { 'x-api-key': 'key1', 'x-forwarded-for': '192.0.2.1' },
+      });
+      const request2 = createMockRequest({
+        headers: { 'x-api-key': 'key2', 'x-forwarded-for': '192.0.2.1' },
+      });
       const set1 = createMockSet();
       const set2 = createMockSet();
 

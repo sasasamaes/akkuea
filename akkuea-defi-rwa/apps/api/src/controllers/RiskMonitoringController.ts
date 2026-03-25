@@ -25,7 +25,7 @@ export class RiskMonitoringController {
   static async getLiquidationReadiness(positionId: string): Promise<LiquidationReadiness> {
     const allHealth = await this.assessAllPositions();
     const health = allHealth.find((h) => h.positionId === positionId);
-    
+
     if (!health) {
       throw new Error(`Position ${positionId} not found`);
     }

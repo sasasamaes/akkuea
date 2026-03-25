@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                     |
-| --------------- | --------------------------------------------------------- |
-| Issue ID        | C3-016                                                    |
-| Title           | Produce deployment, API, and operations documentation     |
-| Area            | API                                                       |
-| Difficulty      | Trivial                                                   |
-| Labels          | docs, operations, api, deployment                         |
-| Dependencies    | C2-008                                                    |
-| Estimated Lines | 80-140                                                    |
+| Attribute       | Value                                                 |
+| --------------- | ----------------------------------------------------- |
+| Issue ID        | C3-016                                                |
+| Title           | Produce deployment, API, and operations documentation |
+| Area            | API                                                   |
+| Difficulty      | Trivial                                               |
+| Labels          | docs, operations, api, deployment                     |
+| Dependencies    | C2-008                                                |
+| Estimated Lines | 80-140                                                |
 
 ## Overview
 
