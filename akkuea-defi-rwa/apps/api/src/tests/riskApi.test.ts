@@ -6,9 +6,7 @@ describe('Risk Monitoring API', () => {
   const app = new Elysia().use(riskMonitoringRoutes);
 
   test('Monitoring data is available to internal tools', async () => {
-    const response = await app.handle(
-      new Request('http://localhost/internal/risk/positions'),
-    );
+    const response = await app.handle(new Request('http://localhost/internal/risk/positions'));
 
     expect(response.status).toBe(200);
     const data = await response.json();
@@ -34,9 +32,7 @@ describe('Risk Monitoring API', () => {
   });
 
   test('Get risk transitions', async () => {
-    const response = await app.handle(
-      new Request('http://localhost/internal/risk/transitions'),
-    );
+    const response = await app.handle(new Request('http://localhost/internal/risk/transitions'));
 
     expect(response.status).toBe(200);
     const data = await response.json();

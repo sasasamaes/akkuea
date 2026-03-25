@@ -13,9 +13,7 @@ const positiveDecimalString = z
 /**
  * Decimal string that allows zero (for rates/factors)
  */
-const decimalString = z
-  .string()
-  .regex(/^\d+(\.\d+)?$/, 'Must be a decimal string');
+const decimalString = z.string().regex(/^\d+(\.\d+)?$/, 'Must be a decimal string');
 
 /**
  * Create lending pool request schema

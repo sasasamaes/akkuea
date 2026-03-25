@@ -1,5 +1,8 @@
 import { randomBytes } from 'node:crypto';
-import type { PropertyInfo, ShareOwnership as SharedShareOwnership } from '@real-estate-defi/shared';
+import type {
+  PropertyInfo,
+  ShareOwnership as SharedShareOwnership,
+} from '@real-estate-defi/shared';
 import {
   ValidationError,
   NotFoundError,
@@ -16,7 +19,14 @@ import {
   type PaginatedResult,
 } from '../repositories/PropertyRepository';
 import { userRepository } from '../repositories/UserRepository';
-import { properties, shareOwnerships, transactions, type Property, type NewProperty, type PropertyDocument } from '../db/schema';
+import {
+  properties,
+  shareOwnerships,
+  transactions,
+  type Property,
+  type NewProperty,
+  type PropertyDocument,
+} from '../db/schema';
 
 /**
  * DTO for creating a property
@@ -542,10 +552,7 @@ export class PropertyController {
           .select()
           .from(shareOwnerships)
           .where(
-            and(
-              eq(shareOwnerships.propertyId, property.id),
-              eq(shareOwnerships.ownerId, buyer.id),
-            ),
+            and(eq(shareOwnerships.propertyId, property.id), eq(shareOwnerships.ownerId, buyer.id)),
           )
           .limit(1);
 

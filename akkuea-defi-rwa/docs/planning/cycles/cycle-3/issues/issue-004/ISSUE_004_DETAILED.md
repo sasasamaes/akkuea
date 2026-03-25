@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                 |
-| --------------- | ----------------------------------------------------- |
-| Issue ID        | C3-004                                                |
+| Attribute       | Value                                                   |
+| --------------- | ------------------------------------------------------- |
+| Issue ID        | C3-004                                                  |
 | Title           | Create launch-grade test harnesses and staging fixtures |
-| Area            | SHARED                                                |
-| Difficulty      | Medium                                                |
-| Labels          | testing, qa, staging, shared                          |
-| Dependencies    | C1-006                                                |
-| Estimated Lines | 120-180                                               |
+| Area            | SHARED                                                  |
+| Difficulty      | Medium                                                  |
+| Labels          | testing, qa, staging, shared                            |
+| Dependencies    | C1-006                                                  |
+| Estimated Lines | 120-180                                                 |
 
 ## Overview
 

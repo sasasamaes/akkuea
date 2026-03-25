@@ -1,4 +1,3 @@
-
 export type {
   PropertyLocation,
   PropertyDocument,
@@ -39,17 +38,9 @@ export type ValuationMethodology =
   | "income_approach"
   | "cost_approach";
 
-export type PropertyType =
-  | "residential"
-  | "commercial"
-  | "industrial"
-  | "land";
+export type PropertyType = "residential" | "commercial" | "industrial" | "land";
 
-export type ValuationStatus =
-  | "active"
-  | "stale"
-  | "rejected"
-  | "manual_review";
+export type ValuationStatus = "active" | "stale" | "rejected" | "manual_review";
 
 export interface ValuationProvenance {
   dataProvider: string;

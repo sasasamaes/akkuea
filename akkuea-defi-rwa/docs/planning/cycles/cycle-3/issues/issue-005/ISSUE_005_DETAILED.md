@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                 |
-| --------------- | ----------------------------------------------------- |
-| Issue ID        | C3-005                                                |
-| Title           | Add platform-wide rate limiting and abuse protection  |
-| Area            | API                                                   |
-| Difficulty      | Trivial                                               |
-| Labels          | api, security, abuse-protection                       |
-| Dependencies    | C1-009                                                |
-| Estimated Lines | 80-140                                                |
+| Attribute       | Value                                                |
+| --------------- | ---------------------------------------------------- |
+| Issue ID        | C3-005                                               |
+| Title           | Add platform-wide rate limiting and abuse protection |
+| Area            | API                                                  |
+| Difficulty      | Trivial                                              |
+| Labels          | api, security, abuse-protection                      |
+| Dependencies    | C1-009                                               |
+| Estimated Lines | 80-140                                               |
 
 ## Overview
 

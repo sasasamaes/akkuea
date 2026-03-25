@@ -1,4 +1,4 @@
-export type RiskLevel = 'safe' | 'warning' | 'critical';
+export type RiskLevel = "safe" | "warning" | "critical";
 
 export interface PositionHealth {
   positionId: string;

@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                   |
-| --------------- | ------------------------------------------------------- |
-| Issue ID        | C3-009                                                  |
-| Title           | Add audit log models and compliance export utilities    |
-| Area            | SHARED                                                  |
-| Difficulty      | Trivial                                                 |
-| Labels          | shared, audit, compliance                               |
-| Dependencies    | C1-006                                                  |
-| Estimated Lines | 70-110                                                  |
+| Attribute       | Value                                                |
+| --------------- | ---------------------------------------------------- |
+| Issue ID        | C3-009                                               |
+| Title           | Add audit log models and compliance export utilities |
+| Area            | SHARED                                               |
+| Difficulty      | Trivial                                              |
+| Labels          | shared, audit, compliance                            |
+| Dependencies    | C1-006                                               |
+| Estimated Lines | 70-110                                               |
 
 ## Overview
 

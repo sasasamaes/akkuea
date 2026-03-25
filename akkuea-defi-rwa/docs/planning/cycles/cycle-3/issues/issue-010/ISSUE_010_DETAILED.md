@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                    |
-| --------------- | -------------------------------------------------------- |
-| Issue ID        | C3-010                                                   |
-| Title           | Implement emergency controls with timelock governance    |
-| Area            | CONTRACT                                                 |
-| Difficulty      | Medium                                                   |
-| Labels          | smart-contract, governance, security                     |
-| Dependencies    | C1-015                                                   |
-| Estimated Lines | 120-180                                                  |
+| Attribute       | Value                                                 |
+| --------------- | ----------------------------------------------------- |
+| Issue ID        | C3-010                                                |
+| Title           | Implement emergency controls with timelock governance |
+| Area            | CONTRACT                                              |
+| Difficulty      | Medium                                                |
+| Labels          | smart-contract, governance, security                  |
+| Dependencies    | C1-015                                                |
+| Estimated Lines | 120-180                                               |
 
 ## Overview
 

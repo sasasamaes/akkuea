@@ -17,41 +17,41 @@ Implement live updates for property status, valuation changes, and lending marke
 
 ## Acceptance Criteria
 
-| Criteria                                              | Validation Method |
-| ----------------------------------------------------- | ----------------- |
-| Valuation changes appear without manual refresh       | UI test           |
-| Connection loss degrades gracefully                   | Manual QA         |
-| Last-updated indicators are visible to the user       | UX review         |
-| Live updates do not break core flows                  | Regression test   |
+| Criteria                                        | Validation Method |
+| ----------------------------------------------- | ----------------- |
+| Valuation changes appear without manual refresh | UI test           |
+| Connection loss degrades gracefully             | Manual QA         |
+| Last-updated indicators are visible to the user | UX review         |
+| Live updates do not break core flows            | Regression test   |
 
 ## Files to Create/Modify
 
-| File                            | Action | Purpose                           |
-| ------------------------------- | ------ | --------------------------------- |
-| `apps/webapp/src/app/`          | Modify | Surface live property state       |
-| `apps/webapp/src/hooks/`        | Create | Realtime subscriptions and cache  |
-| `apps/webapp/src/services/api/` | Modify | Live update integration           |
-| `apps/webapp/src/components/`   | Modify | Freshness and state indicators    |
+| File                            | Action | Purpose                          |
+| ------------------------------- | ------ | -------------------------------- |
+| `apps/webapp/src/app/`          | Modify | Surface live property state      |
+| `apps/webapp/src/hooks/`        | Create | Realtime subscriptions and cache |
+| `apps/webapp/src/services/api/` | Modify | Live update integration          |
+| `apps/webapp/src/components/`   | Modify | Freshness and state indicators   |
 
 ## Test Requirements
 
-| Test Case                                    | Expected Result                 |
-| -------------------------------------------- | ------------------------------- |
-| New valuation event received                 | Relevant card refreshes         |
-| WebSocket or SSE disconnect occurs           | UI falls back safely            |
-| Multiple rapid updates arrive                | UI remains stable               |
-| Mobile session receives updates              | No layout breakage              |
+| Test Case                          | Expected Result         |
+| ---------------------------------- | ----------------------- |
+| New valuation event received       | Relevant card refreshes |
+| WebSocket or SSE disconnect occurs | UI falls back safely    |
+| Multiple rapid updates arrive      | UI remains stable       |
+| Mobile session receives updates    | No layout breakage      |
 
 - If you want to read more about this issue, you can read the https://github.com/akkuea/akkuea/tree/develop/akkuea-defi-rwa/docs/planning/cycles/cycle-3/issues/issue-003/ISSUE_003_DETAILED.md
 
 ## Issue Metadata
 
-| Attribute       | Value                                          |
-| --------------- | ---------------------------------------------- |
-| Issue ID        | C3-003                                         |
+| Attribute       | Value                                              |
+| --------------- | -------------------------------------------------- |
+| Issue ID        | C3-003                                             |
 | Title           | Add live property and market updates to the webapp |
-| Area            | WEBAPP                                         |
-| Difficulty      | Medium                                         |
-| Labels          | frontend, realtime, investor-experience, medium |
-| Dependencies    | C2-007                                         |
-| Estimated Lines | 140-220                                        |
+| Area            | WEBAPP                                             |
+| Difficulty      | Medium                                             |
+| Labels          | frontend, realtime, investor-experience, medium    |
+| Dependencies    | C2-007                                             |
+| Estimated Lines | 140-220                                            |

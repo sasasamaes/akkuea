@@ -43,7 +43,11 @@ function createRateLimitStore() {
     }
   }
 
-  function checkLimit(identifier: string, windowMs: number, max: number): {
+  function checkLimit(
+    identifier: string,
+    windowMs: number,
+    max: number,
+  ): {
     allowed: boolean;
     remaining: number;
     resetAt: number;
