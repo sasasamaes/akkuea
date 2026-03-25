@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const INTERNAL_KEY = process.env.INTERNAL_OPERATIONS_API_KEY ?? "";
+/** Shared secret with the API for the internal operations routes (set in deployment env). */
+const operationsBackendCredential = process.env.OPERATIONS_BACKEND_CREDENTIAL ?? "";
 const API_BASE =
   process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -30,7 +31,7 @@ async function proxy(
   segments: string[],
   method: string,
 ): Promise<NextResponse> {
-  if (!INTERNAL_KEY) {
+  if (!operationsBackendCredential) {
     return NextResponse.json(
       {
         success: false,
@@ -59,7 +60,7 @@ async function proxy(
   targetUrl.search = incomingUrl.search;
 
   const headers = new Headers();
-  headers.set("x-internal-api-key", INTERNAL_KEY);
+  headers.set("x-internal-api-key", operationsBackendCredential);
   const contentType = req.headers.get("content-type");
   if (contentType) {
     headers.set("content-type", contentType);

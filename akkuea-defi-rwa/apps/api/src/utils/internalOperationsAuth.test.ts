@@ -3,11 +3,11 @@ import { isInternalOperationsAuthorized } from './internalOperationsAuth';
 
 describe('isInternalOperationsAuthorized', () => {
   beforeEach(() => {
-    process.env.INTERNAL_OPERATIONS_API_KEY = 'test-internal-ops-key';
+    process.env.OPERATIONS_BACKEND_CREDENTIAL = 'test-internal-ops-key';
   });
 
   afterEach(() => {
-    delete process.env.INTERNAL_OPERATIONS_API_KEY;
+    delete process.env.OPERATIONS_BACKEND_CREDENTIAL;
   });
 
   it('returns false when the header is missing', () => {
@@ -26,8 +26,8 @@ describe('isInternalOperationsAuthorized', () => {
     ).toBe(true);
   });
 
-  it('returns false when INTERNAL_OPERATIONS_API_KEY is unset', () => {
-    delete process.env.INTERNAL_OPERATIONS_API_KEY;
+  it('returns false when OPERATIONS_BACKEND_CREDENTIAL is unset', () => {
+    delete process.env.OPERATIONS_BACKEND_CREDENTIAL;
     expect(
       isInternalOperationsAuthorized({ 'x-internal-api-key': 'test-internal-ops-key' }),
     ).toBe(false);
