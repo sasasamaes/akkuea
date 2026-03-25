@@ -63,7 +63,9 @@ export function ConfirmReviewActionModal({
       description={propertyName}
       size="md"
     >
-      <p className="mb-6 text-sm leading-relaxed text-zinc-400">{copy.description}</p>
+      <p className="mb-6 text-sm leading-relaxed text-zinc-400">
+        {copy.description}
+      </p>
       <div className="flex justify-end gap-3">
         <Button variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancel

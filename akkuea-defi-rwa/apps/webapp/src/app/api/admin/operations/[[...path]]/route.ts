@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /** Shared secret with the API for the internal operations routes (set in deployment env). */
-const operationsBackendCredential = process.env.OPERATIONS_BACKEND_CREDENTIAL ?? "";
+const operationsBackendCredential =
+  process.env.OPERATIONS_BACKEND_CREDENTIAL ?? "";
 const API_BASE =
-  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  process.env.API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:3001";
 
 function parseAllowlist(): string[] | "wildcard" {
   const raw = process.env.OPERATIONS_ALLOWED_WALLETS ?? "";

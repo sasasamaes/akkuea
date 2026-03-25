@@ -22,7 +22,11 @@ import {
   type ReviewAction,
 } from "@/services/api/adminOperations";
 import { cn, formatCurrency, truncateAddress } from "@/lib/utils";
-import { pageTransition, staggerContainer, staggerItem } from "@/lib/animations";
+import {
+  pageTransition,
+  staggerContainer,
+  staggerItem,
+} from "@/lib/animations";
 
 const QUEUE_TABS: { id: OperationsQueue; label: string }[] = [
   { id: "pending", label: "Pending review" },
@@ -124,7 +128,9 @@ export function PropertyOperationsWorkspace({
         const res = await adminOperationsApi.getProperty(operatorWallet, id);
         setDetail(res.data);
       } catch (e) {
-        setDetailError(e instanceof Error ? e.message : "Failed to load property");
+        setDetailError(
+          e instanceof Error ? e.message : "Failed to load property",
+        );
         setDetail(null);
       } finally {
         setDetailLoading(false);
@@ -145,11 +151,15 @@ export function PropertyOperationsWorkspace({
     if (!confirmAction || !selectedId || !operatorWallet) return;
     setSubmitting(true);
     try {
-      const res = await adminOperationsApi.reviewProperty(operatorWallet, selectedId, {
-        action: confirmAction,
-        note: note.trim() || undefined,
-        actorWallet: operatorWallet,
-      });
+      const res = await adminOperationsApi.reviewProperty(
+        operatorWallet,
+        selectedId,
+        {
+          action: confirmAction,
+          note: note.trim() || undefined,
+          actorWallet: operatorWallet,
+        },
+      );
       setDetail(res.data);
       setConfirmAction(null);
       setNote("");
@@ -195,8 +205,9 @@ export function PropertyOperationsWorkspace({
               Property verification
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-              Review tokenized inventory, valuation posture, and owner KYC before marketplace
-              exposure. Critical actions require explicit confirmation.
+              Review tokenized inventory, valuation posture, and owner KYC
+              before marketplace exposure. Critical actions require explicit
+              confirmation.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -223,10 +234,12 @@ export function PropertyOperationsWorkspace({
             <div className="flex gap-3">
               <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400" />
               <div>
-                <p className="font-medium text-amber-100">Connect an authorized wallet</p>
+                <p className="font-medium text-amber-100">
+                  Connect an authorized wallet
+                </p>
                 <p className="mt-1 text-sm text-amber-100/80">
-                  Use the header wallet control to connect. Your address must be on the operations
-                  allowlist for this environment.
+                  Use the header wallet control to connect. Your address must be
+                  on the operations allowlist for this environment.
                 </p>
               </div>
             </div>
@@ -240,8 +253,9 @@ export function PropertyOperationsWorkspace({
               <div>
                 <p className="font-medium text-red-100">Access denied</p>
                 <p className="mt-1 text-sm text-red-100/80">
-                  This wallet is not permitted to use the operations dashboard. Contact platform
-                  administrators if you believe this is an error.
+                  This wallet is not permitted to use the operations dashboard.
+                  Contact platform administrators if you believe this is an
+                  error.
                 </p>
               </div>
             </div>
@@ -281,7 +295,9 @@ export function PropertyOperationsWorkspace({
                   <p className="p-6 text-sm text-red-300">{listError}</p>
                 )}
                 {!listLoading && !listError && items.length === 0 && (
-                  <p className="p-6 text-sm text-zinc-500">No properties in this queue.</p>
+                  <p className="p-6 text-sm text-zinc-500">
+                    No properties in this queue.
+                  </p>
                 )}
                 {!listLoading &&
                   !listError &&
@@ -296,13 +312,19 @@ export function PropertyOperationsWorkspace({
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-medium text-zinc-100">{row.name}</span>
-                        <Badge variant={statusBadgeVariant(row.reviewStatus)} className="shrink-0">
+                        <span className="font-medium text-zinc-100">
+                          {row.name}
+                        </span>
+                        <Badge
+                          variant={statusBadgeVariant(row.reviewStatus)}
+                          className="shrink-0"
+                        >
                           {formatStatusLabel(row.reviewStatus)}
                         </Badge>
                       </div>
                       <p className="text-xs text-zinc-500">
-                        {row.city}, {row.country} · Owner {truncateAddress(row.ownerWallet)}
+                        {row.city}, {row.country} · Owner{" "}
+                        {truncateAddress(row.ownerWallet)}
                       </p>
                       <div className="flex flex-wrap gap-2 text-[11px] text-zinc-500">
                         <span>KYC: {row.ownerKycStatus}</span>
@@ -322,7 +344,8 @@ export function PropertyOperationsWorkspace({
               <Card className="flex min-h-[320px] flex-col items-center justify-center border-dashed border-zinc-700 bg-zinc-950/40 p-8 text-center">
                 <Building2 className="mb-3 h-10 w-10 text-zinc-600" />
                 <p className="text-sm text-zinc-500">
-                  Select a property from the queue to see audit context, documents, and actions.
+                  Select a property from the queue to see audit context,
+                  documents, and actions.
                 </p>
               </Card>
             )}
@@ -339,22 +362,28 @@ export function PropertyOperationsWorkspace({
                 <Card className="border-zinc-800 bg-zinc-950/80 p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <h2 className="text-xl font-semibold text-white">{detail.name}</h2>
+                      <h2 className="text-xl font-semibold text-white">
+                        {detail.name}
+                      </h2>
                       <p className="mt-1 text-sm text-zinc-500">
-                        {detail.location.city}, {detail.location.country} · Listed{" "}
-                        {new Date(detail.listedAt).toLocaleString()}
+                        {detail.location.city}, {detail.location.country} ·
+                        Listed {new Date(detail.listedAt).toLocaleString()}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant={detail.verified ? "success" : "warning"}>
-                        {detail.verified ? "Verified (marketplace)" : "Not verified"}
+                        {detail.verified
+                          ? "Verified (marketplace)"
+                          : "Not verified"}
                       </Badge>
                       <Badge variant={statusBadgeVariant(detail.reviewStatus)}>
                         {formatStatusLabel(detail.reviewStatus)}
                       </Badge>
                     </div>
                   </div>
-                  <p className="mt-4 text-sm leading-relaxed text-zinc-400">{detail.description}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+                    {detail.description}
+                  </p>
                   <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
                     <div>
                       <dt className="text-zinc-500">Total value</dt>
@@ -370,7 +399,9 @@ export function PropertyOperationsWorkspace({
                     </div>
                     <div>
                       <dt className="text-zinc-500">Owner wallet</dt>
-                      <dd className="font-mono text-xs text-zinc-300">{detail.owner}</dd>
+                      <dd className="font-mono text-xs text-zinc-300">
+                        {detail.owner}
+                      </dd>
                     </div>
                     <div>
                       <dt className="text-zinc-500">Token</dt>
@@ -405,7 +436,8 @@ export function PropertyOperationsWorkspace({
                     {readinessSummary && (
                       <li>
                         <span className="text-zinc-500">Documents: </span>
-                        {readinessSummary.verifiedDocs}/{readinessSummary.docsTotal} verified on file
+                        {readinessSummary.verifiedDocs}/
+                        {readinessSummary.docsTotal} verified on file
                       </li>
                     )}
                     <li>
@@ -416,7 +448,8 @@ export function PropertyOperationsWorkspace({
                       {detail.audit.lastActionAt && (
                         <span className="text-zinc-600">
                           {" "}
-                          · {new Date(detail.audit.lastActionAt).toLocaleString()}
+                          ·{" "}
+                          {new Date(detail.audit.lastActionAt).toLocaleString()}
                         </span>
                       )}
                     </li>
@@ -436,7 +469,9 @@ export function PropertyOperationsWorkspace({
                   </h3>
                   <ul className="mt-4 divide-y divide-zinc-800">
                     {(detail.documents ?? []).length === 0 && (
-                      <li className="py-2 text-sm text-zinc-500">No documents uploaded.</li>
+                      <li className="py-2 text-sm text-zinc-500">
+                        No documents uploaded.
+                      </li>
                     )}
                     {(detail.documents ?? []).map((doc) => (
                       <li
@@ -444,7 +479,9 @@ export function PropertyOperationsWorkspace({
                         className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm"
                       >
                         <span className="text-zinc-200">{doc.name}</span>
-                        <span className="text-xs text-zinc-500">{doc.type}</span>
+                        <span className="text-xs text-zinc-500">
+                          {doc.type}
+                        </span>
                         <Badge variant={doc.verified ? "success" : "warning"}>
                           {doc.verified ? "Verified" : "Pending"}
                         </Badge>
@@ -454,7 +491,9 @@ export function PropertyOperationsWorkspace({
                 </Card>
 
                 <Card className="border-zinc-800 bg-zinc-950/80 p-6">
-                  <h3 className="text-sm font-semibold text-zinc-200">Operational note</h3>
+                  <h3 className="text-sm font-semibold text-zinc-200">
+                    Operational note
+                  </h3>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}

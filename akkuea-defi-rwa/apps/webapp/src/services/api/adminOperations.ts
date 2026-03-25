@@ -84,7 +84,9 @@ async function adminFetch<T>(
   };
 
   if (!res.ok) {
-    throw new Error(json.message ?? res.statusText ?? "Operations request failed");
+    throw new Error(
+      json.message ?? res.statusText ?? "Operations request failed",
+    );
   }
 
   return json as T;
@@ -94,7 +96,9 @@ export const adminOperationsApi = {
   async listQueue(
     operatorWallet: string | null,
     params: { queue: OperationsQueue; page?: number; limit?: number },
-  ): Promise<PaginatedResponse<OperationalPropertyListItem> & { success: boolean }> {
+  ): Promise<
+    PaginatedResponse<OperationalPropertyListItem> & { success: boolean }
+  > {
     const search = new URLSearchParams();
     search.set("queue", params.queue);
     if (params.page) search.set("page", String(params.page));
