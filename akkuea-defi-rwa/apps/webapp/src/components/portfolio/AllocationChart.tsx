@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface AllocationChartProps {
@@ -20,6 +20,9 @@ const TYPE_COLORS: Record<string, string> = {
 const DEFAULT_COLOR = "#525252";
 
 export function AllocationChart({ allocation, totalValue, className }: AllocationChartProps) {
+
+  const [cumulative, setCumulative] = useState(0);
+
   const segments = useMemo(() => {
     if (totalValue === 0) return [];
     return Object.entries(allocation)
@@ -42,10 +45,9 @@ export function AllocationChart({ allocation, totalValue, className }: Allocatio
   }
 
   // Build conic-gradient stops
-  let cumulative = 0;
   const stops = segments.map((s) => {
     const start = cumulative;
-    cumulative += s.pct;
+    setCumulative(prev => prev + s.pct)
     return `${s.color} ${start.toFixed(1)}% ${cumulative.toFixed(1)}%`;
   });
   const gradient = `conic-gradient(${stops.join(", ")})`;
