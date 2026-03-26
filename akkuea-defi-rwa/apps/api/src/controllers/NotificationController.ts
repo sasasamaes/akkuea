@@ -2,6 +2,13 @@ import type { Context } from 'elysia';
 import { NotificationService } from '../services/NotificationService';
 import { ApiError } from '../errors/ApiError';
 
+type NotificationBody = {
+  email?: string
+  wallet?: string
+  message?: string
+  notificationIds?: string[]
+}
+
 export class NotificationController {
   private static notificationService = new NotificationService();
 
@@ -43,6 +50,8 @@ export class NotificationController {
         pagination: { limit, offset },
       });
     } catch (error) {
+      console.error(error);
+
       throw new ApiError(500, 'INTERNAL_ERROR', 'Failed to retrieve notifications');
     }
   }
@@ -61,6 +70,8 @@ export class NotificationController {
       const count = await this.notificationService.getUnreadCount(userId);
       return this.jsonResponse({ unreadCount: count });
     } catch (error) {
+      console.error(error);
+
       throw new ApiError(500, 'INTERNAL_ERROR', 'Failed to retrieve unread count');
     }
   }
@@ -140,14 +151,14 @@ export class NotificationController {
       throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required');
     }
 
-    let body;
+    let body: NotificationBody;
     try {
-      body = await ctx.request.json();
+      body = await ctx.request.json() as NotificationBody;
     } catch {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid request body');
     }
 
-    if (!Array.isArray(body.notificationIds)) {
+    if (!body.notificationIds || !Array.isArray(body.notificationIds)) {
       throw new ApiError(400, 'VALIDATION_ERROR', 'notificationIds must be an array');
     }
 
@@ -190,6 +201,8 @@ export class NotificationController {
         count,
       });
     } catch (error) {
+      console.error(error);
+
       throw new ApiError(500, 'INTERNAL_ERROR', 'Failed to update notifications');
     }
   }

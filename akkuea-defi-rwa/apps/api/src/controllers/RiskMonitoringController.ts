@@ -72,8 +72,7 @@ export class RiskMonitoringController {
   }
 
   private static extractUserIdFromPositionId(positionId: string): string | null {
-    // positionId format is typically "poolId-borrowerId"
     const parts = positionId.split('-');
-    return parts.length > 1 ? parts[1] : null;
+    return parts.length > 1 ? parts[1] ?? null : null;
   }
 }
