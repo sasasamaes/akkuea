@@ -117,7 +117,7 @@ fn test_event_emission() {
     let events = env.events().all();
 
     // Verify at least one contract event was emitted
-    assert!(events.len() >= 1);
+    assert!(!events.is_empty());
 
     // Verify the last event has 2 topics (our tuple pattern)
     let (_contract_id, topics, _data) = events.last().unwrap();
