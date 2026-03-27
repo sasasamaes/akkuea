@@ -127,12 +127,7 @@ impl Contract {
         dist_id
     }
 
-    pub fn claim_distribution(
-        env: Env,
-        holder: Address,
-        property_id: u64,
-        dist_id: u32,
-    ) -> i128 {
+    pub fn claim_distribution(env: Env, holder: Address, property_id: u64, dist_id: u32) -> i128 {
         holder.require_auth();
 
         let claimed_key = DataKey::Claimed(property_id, dist_id, holder.clone());

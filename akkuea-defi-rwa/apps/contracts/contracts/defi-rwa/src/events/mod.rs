@@ -5,12 +5,7 @@ pub fn emit_property_registered(env: &Env, property_id: u64, total_shares: u32) 
         .publish(("property", "registered"), (property_id, total_shares));
 }
 
-pub fn emit_shareholder_registered(
-    env: &Env,
-    property_id: u64,
-    holder: Address,
-    shares: u32,
-) {
+pub fn emit_shareholder_registered(env: &Env, property_id: u64, holder: Address, shares: u32) {
     env.events()
         .publish(("shareholder", "registered"), (property_id, holder, shares));
 }

@@ -1,7 +1,10 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{testutils::{Address as _, Events}, Address, Env};
+use soroban_sdk::{
+    testutils::{Address as _, Events},
+    Address, Env,
+};
 
 fn setup_env() -> (Env, ContractClient<'static>, Address) {
     let env = Env::default();
