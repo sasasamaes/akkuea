@@ -2658,6 +2658,7 @@ fn test_borrow_with_zero_oracle_price() {
     });
 }
 
+#[test]
 #[should_panic(expected = "Contract paused")]
 fn test_emergency_pause_blocks_operations() {
     let s = setup();
