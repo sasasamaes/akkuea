@@ -1,34 +1,25 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
-#[contracttype]
-pub enum DataKey {
-    Admin,
-    Property(u64),
-    Shares(u64, Address),
-    DistCount(u64),
-    Dist(u64, u32),
-    Claimed(u64, u32, Address),
-}
+// Operational Assumptions (REQ-006):
+// - Off-chain cashflow is collected by the property admin, who then calls
+//   `create_distribution` with the total amount available for distribution.
+// - Token holders call `claim_distribution` to record their entitlement on-chain.
+// - Actual payment settlement occurs off-chain or via a separate token contract.
+// - The `period` field is a reference identifier (e.g. 202601 for Jan 2026)
+//   and is not enforced on-chain.
+// - Integer division rounding: the last claimer may receive 1 less unit
+//   (sub-stroop), which is acceptable for real estate distribution amounts.
 
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct PropertyInfo {
-    pub id: u64,
-    pub admin: Address,
-    pub total_shares: u32,
-}
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Distribution {
-    pub id: u32,
-    pub property_id: u64,
-    pub total_amount: i128,
-    pub period: u64,
-    pub total_shares: u32,
-    pub claimed_amount: i128,
-}
+pub mod events;
+pub mod storage;
+
+use events::{
+    emit_distribution_claimed, emit_distribution_created, emit_property_registered,
+    emit_shareholder_registered,
+};
+use storage::{DataKey, Distribution, PropertyInfo};
 
 #[contract]
 pub struct Contract;
@@ -54,11 +45,14 @@ impl Contract {
             admin: admin.clone(),
             total_shares,
         };
-        env.storage().persistent().set(&DataKey::Property(property_id), &info);
-        env.storage().persistent().set(&DataKey::DistCount(property_id), &0u32);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Property(property_id), &info);
+        env.storage()
+            .persistent()
+            .set(&DataKey::DistCount(property_id), &0u32);
 
-        env.events()
-            .publish(("property", "registered"), (property_id, total_shares));
+        emit_property_registered(&env, property_id, total_shares);
     }
 
     pub fn register_shareholder(
@@ -84,8 +78,7 @@ impl Contract {
             .persistent()
             .set(&DataKey::Shares(property_id, holder.clone()), &shares);
 
-        env.events()
-            .publish(("shareholder", "registered"), (property_id, holder, shares));
+        emit_shareholder_registered(&env, property_id, holder, shares);
     }
 
     pub fn create_distribution(
@@ -129,10 +122,7 @@ impl Contract {
             .persistent()
             .set(&DataKey::DistCount(property_id), &(dist_id + 1));
 
-        env.events().publish(
-            ("distribution", "created"),
-            (property_id, dist_id, total_amount, period),
-        );
+        emit_distribution_created(&env, property_id, dist_id, total_amount, period);
 
         dist_id
     }
@@ -174,10 +164,7 @@ impl Contract {
             .set(&DataKey::Dist(property_id, dist_id), &dist);
         env.storage().persistent().set(&claimed_key, &true);
 
-        env.events().publish(
-            ("distribution", "claimed"),
-            (property_id, dist_id, holder, amount),
-        );
+        emit_distribution_claimed(&env, property_id, dist_id, holder, amount);
 
         amount
     }
