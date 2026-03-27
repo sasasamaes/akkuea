@@ -1,6 +1,12 @@
 import { swagger } from '@elysiajs/swagger';
 import app from './app';
 import { checkDatabaseHealth, closeDatabaseConnection } from './db';
+import { propertyRoutes } from './routes/properties';
+import { lendingRoutes } from './routes/lending';
+import { userRoutes } from './routes/users';
+import { kycRoutes } from './routes/kyc';
+import { oracleRoutes } from './routes/oracle';
+import { errorHandler } from './middleware/errorHandler';
 
 // Add swagger to the base app
 app.use(
@@ -34,6 +40,12 @@ app
       },
     };
   })
+  .use(errorHandler)
+  .use(propertyRoutes)
+  .use(lendingRoutes)
+  .use(userRoutes)
+  .use(kycRoutes)
+  .use(oracleRoutes)
   .listen({
     port: Number(process.env.PORT) || 3001,
     hostname: '0.0.0.0',
