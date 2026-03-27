@@ -92,8 +92,9 @@ impl PauseControl {
     pub fn can_pause(env: &Env, address: &Address) -> bool {
         let is_admin = AdminControl::is_admin(env, address);
         let is_pauser = RoleStorage::has_role(env, address, &Role::Pauser);
+        let is_emergency_guard = RoleStorage::has_role(env, address, &Role::EmergencyGuard);
 
-        is_admin || is_pauser
+        is_admin || is_pauser || is_emergency_guard
     }
 
     pub fn require_can_pause(env: &Env, address: &Address) {

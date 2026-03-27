@@ -22,6 +22,14 @@ export const propertyTypeEnum = pgEnum('property_type', [
   'mixed',
 ]);
 
+export const propertyReviewStatusEnum = pgEnum('property_review_status', [
+  'pending_review',
+  'approved',
+  'rejected',
+  'changes_requested',
+  'on_hold',
+]);
+
 export const properties = pgTable('properties', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -42,6 +50,10 @@ export const properties = pgTable('properties', {
   pricePerShare: decimal('price_per_share', { precision: 20, scale: 2 }).notNull(),
   images: jsonb('images').notNull().$type<string[]>(),
   verified: boolean('verified').notNull().default(false),
+  reviewStatus: propertyReviewStatusEnum('review_status').notNull().default('pending_review'),
+  lastReviewNote: text('last_review_note'),
+  lastReviewedAt: timestamp('last_reviewed_at', { withTimezone: true }),
+  lastReviewerWallet: varchar('last_reviewer_wallet', { length: 56 }),
   listedAt: timestamp('listed_at', { withTimezone: true }).notNull().defaultNow(),
   ownerId: uuid('owner_id')
     .notNull()

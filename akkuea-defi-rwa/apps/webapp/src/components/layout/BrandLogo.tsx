@@ -31,7 +31,10 @@ export function BrandLogo({
     : {};
 
   return (
-    <Link href={href} className={cn("flex items-center gap-3 group", className)}>
+    <Link
+      href={href}
+      className={cn("flex items-center gap-3 group", className)}
+    >
       <IconWrapper
         {...iconWrapperProps}
         className={cn(

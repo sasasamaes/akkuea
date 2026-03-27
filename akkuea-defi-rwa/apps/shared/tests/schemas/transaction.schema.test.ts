@@ -7,7 +7,8 @@ import {
   type TransactionFilter,
 } from "../../src/schemas";
 
-const validStellarAddress = "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H";
+const validStellarAddress =
+  "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H";
 
 const validTransaction = {
   id: "550e8400-e29b-41d4-a716-446655440000",
@@ -37,7 +38,7 @@ describe("transactionSchema", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       const hashIssue = result.error.issues.find((i) =>
-        i.path.includes("hash")
+        i.path.includes("hash"),
       );
       expect(hashIssue).toBeDefined();
     }

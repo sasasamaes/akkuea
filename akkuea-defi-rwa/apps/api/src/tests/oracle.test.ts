@@ -7,7 +7,9 @@ import { ValidationService } from '@real-estate-defi/shared';
 // Reset in-memory store between tests by re-importing won't work cleanly,
 // so we test each scenario with unique propertyIds.
 
-const makePayload = (overrides: Partial<RealEstateValuationPayload> = {}): RealEstateValuationPayload => ({
+const makePayload = (
+  overrides: Partial<RealEstateValuationPayload> = {},
+): RealEstateValuationPayload => ({
   propertyId: `prop_${Math.random().toString(36).slice(2)}`,
   price: 350_000,
   currency: 'USD',
@@ -51,21 +53,27 @@ describe('ValidationService.validateValuationPayload', () => {
   });
 
   test('rejects price exceeding max bound', () => {
-    const result = ValidationService.validateValuationPayload(makePayload({ price: 2_000_000_000 }));
+    const result = ValidationService.validateValuationPayload(
+      makePayload({ price: 2_000_000_000 }),
+    );
     expect(result.isValid).toBe(false);
     expect(result.errors.some((e) => e.includes('Price'))).toBe(true);
   });
 
   test('rejects stale timestamp', () => {
     const staleDate = new Date(Date.now() - 25 * 60 * 60 * 1000); // 25 hours ago
-    const result = ValidationService.validateValuationPayload(makePayload({ timestamp: staleDate }));
+    const result = ValidationService.validateValuationPayload(
+      makePayload({ timestamp: staleDate }),
+    );
     expect(result.isValid).toBe(false);
     expect(result.errors.some((e) => e.toLowerCase().includes('stale'))).toBe(true);
   });
 
   test('rejects future timestamp', () => {
     const futureDate = new Date(Date.now() + 60_000);
-    const result = ValidationService.validateValuationPayload(makePayload({ timestamp: futureDate }));
+    const result = ValidationService.validateValuationPayload(
+      makePayload({ timestamp: futureDate }),
+    );
     expect(result.isValid).toBe(false);
     expect(result.errors.some((e) => e.includes('future'))).toBe(true);
   });
@@ -206,7 +214,11 @@ describe('OracleService.flagForManualReview', () => {
     const payload = makePayload();
     const { record } = OracleService.ingestValuation(payload);
 
-    const updated = OracleService.flagForManualReview(record.id, payload.propertyId, 'Suspicious value');
+    const updated = OracleService.flagForManualReview(
+      record.id,
+      payload.propertyId,
+      'Suspicious value',
+    );
     expect(updated.status).toBe('manual_review');
     expect(updated.rejectionReason).toBe('Suspicious value');
   });

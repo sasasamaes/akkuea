@@ -14,7 +14,9 @@ class MockWalletSigner implements WalletSigner {
 
   async sign(transaction: string): Promise<string> {
     // Mock implementation for testing
-    return Buffer.from(`mock-signature-${transaction.slice(0, 10)}`).toString("base64");
+    return Buffer.from(`mock-signature-${transaction.slice(0, 10)}`).toString(
+      "base64",
+    );
   }
 }
 

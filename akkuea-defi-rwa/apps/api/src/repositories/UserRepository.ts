@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import { users, type User, type NewUser } from '../db/schema';
 import { BaseRepository } from './BaseRepository';
@@ -6,6 +6,16 @@ import { BaseRepository } from './BaseRepository';
 export class UserRepository extends BaseRepository<typeof users, User, NewUser> {
   constructor() {
     super(users);
+  }
+
+  /**
+   * Find users by internal IDs (batch)
+   */
+  async findByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    return db.select().from(users).where(inArray(users.id, ids));
   }
 
   /**

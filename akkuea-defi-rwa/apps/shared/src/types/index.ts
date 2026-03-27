@@ -1,4 +1,3 @@
-// Re-export types from schemas (single source of truth)
 export type {
   PropertyLocation,
   PropertyDocument,
@@ -29,20 +28,20 @@ export type {
   OraclePrice,
 } from "../schemas/user.schema";
 
-// Keep pagination types (schema-independent)
-export * from "./pagination";
 
 
+// Observability contracts
+export * from "./observability";
 export type ValuationMethodology =
-  | 'automated'
-  | 'manual'
-  | 'comparable_sales'
-  | 'income_approach'
-  | 'cost_approach';
+  | "automated"
+  | "manual"
+  | "comparable_sales"
+  | "income_approach"
+  | "cost_approach";
 
-export type PropertyType = 'residential' | 'commercial' | 'industrial' | 'land';
+export type PropertyType = "residential" | "commercial" | "industrial" | "land";
 
-export type ValuationStatus = 'active' | 'stale' | 'rejected' | 'manual_review';
+export type ValuationStatus = "active" | "stale" | "rejected" | "manual_review";
 
 export interface ValuationProvenance {
   dataProvider: string;
@@ -87,3 +86,6 @@ export interface ContractValuationPayload {
   sourceHash: string;
   confidence: number;
 }
+
+export * from "./risk";
+export * from "./pagination";

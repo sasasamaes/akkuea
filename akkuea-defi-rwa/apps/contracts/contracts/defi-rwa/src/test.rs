@@ -2061,6 +2061,7 @@ fn test_approve_and_transfer_from() {
     assert_eq!(client.get_allowance(&property_id, &owner, &spender), 150);
 }
 
+
 // =========================================================================
 // Oracle Guardrails Tests (Issue #729 / C3-013)
 // =========================================================================
@@ -2415,8 +2416,29 @@ fn test_oracle_min_price_floor() {
         PriceOracle::get_price(&env, &asset_address);
     });
 }
+fn advance_time(env: &Env, secs: u64) {
+    let mut li = env.ledger().get();
+    li.timestamp += secs;
+    env.ledger().set(li);
+}
 
 #[test]
+fn test_emergency_guard_can_pause() {
+    let s = setup();
+    let guard = Address::generate(&s.env);
+
+    s.contract_client.grant_emergency_role(&s.admin, &guard);
+
+    s.contract_client.emergency_pause(&guard);
+
+    s.env.as_contract(&s.contract_address, || {
+        assert!(PauseControl::is_paused(&s.env));
+
+    });
+}
+
+#[test]
+
 fn test_oracle_min_price_floor_passes_above_threshold() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2637,3 +2659,195 @@ fn test_borrow_with_zero_oracle_price() {
         )
     });
 }
+
+#[should_panic(expected = "Contract paused")]
+fn test_emergency_pause_blocks_operations() {
+    let s = setup();
+
+    s.contract_client.emergency_pause(&s.admin);
+
+    s.env.as_contract(&s.contract_address, || {
+        PauseControl::require_not_paused(&s.env);
+    });
+}
+
+#[test]
+#[should_panic(expected = "Timelock not expired")]
+fn test_recovery_rejected_before_timelock() {
+    let s = setup();
+
+    s.contract_client.emergency_pause(&s.admin);
+    s.contract_client.schedule_recovery(&s.admin);
+
+    s.contract_client.execute_recovery(&s.admin);
+}
+
+#[test]
+fn test_recovery_succeeds_after_timelock() {
+    let s = setup();
+
+    s.contract_client.emergency_pause(&s.admin);
+    s.env.as_contract(&s.contract_address, || {
+        assert!(PauseControl::is_paused(&s.env));
+    });
+
+    s.contract_client.schedule_recovery(&s.admin);
+
+    advance_time(&s.env, 86_401);
+
+    s.contract_client.execute_recovery(&s.admin);
+
+    s.env.as_contract(&s.contract_address, || {
+        assert!(!PauseControl::is_paused(&s.env));
+    });
+}
+
+#[test]
+#[should_panic(expected = "Contract not paused")]
+fn test_schedule_recovery_requires_paused() {
+    let s = setup();
+    s.contract_client.schedule_recovery(&s.admin);
+}
+
+#[test]
+#[should_panic(expected = "Recovery already scheduled")]
+fn test_double_schedule_rejected() {
+    let s = setup();
+
+    s.contract_client.emergency_pause(&s.admin);
+    s.contract_client.schedule_recovery(&s.admin);
+    s.contract_client.schedule_recovery(&s.admin);
+}
+
+#[test]
+fn test_cancel_recovery_keeps_contract_paused() {
+    let s = setup();
+
+    s.contract_client.emergency_pause(&s.admin);
+    s.contract_client.schedule_recovery(&s.admin);
+    s.contract_client.cancel_recovery(&s.admin);
+
+    s.env.as_contract(&s.contract_address, || {
+        assert!(PauseControl::is_paused(&s.env));
+    });
+}
+
+#[test]
+#[should_panic(expected = "No recovery scheduled")]
+fn test_cancel_no_recovery_panics() {
+    let s = setup();
+    s.contract_client.cancel_recovery(&s.admin);
+}
+
+#[test]
+#[should_panic(expected = "Caller does not have permission to pause")]
+fn test_unauthorized_cannot_emergency_pause() {
+    let s = setup();
+    let attacker = Address::generate(&s.env);
+    s.contract_client.emergency_pause(&attacker);
+}
+
+#[test]
+#[should_panic(expected = "Caller not admin")]
+fn test_unauthorized_cannot_schedule_recovery() {
+    let s = setup();
+    let attacker = Address::generate(&s.env);
+    s.contract_client.emergency_pause(&s.admin);
+    s.contract_client.schedule_recovery(&attacker);
+}
+
+#[test]
+#[should_panic(expected = "Caller not admin")]
+fn test_unauthorized_cannot_execute_recovery() {
+    let s = setup();
+    let attacker = Address::generate(&s.env);
+    s.contract_client.execute_recovery(&attacker);
+}
+
+#[test]
+#[should_panic(expected = "Caller not admin")]
+fn test_unauthorized_cannot_cancel_recovery() {
+    let s = setup();
+    let attacker = Address::generate(&s.env);
+    s.contract_client.cancel_recovery(&attacker);
+}
+
+#[test]
+#[should_panic(expected = "Caller not admin")]
+fn test_non_admin_cannot_grant_emergency_role() {
+    let s = setup();
+    let non_admin = Address::generate(&s.env);
+    let target = Address::generate(&s.env);
+    s.contract_client.grant_emergency_role(&non_admin, &target);
+}
+
+#[test]
+#[should_panic(expected = "Caller does not have permission to pause")]
+fn test_revoked_emergency_guard_cannot_pause() {
+    let s = setup();
+    let guard = Address::generate(&s.env);
+
+    s.contract_client.grant_emergency_role(&s.admin, &guard);
+    s.contract_client.revoke_emergency_role(&s.admin, &guard);
+
+    s.contract_client.emergency_pause(&guard);
+}
+
+#[test]
+fn test_emergency_pause_emits_event() {
+    let s = setup();
+    s.contract_client.emergency_pause(&s.admin);
+}
+
+#[test]
+fn test_schedule_recovery_emits_event() {
+    let s = setup();
+    s.contract_client.emergency_pause(&s.admin);
+    s.contract_client.schedule_recovery(&s.admin);
+}
+
+#[test]
+fn test_cancel_recovery_emits_event() {
+    let s = setup();
+    s.contract_client.emergency_pause(&s.admin);
+    s.contract_client.schedule_recovery(&s.admin);
+    s.contract_client.cancel_recovery(&s.admin);
+}
+
+#[test]
+fn test_execute_recovery_emits_event() {
+    let s = setup();
+    s.contract_client.emergency_pause(&s.admin);
+    s.contract_client.schedule_recovery(&s.admin);
+    advance_time(&s.env, 86_401);
+    s.contract_client.execute_recovery(&s.admin);
+}
+
+#[test]
+fn test_full_emergency_and_recovery_flow() {
+    let s = setup();
+    let pool_id = create_default_pool(&s);
+    let guard = Address::generate(&s.env);
+    let user = Address::generate(&s.env);
+
+    s.contract_client.grant_emergency_role(&s.admin, &guard);
+    mint_tokens(&s, &user, 2_000_000_000);
+
+    s.contract_client
+        .deposit(&user, &pool_id, &1_000_000_000_i128);
+
+    s.contract_client.emergency_pause(&guard);
+
+    s.contract_client.schedule_recovery(&s.admin);
+
+    advance_time(&s.env, 86_401);
+
+    s.contract_client.execute_recovery(&s.admin);
+
+    s.contract_client
+        .deposit(&user, &pool_id, &1_000_000_000_i128);
+
+    let total = s.contract_client.get_total_deposits(&pool_id);
+    assert_eq!(total, 2_000_000_000);
+}
+

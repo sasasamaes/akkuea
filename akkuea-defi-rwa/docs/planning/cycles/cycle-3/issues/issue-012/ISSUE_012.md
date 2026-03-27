@@ -16,40 +16,40 @@ Create the service layer that sends operational and investor-facing notification
 
 ## Acceptance Criteria
 
-| Criteria                                   | Validation Method |
-| ------------------------------------------ | ----------------- |
-| Notification records are created for key events | Service test |
-| Delivery state is queryable                | Repository test   |
-| Users can fetch their relevant notifications | API test        |
-| Retry-safe behavior exists                 | Negative test     |
+| Criteria                                        | Validation Method |
+| ----------------------------------------------- | ----------------- |
+| Notification records are created for key events | Service test      |
+| Delivery state is queryable                     | Repository test   |
+| Users can fetch their relevant notifications    | API test          |
+| Retry-safe behavior exists                      | Negative test     |
 
 ## Files to Create/Modify
 
-| File                         | Action | Purpose                          |
-| ---------------------------- | ------ | -------------------------------- |
-| `apps/api/src/services/`     | Create | Notification orchestration       |
-| `apps/api/src/routes/`       | Create | Notification retrieval endpoints |
-| `apps/api/src/controllers/`  | Create | Notification handlers            |
-| `apps/api/src/db/schema/`    | Modify | Persist notifications            |
+| File                        | Action | Purpose                          |
+| --------------------------- | ------ | -------------------------------- |
+| `apps/api/src/services/`    | Create | Notification orchestration       |
+| `apps/api/src/routes/`      | Create | Notification retrieval endpoints |
+| `apps/api/src/controllers/` | Create | Notification handlers            |
+| `apps/api/src/db/schema/`   | Modify | Persist notifications            |
 
 ## Test Requirements
 
-| Test Case                              | Expected Result               |
-| -------------------------------------- | ----------------------------- |
-| Risk event triggers notification       | Record created                |
-| User queries notifications             | Relevant list returned        |
-| Delivery attempt fails temporarily     | Retry state captured          |
+| Test Case                          | Expected Result        |
+| ---------------------------------- | ---------------------- |
+| Risk event triggers notification   | Record created         |
+| User queries notifications         | Relevant list returned |
+| Delivery attempt fails temporarily | Retry state captured   |
 
 - If you want to read more about this issue, you can read the https://github.com/akkuea/akkuea/tree/develop/akkuea-defi-rwa/docs/planning/cycles/cycle-3/issues/issue-012/ISSUE_012_DETAILED.md
 
 ## Issue Metadata
 
-| Attribute       | Value                                            |
-| --------------- | ------------------------------------------------ |
-| Issue ID        | C3-012                                           |
+| Attribute       | Value                                                      |
+| --------------- | ---------------------------------------------------------- |
+| Issue ID        | C3-012                                                     |
 | Title           | Implement notification and investor communications service |
-| Area            | API                                              |
-| Difficulty      | Medium                                           |
-| Labels          | api, notifications, investor-communications      |
-| Dependencies    | C1-013                                           |
-| Estimated Lines | 140-220                                          |
+| Area            | API                                                        |
+| Difficulty      | Medium                                                     |
+| Labels          | api, notifications, investor-communications                |
+| Dependencies    | C1-013                                                     |
+| Estimated Lines | 140-220                                                    |

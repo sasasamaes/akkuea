@@ -4,15 +4,15 @@
 
 ## Issue Metadata
 
-| Attribute       | Value                                                             |
-| --------------- | ----------------------------------------------------------------- |
-| Issue ID        | C3-012                                                            |
-| Title           | Implement notification and investor communications service        |
-| Area            | API                                                               |
-| Difficulty      | Medium                                                            |
-| Labels          | api, notifications, investor-communications                       |
-| Dependencies    | C1-013                                                            |
-| Estimated Lines | 140-220                                                           |
+| Attribute       | Value                                                      |
+| --------------- | ---------------------------------------------------------- |
+| Issue ID        | C3-012                                                     |
+| Title           | Implement notification and investor communications service |
+| Area            | API                                                        |
+| Difficulty      | Medium                                                     |
+| Labels          | api, notifications, investor-communications                |
+| Dependencies    | C1-013                                                     |
+| Estimated Lines | 140-220                                                    |
 
 ## Overview
 

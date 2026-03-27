@@ -7,6 +7,7 @@ import {
   uuidParamSchema,
   paginationQuerySchema,
   ownerParamSchema,
+  rateLimit,
 } from '../middleware';
 import { PropertyController } from '../controllers/PropertyController';
 import { handleError, UnauthorizedError } from '../utils/errors';
@@ -74,9 +75,9 @@ const getPropertyRoute = new Elysia()
   });
 
 // POST /properties - create property
-const createPropertyRoute = new Elysia()
-  .use(validateBody(createPropertySchema))
-  .post('/', async ({ validatedBody, headers, set }) => {
+const createPropertyRoute = new Elysia().use(validateBody(createPropertySchema)).post(
+  '/',
+  async ({ validatedBody, headers, set }) => {
     try {
       const userAddress = headers['x-user-address'] as string | undefined;
       if (!userAddress) {
@@ -88,7 +89,9 @@ const createPropertyRoute = new Elysia()
       set.status = errorResponse.statusCode;
       return errorResponse;
     }
-  });
+  },
+  { beforeHandle: [rateLimit()] },
+);
 
 // PUT /properties/:id - update property
 const updatePropertyRoute = new Elysia()
@@ -130,9 +133,9 @@ const deletePropertyRoute = new Elysia()
   });
 
 // POST /properties/:id/tokenize - tokenize property
-const tokenizePropertyRoute = new Elysia()
-  .use(validateParams(uuidParamSchema))
-  .post('/:id/tokenize', async ({ validatedParams, body, headers, set }) => {
+const tokenizePropertyRoute = new Elysia().use(validateParams(uuidParamSchema)).post(
+  '/:id/tokenize',
+  async ({ validatedParams, body, headers, set }) => {
     try {
       const userAddress = headers['x-user-address'] as string | undefined;
       return await PropertyController.tokenizeProperty(
@@ -145,29 +148,39 @@ const tokenizePropertyRoute = new Elysia()
       set.status = errorResponse.statusCode;
       return errorResponse;
     }
-  });
+  },
+  { beforeHandle: [rateLimit()] },
+);
 
 // POST /properties/:id/buy-shares - buy property shares
 const buySharesRoute = new Elysia()
   .use(validateParams(uuidParamSchema))
   .use(validateBody(buySharesSchema))
-  .post('/:id/buy-shares', async ({ validatedParams, validatedBody, headers, set }) => {
-    try {
-      const userAddress = headers['x-user-address'] as string | undefined;
-      if (!userAddress) {
-        throw new UnauthorizedError('User address is required for authentication');
-      }
+  .post(
+    '/:id/buy-shares',
+    async ({ validatedParams, validatedBody, headers, set }) => {
+      try {
+        const userAddress = headers['x-user-address'] as string | undefined;
+        if (!userAddress) {
+          throw new UnauthorizedError('User address is required for authentication');
+        }
 
-      return await PropertyController.buyShares(validatedParams!.id, {
-        buyer: validatedBody!.buyer,
-        shares: validatedBody!.shares,
-      }, userAddress);
-    } catch (error) {
-      const errorResponse = handleError(error);
-      set.status = errorResponse.statusCode;
-      return errorResponse;
-    }
-  });
+        return await PropertyController.buyShares(
+          validatedParams!.id,
+          {
+            buyer: validatedBody!.buyer,
+            shares: validatedBody!.shares,
+          },
+          userAddress,
+        );
+      } catch (error) {
+        const errorResponse = handleError(error);
+        set.status = errorResponse.statusCode;
+        return errorResponse;
+      }
+    },
+    { beforeHandle: [rateLimit()] },
+  );
 
 // GET /properties/:id/shares/:owner - get user shares
 const getUserSharesRoute = new Elysia()

@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { KYCController } from '../controllers/KYCController';
 import { ApiError } from '../errors/ApiError';
+import { rateLimit } from '../middleware';
 
 const DOCUMENT_TYPES = [
   'passport',
@@ -105,59 +106,27 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
         return handleKycError(error, set);
       }
     },
-    {
-      beforeHandle: [
-        async ({ request, set }) => {
-          const forwarded = request.headers.get('x-forwarded-for');
-          const key = forwarded?.split(',')[0]?.trim() ?? 'unknown';
-          const windowMs = 60 * 1000;
-          const max = 10;
-          type RateLimitEntry = { count: number; resetAt: number };
-          const globalStore = globalThis as typeof globalThis & {
-            __kycUploadRateLimit?: Map<string, RateLimitEntry>;
-          };
-          const store: Map<string, RateLimitEntry> =
-            globalStore.__kycUploadRateLimit ?? new Map<string, RateLimitEntry>();
-          globalStore.__kycUploadRateLimit = store;
-          const now = Date.now();
-          const entry = store.get(key);
-          if (!entry) {
-            store.set(key, { count: 1, resetAt: now + windowMs });
-            return;
-          }
-          if (now >= entry.resetAt) {
-            entry.count = 1;
-            entry.resetAt = now + windowMs;
-            return;
-          }
-          entry.count += 1;
-          if (entry.count > max) {
-            set.status = 429;
-            return {
-              success: false,
-              error: 'TOO_MANY_REQUESTS',
-              message: 'Too many upload requests. Please try again later.',
-            };
-          }
-        },
-      ],
-    },
+    { beforeHandle: [rateLimit()] },
   )
-  .post('/submit', async ({ body, set }) => {
-    try {
-      return await KYCController.submitKYC(
-        body as {
-          userId: string;
-          documents: {
-            type: 'passport' | 'id_card' | 'proof_of_address' | 'other';
-            documentUrl: string;
-          }[];
-        },
-      );
-    } catch (error) {
-      return handleKycError(error, set);
-    }
-  })
+  .post(
+    '/submit',
+    async ({ body, set }) => {
+      try {
+        return await KYCController.submitKYC(
+          body as {
+            userId: string;
+            documents: {
+              type: 'passport' | 'id_card' | 'proof_of_address' | 'other';
+              documentUrl: string;
+            }[];
+          },
+        );
+      } catch (error) {
+        return handleKycError(error, set);
+      }
+    },
+    { beforeHandle: [rateLimit()] },
+  )
   .post('/verify/:documentId', async ({ params: { documentId }, body, set }) => {
     try {
       return await KYCController.verifyDocument(
@@ -180,7 +149,7 @@ export const kycRoutes = new Elysia({ prefix: '/kyc' })
       const { buffer, contentType, fileName } = await KYCController.getDocumentFile(documentId);
       set.headers['Content-Type'] = contentType;
       set.headers['Content-Disposition'] = `inline; filename="${fileName}"`;
-      return new Response(buffer, {
+      return new Response(new Uint8Array(buffer), {
         status: 200,
         headers: {
           'Content-Type': contentType,

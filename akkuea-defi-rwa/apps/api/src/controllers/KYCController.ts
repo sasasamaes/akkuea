@@ -3,6 +3,7 @@ import { ApiError } from '../errors/ApiError';
 import { kycRepository } from '../repositories/KYCRepository';
 import { userRepository } from '../repositories/UserRepository';
 import { storageService, StorageService } from '../services/StorageService';
+import { NotificationService } from '../services/NotificationService';
 
 const DOCUMENT_TYPE_MAP = {
   passport: 'passport' as const,
@@ -191,10 +192,21 @@ export class KYCController {
       const anyRejected = allDocs.some((d) => d.status === 'rejected');
       const allApproved = allDocs.every((d) => d.status === 'approved');
 
+      // Initialize notification service
+      const notificationService = new NotificationService();
+
       if (anyRejected) {
         await kycRepository.updateUserKycStatus(doc.userId, 'rejected');
+        // Send verification rejected notification
+        await notificationService.notifyVerificationRejected(
+          doc.userId,
+          data.notes || 'Your verification documents were rejected. Please resubmit with correct information.',
+          'IN_APP',
+        );
       } else if (allApproved) {
         await kycRepository.updateUserKycStatus(doc.userId, 'approved');
+        // Send verification approved notification
+        await notificationService.notifyVerificationApproved(doc.userId, 'IN_APP');
       }
 
       return { success: true };

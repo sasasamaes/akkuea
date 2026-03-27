@@ -1,3 +1,4 @@
+import { isAppError } from '@real-estate-defi/shared';
 import { ApiError } from '../errors/ApiError';
 
 export class AppError extends Error {
@@ -56,6 +57,16 @@ export function handleError(error: unknown): ErrorResponse {
       error: error.code,
       message: error.message,
       statusCode: error.statusCode,
+      timestamp,
+    };
+  }
+
+  if (isAppError(error)) {
+    return {
+      success: false,
+      error: String(error.code),
+      message: error.message,
+      statusCode: error.status,
       timestamp,
     };
   }
