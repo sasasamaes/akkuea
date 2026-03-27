@@ -2061,7 +2061,6 @@ fn test_approve_and_transfer_from() {
     assert_eq!(client.get_allowance(&property_id, &owner, &spender), 150);
 }
 
-
 // =========================================================================
 // Oracle Guardrails Tests (Issue #729 / C3-013)
 // =========================================================================
@@ -2433,7 +2432,6 @@ fn test_emergency_guard_can_pause() {
 
     s.env.as_contract(&s.contract_address, || {
         assert!(PauseControl::is_paused(&s.env));
-
     });
 }
 
@@ -2850,4 +2848,3 @@ fn test_full_emergency_and_recovery_flow() {
     let total = s.contract_client.get_total_deposits(&pool_id);
     assert_eq!(total, 2_000_000_000);
 }
-
