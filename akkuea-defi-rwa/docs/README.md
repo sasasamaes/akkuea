@@ -14,44 +14,42 @@ This platform combines two powerful concepts:
 ### 🚀 Quick Start
 
 - [Getting Started](./guides/getting-started.md)
-- [Installation Guide](./guides/installation.md)
-- [Development Setup](./guides/development-setup.md)
 
 ### 🏗️ Architecture
 
 - [System Architecture](./architecture/system-architecture.md)
-- [Contract Architecture](./architecture/contracts.md)
-- [API Architecture](./architecture/api.md)
-- [Security Model](./architecture/security.md)
 
-### 🔧 Smart Contracts
+### 🚢 Deployment
 
-- [Real Estate Token Contract](./contracts/real-estate-token.md)
-- [DeFi Lending Contract](./contracts/defi-lending.md)
-- [Contract Deployment](./contracts/deployment.md)
-- [Contract Testing](./contracts/testing.md)
+> Start here for any production or testnet launch.
 
-### 🌐 API Documentation
+- [Environment Variables](./deployment/environment-variables.md) — complete `.env` reference, secret warnings, network passphrases
+- [Deploy Contracts](./deployment/deploy-contracts.md) — build, deploy, oracle setup, pool creation, role grants
+- [Post-Deploy Checklist](./deployment/post-deploy-checklist.md) — Day 0 action list: liveness, oracle, roles, pool, API verification
 
-- [API Overview](./api/overview.md)
-- [Authentication](./api/authentication.md)
-- [Endpoints Reference](./api/endpoints.md)
-- [Error Handling](./api/errors.md)
-- [Rate Limiting](./api/rate-limiting.md)
+### 🌐 API Workflows
 
-### 🚀 Deployment
+> Step-by-step flows for platform integrators and operators.
 
-- [Environment Setup](./deployment/environment.md)
-- [Testnet Deployment](./deployment/testnet.md)
-- [Mainnet Deployment](./deployment/mainnet.md)
-- [Monitoring & Maintenance](./deployment/monitoring.md)
+- [API Overview](./api/overview.md) — framework, authentication, rate limiting
+- [Launch Workflows](./api/launch-workflows.md) — end-to-end HTTP sequences with full payloads: KYC onboarding, property tokenization, share purchase
+- [Minting Workflow](./api/minting-workflow.md) — deep dive: tokenization path from HTTP request to on-chain `mint_shares`
+- [KYC Workflow](./api/kyc-workflow.md) — off-chain compliance state machine, admin verification procedure, known gaps
 
-### 📖 Guides
+### 🔥 Operations Runbooks
 
-- [Property Tokenization Guide](./guides/property-tokenization.md)
-- [DeFi Lending Guide](./guides/defi-lending.md)
-- [KYC Integration](./guides/kyc-integration.md)
-- [Frontend Integration](./guides/frontend-integration.md)
+> Use these documents during incidents. Read them before an incident occurs.
+
+- [Emergency Pause Runbook](./operations/runbook-emergency-pause.md) — immediate pause, 24-hour timelock recovery, exact CLI commands
+- [Oracle Failure Runbook](./operations/runbook-oracle-failure.md) — price feed outage, stale data response, backup oracle switch
+- [Role Management Runbook](./operations/runbook-role-management.md) — grant/revoke EmergencyGuard, admin transfer procedure
+- [Dividend Distribution](./operations/runbook-dividends-placeholder.md) — placeholder pending Issue #722
+
+### 🔧 Legacy Contract Docs
+
+> These documents predate the current codebase and contain outdated file paths. Kept for historical context only.
+
+- [Contract Deployment (outdated)](./contracts/deployment.md) — superseded by `deployment/deploy-contracts.md`
 
 ## 🛠️ Technology Stack
 
@@ -87,4 +85,4 @@ For technical support or questions:
 
 ---
 
-_This documentation is continuously updated. Last updated: January 2026_
+_This documentation is continuously updated. Last updated: March 2026_
