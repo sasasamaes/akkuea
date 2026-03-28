@@ -2061,6 +2061,360 @@ fn test_approve_and_transfer_from() {
     assert_eq!(client.get_allowance(&property_id, &owner, &spender), 150);
 }
 
+// =========================================================================
+// Oracle Guardrails Tests (Issue #729 / C3-013)
+// =========================================================================
+
+// Mock Oracle with configurable decimals — needed for normalization tests
+#[contract]
+pub struct MockOracleWithDecimals;
+
+#[contractimpl]
+impl MockOracleWithDecimals {
+    pub fn set_price(env: Env, asset: Address, price: i128, timestamp: u64) {
+        let key = (Symbol::new(&env, "price"), asset);
+        let price_data = PriceData { price, timestamp };
+        env.storage().persistent().set(&key, &price_data);
+    }
+
+    pub fn set_decimals(env: Env, d: u32) {
+        env.storage()
+            .instance()
+            .set(&Symbol::new(&env, "decimals"), &d);
+    }
+
+    pub fn lastprice(env: Env, asset: Asset) -> Option<PriceData> {
+        match asset {
+            Asset::Stellar(addr) => {
+                let key = (Symbol::new(&env, "price"), addr);
+                env.storage().persistent().get(&key)
+            }
+            Asset::Other(_) => None,
+        }
+    }
+
+    pub fn decimals(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&Symbol::new(&env, "decimals"))
+            .unwrap_or(18u32)
+    }
+
+    pub fn resolution(_env: Env) -> u32 {
+        1
+    }
+    pub fn base(_env: Env) -> Asset {
+        Asset::Other(Symbol::new(&_env, "USD"))
+    }
+    pub fn assets(_env: Env) -> soroban_sdk::Vec<Asset> {
+        soroban_sdk::Vec::new(&_env)
+    }
+}
+
+// ─── Helper: set up a minimal oracle test environment ──────
+
+struct OracleTestEnv {
+    env: Env,
+    contract_id: Address,
+    oracle_id: Address,
+    asset_address: Address,
+}
+
+fn setup_oracle_test() -> OracleTestEnv {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleContract, ());
+    let asset_address = Address::generate(&env);
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+    });
+
+    OracleTestEnv {
+        env,
+        contract_id,
+        oracle_id,
+        asset_address,
+    }
+}
+
+// ─── Test 1: Fresh price within max age → success ──────
+
+#[test]
+fn test_oracle_fresh_price() {
+    let t = setup_oracle_test();
+    let now = t.env.ledger().timestamp();
+
+    // Set a fresh, valid price
+    t.env.as_contract(&t.oracle_id, || {
+        MockOracleContract::set_price(t.env.clone(), t.asset_address.clone(), PRECISION, now);
+    });
+
+    let price = t.env.as_contract(&t.contract_id, || {
+        PriceOracle::get_price(&t.env, &t.asset_address)
+    });
+
+    assert_eq!(
+        price, PRECISION,
+        "Fresh price should be returned as-is (18 dec oracle)"
+    );
+}
+
+// ─── Test 2: Stale price → panic ───────────────────────
+
+#[test]
+#[should_panic(expected = "Price data is stale")]
+fn test_oracle_stale_price() {
+    let t = setup_oracle_test();
+
+    // Advance ledger time so staleness check can trigger
+    let mut li = t.env.ledger().get();
+    li.timestamp = 10_000;
+    t.env.ledger().set(li);
+
+    let now = t.env.ledger().timestamp();
+
+    // Set price with timestamp 2 hours ago
+    let stale_timestamp = now - 7200;
+    t.env.as_contract(&t.oracle_id, || {
+        MockOracleContract::set_price(
+            t.env.clone(),
+            t.asset_address.clone(),
+            PRECISION,
+            stale_timestamp,
+        );
+    });
+
+    // Should panic
+    t.env.as_contract(&t.contract_id, || {
+        PriceOracle::get_price(&t.env, &t.asset_address);
+    });
+}
+
+// ─── Test 3: Zero price → panic ────────────────────────
+
+#[test]
+#[should_panic(expected = "Invalid price: price must be positive")]
+fn test_oracle_zero_price() {
+    let t = setup_oracle_test();
+    let now = t.env.ledger().timestamp();
+
+    t.env.as_contract(&t.oracle_id, || {
+        MockOracleContract::set_price(t.env.clone(), t.asset_address.clone(), 0, now);
+    });
+
+    t.env.as_contract(&t.contract_id, || {
+        PriceOracle::get_price(&t.env, &t.asset_address);
+    });
+}
+
+// ─── Test 4: Negative price → panic ───────────────────
+
+#[test]
+#[should_panic(expected = "Invalid price: price must be positive")]
+fn test_oracle_negative_price() {
+    let t = setup_oracle_test();
+    let now = t.env.ledger().timestamp();
+
+    t.env.as_contract(&t.oracle_id, || {
+        MockOracleContract::set_price(t.env.clone(), t.asset_address.clone(), -500, now);
+    });
+
+    t.env.as_contract(&t.contract_id, || {
+        PriceOracle::get_price(&t.env, &t.asset_address);
+    });
+}
+
+// ─── Test 5: Missing price (no data set) → panic ──────
+
+#[test]
+#[should_panic(expected = "Price not available for asset")]
+fn test_oracle_missing_price() {
+    let t = setup_oracle_test();
+
+    // Do NOT set any price — oracle will return None
+    t.env.as_contract(&t.contract_id, || {
+        PriceOracle::get_price(&t.env, &t.asset_address);
+    });
+}
+
+// ─── Test 6: Decimal normalization — scale UP ──────────
+// Oracle has 8 decimals → price should be scaled to 18 decimals
+
+#[test]
+fn test_oracle_decimal_normalization_up() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleWithDecimals, ());
+    let asset_address = Address::generate(&env);
+
+    // Configure oracle with 8 decimals
+    env.as_contract(&oracle_id, || {
+        MockOracleWithDecimals::set_decimals(env.clone(), 8);
+        MockOracleWithDecimals::set_price(
+            env.clone(),
+            asset_address.clone(),
+            100_000_000, // 1.0 in 8-decimal format
+            env.ledger().timestamp(),
+        );
+    });
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+    });
+
+    let price = env.as_contract(&contract_id, || {
+        PriceOracle::get_price(&env, &asset_address)
+    });
+
+    // 1.0 at 8 decimals = 100_000_000
+    // Scaled to 18 decimals = 100_000_000 * 10^10 = 1_000_000_000_000_000_000 = PRECISION
+    assert_eq!(
+        price, PRECISION,
+        "Price should be scaled from 8 to 18 decimals"
+    );
+}
+
+// ─── Test 7: Decimal normalization — scale DOWN ────────
+// Oracle has 24 decimals → price should be scaled down to 18 decimals
+
+#[test]
+fn test_oracle_decimal_normalization_down() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleWithDecimals, ());
+    let asset_address = Address::generate(&env);
+
+    // Configure oracle with 24 decimals
+    env.as_contract(&oracle_id, || {
+        MockOracleWithDecimals::set_decimals(env.clone(), 24);
+        MockOracleWithDecimals::set_price(
+            env.clone(),
+            asset_address.clone(),
+            1_000_000_000_000_000_000_000_000, // 1.0 in 24-decimal format
+            env.ledger().timestamp(),
+        );
+    });
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+    });
+
+    let price = env.as_contract(&contract_id, || {
+        PriceOracle::get_price(&env, &asset_address)
+    });
+
+    // 1.0 at 24 decimals = 1e24, scaled down to 18 = 1e24 / 1e6 = 1e18 = PRECISION
+    assert_eq!(
+        price, PRECISION,
+        "Price should be scaled from 24 to 18 decimals"
+    );
+}
+
+// ─── Test 8: Configurable max age ──────────────────────
+
+#[test]
+fn test_oracle_configurable_max_age() {
+    let t = setup_oracle_test();
+
+    // Set a very short max age: 60 seconds
+    t.env.as_contract(&t.contract_id, || {
+        PriceOracle::set_max_age(&t.env, 60);
+    });
+
+    // Set price 120 seconds old (would be fine under default 3600, but stale under 60)
+    let now = t.env.ledger().timestamp();
+    let old_timestamp = now.saturating_sub(120);
+    t.env.as_contract(&t.oracle_id, || {
+        MockOracleContract::set_price(
+            t.env.clone(),
+            t.asset_address.clone(),
+            PRECISION,
+            old_timestamp,
+        );
+    });
+
+    // Verify stored max age
+    let stored_max_age = t
+        .env
+        .as_contract(&t.contract_id, || PriceOracle::get_max_age(&t.env));
+    assert_eq!(stored_max_age, 60, "Custom max age should be stored");
+}
+
+#[test]
+#[should_panic(expected = "Price data is stale")]
+fn test_oracle_configurable_max_age_rejects_stale() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleContract, ());
+    let asset_address = Address::generate(&env);
+
+    // Advance ledger time so we have room for staleness
+    let mut li = env.ledger().get();
+    li.timestamp = 10_000;
+    env.ledger().set(li);
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+        PriceOracle::set_max_age(&env, 60); // 60s max age
+    });
+
+    // Price 120s old → stale under 60s max age
+    env.as_contract(&oracle_id, || {
+        MockOracleContract::set_price(env.clone(), asset_address.clone(), PRECISION, 10_000 - 120);
+    });
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::get_price(&env, &asset_address);
+    });
+}
+
+// ─── Test 9: Minimum price floor ───────────────────────
+
+#[test]
+#[should_panic(expected = "Price below minimum threshold")]
+fn test_oracle_min_price_floor() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleContract, ());
+    let asset_address = Address::generate(&env);
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+        // Require at least 0.5 * PRECISION as the minimum price
+        PriceOracle::set_min_price(&env, PRECISION / 2);
+    });
+
+    // Set a valid but very low price: 0.01 * PRECISION (below floor)
+    let now = env.ledger().timestamp();
+    env.as_contract(&oracle_id, || {
+        MockOracleContract::set_price(
+            env.clone(),
+            asset_address.clone(),
+            PRECISION / 100, // 0.01 — below minimum of 0.5
+            now,
+        );
+    });
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::get_price(&env, &asset_address);
+    });
+}
 fn advance_time(env: &Env, secs: u64) {
     let mut li = env.ledger().get();
     li.timestamp += secs;
@@ -2078,6 +2432,229 @@ fn test_emergency_guard_can_pause() {
 
     s.env.as_contract(&s.contract_address, || {
         assert!(PauseControl::is_paused(&s.env));
+    });
+}
+
+#[test]
+
+fn test_oracle_min_price_floor_passes_above_threshold() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleContract, ());
+    let asset_address = Address::generate(&env);
+
+    env.as_contract(&contract_id, || {
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+        PriceOracle::set_min_price(&env, PRECISION / 2); // floor = 0.5
+    });
+
+    let now = env.ledger().timestamp();
+    env.as_contract(&oracle_id, || {
+        MockOracleContract::set_price(env.clone(), asset_address.clone(), PRECISION, now);
+    });
+
+    let price = env.as_contract(&contract_id, || {
+        PriceOracle::get_price(&env, &asset_address)
+    });
+
+    assert_eq!(price, PRECISION, "Price above floor should succeed");
+}
+
+// ─── Test 10: Default max age when not configured ──────
+
+#[test]
+fn test_oracle_default_max_age() {
+    let t = setup_oracle_test();
+
+    let default_max_age = t
+        .env
+        .as_contract(&t.contract_id, || PriceOracle::get_max_age(&t.env));
+
+    assert_eq!(
+        default_max_age, 3600,
+        "Default max age should be 3600 seconds"
+    );
+}
+
+// ─── Test 11: get_guarded_price is alias for get_price ─
+
+#[test]
+fn test_oracle_guarded_price_alias() {
+    let t = setup_oracle_test();
+    let now = t.env.ledger().timestamp();
+
+    t.env.as_contract(&t.oracle_id, || {
+        MockOracleContract::set_price(t.env.clone(), t.asset_address.clone(), PRECISION * 2, now);
+    });
+
+    let price = t.env.as_contract(&t.contract_id, || {
+        PriceOracle::get_guarded_price(&t.env, &t.asset_address)
+    });
+
+    assert_eq!(
+        price,
+        PRECISION * 2,
+        "get_guarded_price should return same result as get_price"
+    );
+}
+
+// ─── Test 12: End-to-end borrow with stale oracle ──────
+
+#[test]
+#[should_panic(expected = "Price data is stale")]
+fn test_borrow_with_stale_oracle() {
+    use soroban_sdk::token::StellarAssetClient;
+
+    let env = Env::default();
+    env.mock_all_auths();
+
+    // Advance ledger time so staleness check can trigger
+    let mut li = env.ledger().get();
+    li.timestamp = 10_000;
+    env.ledger().set(li);
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleContract, ());
+    let borrower = Address::generate(&env);
+
+    let usdc_admin = Address::generate(&env);
+    let usdc_contract = env.register_stellar_asset_contract_v2(usdc_admin.clone());
+    let usdc_token = StellarAssetClient::new(&env, &usdc_contract.address());
+
+    let xlm_admin = Address::generate(&env);
+    let xlm_contract = env.register_stellar_asset_contract_v2(xlm_admin.clone());
+    let xlm_token = StellarAssetClient::new(&env, &xlm_contract.address());
+
+    let pool_id = String::from_str(&env, "USDC-POOL");
+    let pool = LendingPool {
+        id: pool_id.clone(),
+        name: String::from_str(&env, "USDC Lending Pool"),
+        asset: String::from_str(&env, "USDC"),
+        asset_address: usdc_contract.address().clone(),
+        collateral_factor: 750_000_000_000_000_000,
+        liquidation_threshold: 800_000_000_000_000_000,
+        liquidation_penalty: 50_000_000_000_000_000,
+        reserve_factor: 1000,
+        is_active: true,
+        created_at: env.ledger().timestamp(),
+    };
+
+    env.as_contract(&contract_id, || {
+        PoolStorage::set(&env, &pool);
+        PoolStorage::set_total_deposits(&env, &pool_id, 10_000_000_000);
+        PoolStorage::set_total_borrows(&env, &pool_id, 0);
+
+        let model = InterestRateModel::default();
+        InterestStorage::set_model(&env, &pool_id, &model);
+        InterestStorage::set_interest_index(&env, &pool_id, PRECISION);
+        InterestStorage::set_last_accrual(&env, &pool_id, env.ledger().timestamp());
+
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+    });
+
+    // Set XLM price with timestamp 2 hours ago — STALE
+    let now = env.ledger().timestamp();
+    let stale_ts = now - 7200;
+    env.as_contract(&oracle_id, || {
+        MockOracleContract::set_price(
+            env.clone(),
+            xlm_contract.address().clone(),
+            PRECISION,
+            stale_ts,
+        );
+    });
+
+    usdc_token.mint(&borrower, &2_000_000_000);
+    xlm_token.mint(&borrower, &2_000_000_000);
+    usdc_token.mint(&contract_id, &10_000_000_000);
+
+    // Borrow should fail because oracle price is stale
+    env.as_contract(&contract_id, || {
+        PropertyTokenContract::borrow(
+            env.clone(),
+            borrower.clone(),
+            pool_id.clone(),
+            1_000_000_000,
+            xlm_contract.address().clone(),
+            2_000_000_000,
+        )
+    });
+}
+
+// ─── Test 13: End-to-end borrow with zero oracle price ─
+
+#[test]
+#[should_panic(expected = "Invalid price: price must be positive")]
+fn test_borrow_with_zero_oracle_price() {
+    use soroban_sdk::token::StellarAssetClient;
+
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(PropertyTokenContract, (&admin,));
+    let oracle_id = env.register(MockOracleContract, ());
+    let borrower = Address::generate(&env);
+
+    let usdc_admin = Address::generate(&env);
+    let usdc_contract = env.register_stellar_asset_contract_v2(usdc_admin.clone());
+    let usdc_token = StellarAssetClient::new(&env, &usdc_contract.address());
+
+    let xlm_admin = Address::generate(&env);
+    let xlm_contract = env.register_stellar_asset_contract_v2(xlm_admin.clone());
+    let xlm_token = StellarAssetClient::new(&env, &xlm_contract.address());
+
+    let pool_id = String::from_str(&env, "USDC-POOL");
+    let pool = LendingPool {
+        id: pool_id.clone(),
+        name: String::from_str(&env, "USDC Lending Pool"),
+        asset: String::from_str(&env, "USDC"),
+        asset_address: usdc_contract.address().clone(),
+        collateral_factor: 750_000_000_000_000_000,
+        liquidation_threshold: 800_000_000_000_000_000,
+        liquidation_penalty: 50_000_000_000_000_000,
+        reserve_factor: 1000,
+        is_active: true,
+        created_at: env.ledger().timestamp(),
+    };
+
+    env.as_contract(&contract_id, || {
+        PoolStorage::set(&env, &pool);
+        PoolStorage::set_total_deposits(&env, &pool_id, 10_000_000_000);
+        PoolStorage::set_total_borrows(&env, &pool_id, 0);
+
+        let model = InterestRateModel::default();
+        InterestStorage::set_model(&env, &pool_id, &model);
+        InterestStorage::set_interest_index(&env, &pool_id, PRECISION);
+        InterestStorage::set_last_accrual(&env, &pool_id, env.ledger().timestamp());
+
+        PriceOracle::set_oracle_address(&env, &oracle_id);
+    });
+
+    // Set XLM price to ZERO — invalid
+    let now = env.ledger().timestamp();
+    env.as_contract(&oracle_id, || {
+        MockOracleContract::set_price(env.clone(), xlm_contract.address().clone(), 0, now);
+    });
+
+    usdc_token.mint(&borrower, &2_000_000_000);
+    xlm_token.mint(&borrower, &2_000_000_000);
+    usdc_token.mint(&contract_id, &10_000_000_000);
+
+    // Borrow should fail because oracle price is zero
+    env.as_contract(&contract_id, || {
+        PropertyTokenContract::borrow(
+            env.clone(),
+            borrower.clone(),
+            pool_id.clone(),
+            1_000_000_000,
+            xlm_contract.address().clone(),
+            2_000_000_000,
+        )
     });
 }
 

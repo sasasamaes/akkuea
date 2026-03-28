@@ -551,7 +551,28 @@ impl PropertyTokenContract {
         PriceOracle::set_oracle_address(&env, &oracle_address);
     }
 
+    /// Configure oracle guardrail parameters.
+    ///
+    /// * `max_age`   – maximum acceptable price age in seconds (0 = use default 3600).
+    /// * `min_price` – minimum normalized price (floor). Set to 0 to disable.
+    pub fn set_oracle_config(env: Env, caller: Address, max_age: u64, min_price: i128) {
+        caller.require_auth();
+        AdminControl::require_admin(&env, &caller);
+        if max_age > 0 {
+            PriceOracle::set_max_age(&env, max_age);
+        }
+        PriceOracle::set_min_price(&env, min_price);
+    }
+
     // ─── Query Views ────────────────────────────
+
+    /// Return the current oracle guardrail parameters: `(max_age, min_price)`.
+    pub fn get_oracle_config(env: Env) -> (u64, i128) {
+        (
+            PriceOracle::get_max_age(&env),
+            PriceOracle::get_min_price(&env),
+        )
+    }
 
     pub fn get_balance(env: Env, property_id: u64, owner: Address) -> u64 {
         get_balance(&env, property_id, &owner)
