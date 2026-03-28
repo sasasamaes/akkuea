@@ -8,16 +8,19 @@
 
 ## Symptoms
 
-An oracle incident manifests as one of two panics in the Soroban contract:
+An oracle incident manifests as one of four panics in the Soroban contract (Issue #729 merged — `oracle.rs` updated):
 
 | Panic message | Location | Meaning |
 |---|---|---|
-| `"Oracle address not configured"` | `oracle.rs:19` | `set_oracle` was never called after deployment, or the oracle address was wiped |
-| `"Price data is stale"` | `oracle.rs:34` | Oracle contract has not published a price update within the staleness threshold |
+| `"Oracle address not configured"` | `oracle.rs` — `get_oracle_address` | `set_oracle` was never called, or the oracle address was wiped |
+| `"Price not available for asset"` | `oracle.rs` — `get_price` | Oracle returned `None` for the requested asset |
+| `"Invalid price: price must be positive"` | `oracle.rs` — `get_price` | Oracle returned a zero or negative raw price |
+| `"Price data is stale"` | `oracle.rs` — `get_price` | Price timestamp exceeds the configured `max_age` threshold |
+| `"Price below minimum threshold"` | `oracle.rs` — `get_price` | Normalized price is below the configured `min_price` floor |
 
-Both panics terminate every `borrow()` call. `deposit()`, `withdraw()`, and `repay()` are **not** affected — existing depositors and borrowers can still exit positions. Only new borrowing is blocked.
+All five panics terminate every `borrow()` call. `deposit()`, `withdraw()`, and `repay()` are **not** affected — existing depositors and borrowers can still exit positions. Only new borrowing is blocked.
 
-> **Stability Note — Issue #729:** The staleness threshold is currently hardcoded at `3600` seconds (`oracle.rs:32`, `max_age = 3600`). This value and related price guardrails are under review in [Issue #729 — Finalize Oracle & Price Guardrails](https://github.com/akkuea/akkuea/issues/729). Until that issue closes, treat `3600s` as the operational limit but do not rely on it being permanent. When Issue #729 merges, update the threshold value in this runbook.
+> **Issue #729 — merged.** The staleness threshold is now **configurable** via `set_oracle_config(caller, max_age, min_price)`. The default is `DEFAULT_MAX_AGE = 3600` seconds if `set_oracle_config` has not been called. Run `get_oracle_config()` on your deployed contract to confirm the active values before citing any specific threshold in an incident report.
 
 ---
 
@@ -42,8 +45,25 @@ stellar contract invoke \
 
 Read the error:
 - `"Oracle address not configured"` → go to **Scenario A**
-- `"Price data is stale"` → go to **Scenario B**
+- `"Price not available for asset"` → go to **Scenario B1** (oracle outage)
+- `"Invalid price: price must be positive"` → go to **Scenario C** (bad price feed)
+- `"Price data is stale"` → go to **Scenario B** (staleness)
+- `"Price below minimum threshold"` → go to **Scenario C** (price floor breach)
 - Any other error → oracle is not the root cause; check pool status and contract pause state
+
+### 2. Check active guardrail configuration
+
+```bash
+stellar contract invoke \
+  --contract-id $CONTRACT_ID \
+  --source-account $ADMIN_ADDRESS \
+  --network $NETWORK \
+  --function get_oracle_config
+# Returns: (max_age_seconds, min_price_normalized)
+# Example: (3600, 0) = default staleness, no price floor active
+```
+
+Keep this output in your incident notes — it tells you the exact thresholds the contract is enforcing.
 
 ### 2. Check oracle address on-chain
 
@@ -206,7 +226,54 @@ stellar contract invoke \
   --caller $ADMIN_ADDRESS
 ```
 
-Verify the backup oracle returns prices with `decimals()` and `lastprice()` responses compatible with the contract's decimal normalization logic (`oracle.rs:38-50`). A backup oracle with unexpected decimal precision will cause price scaling errors in borrow health factor calculations.
+After switching, re-apply your guardrail configuration, as the backup oracle may have different update frequency characteristics:
+
+```bash
+stellar contract invoke \
+  --contract-id $CONTRACT_ID \
+  --source-account $ADMIN_ADDRESS \
+  --network $NETWORK \
+  --function set_oracle_config \
+  -- \
+  --caller $ADMIN_ADDRESS \
+  --max_age <backup-oracle-update-interval-seconds> \
+  --min_price 0
+
+# Confirm active config
+stellar contract invoke \
+  --contract-id $CONTRACT_ID \
+  --source-account $ADMIN_ADDRESS \
+  --network $NETWORK \
+  --function get_oracle_config
+```
+
+Verify the backup oracle returns prices with `decimals()` and `lastprice()` responses compatible with the contract's decimal normalization logic (`oracle.rs` — `normalize_price`). A backup oracle with unexpected decimal precision will cause price scaling errors in borrow health factor calculations.
+
+## Adjusting guardrail parameters (non-incident)
+
+To tune `max_age` or `min_price` outside of an incident (e.g., after the oracle provider changes their update frequency):
+
+```bash
+stellar contract invoke \
+  --contract-id $CONTRACT_ID \
+  --source-account $ADMIN_ADDRESS \
+  --network $NETWORK \
+  --function set_oracle_config \
+  -- \
+  --caller $ADMIN_ADDRESS \
+  --max_age 1800 \
+  --min_price 1000000000000000
+
+# Verify
+stellar contract invoke \
+  --contract-id $CONTRACT_ID \
+  --source-account $ADMIN_ADDRESS \
+  --network $NETWORK \
+  --function get_oracle_config
+# Expected: (1800, 1000000000000000)
+```
+
+`max_age = 0` in the call preserves the current value. `min_price = 0` disables the floor check entirely.
 
 ---
 
@@ -215,26 +282,29 @@ Verify the backup oracle returns prices with `decimals()` and `lastprice()` resp
 1. Document: which scenario occurred, how long borrowing was blocked, whether any liquidatable positions were opened during the outage.
 2. If outage lasted more than 30 minutes: review open borrow positions for health factor degradation.
 3. Update the oracle provider contact procedures with lessons from the response.
-4. If Issue #729 circuit-breaker parameters are finalized before the next incident, update this runbook with the new thresholds.
+4. Review `get_oracle_config()` output and confirm `max_age` and `min_price` are correctly set for the current oracle provider's update frequency.
 
 ---
 
 ## Reference
 
-| Item | Value |
-|---|---|
-| Oracle set function | `lib.rs:548` — `set_oracle(oracle_address, caller)` |
-| Staleness check | `oracle.rs:32-36` — `max_age = 3600` (see Issue #729) |
-| `"Price data is stale"` panic | `oracle.rs:35` |
-| `"Oracle address not configured"` panic | `oracle.rs:19` |
-| Affected operations | `borrow()` only — `deposit`, `withdraw`, `repay` continue normally |
-| Required role for `set_oracle` | Admin only |
+| Item | Source | Notes |
+|---|---|---|
+| `set_oracle(oracle_address, caller)` | `lib.rs` | Sets SEP-40 oracle address. Admin only |
+| `set_oracle_config(caller, max_age, min_price)` | `lib.rs` | Configures staleness threshold and price floor. Admin only. `max_age=0` preserves current value |
+| `get_oracle_config()` | `lib.rs` | Returns `(max_age, min_price)` tuple — use to confirm active guardrail values |
+| `DEFAULT_MAX_AGE` | `oracle.rs` | `3600` seconds — applied when `set_oracle_config` has never been called |
+| `"Oracle address not configured"` | `oracle.rs` — `get_oracle_address` | `set_oracle` not called post-deploy |
+| `"Price not available for asset"` | `oracle.rs` — `get_price` | Oracle returned `None` |
+| `"Invalid price: price must be positive"` | `oracle.rs` — `get_price` | Raw price ≤ 0 |
+| `"Price data is stale"` | `oracle.rs` — `get_price` | Age exceeds `max_age` |
+| `"Price below minimum threshold"` | `oracle.rs` — `get_price` | Normalized price < `min_price` |
+| Affected operations | All | `borrow()` only — `deposit`, `withdraw`, `repay` unaffected |
 
 ---
 
 ## See also
 
 - `docs/operations/runbook-emergency-pause.md` — if oracle manipulation confirms active exploit
-- `docs/deployment/deploy-contracts.md` — Step 3: mandatory oracle setup
+- `docs/deployment/deploy-contracts.md` — Step 3: oracle setup including `set_oracle_config`
 - `docs/deployment/post-deploy-checklist.md` — Step 2: oracle verification at launch
-- Issue #729 — Finalize Oracle & Price Guardrails (staleness threshold under review)

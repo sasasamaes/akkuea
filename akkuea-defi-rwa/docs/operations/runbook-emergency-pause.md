@@ -285,11 +285,9 @@ T+24:xx   execute_recovery called.
 | `schedule_recovery(caller)` | `lib.rs:599` / `emergency.rs:15` | Admin only |
 | `cancel_recovery(caller)` | `lib.rs:604` / `emergency.rs:41` | Admin only |
 | `execute_recovery(caller)` | `lib.rs:609` / `emergency.rs:53` | Admin only |
-| `TIMELOCK_DURATION` | `roles.rs:4` | 86,400 seconds (24 hours) — see Stability Note below |
+| `TIMELOCK_DURATION` | `roles.rs:4` | 86,400 seconds (24 hours) — confirmed final |
 
-> **Stability Note — Issue #729:** The 24-hour recovery timelock (`TIMELOCK_DURATION = 86_400`, `roles.rs:4`) is the **structural framework** for controlled recovery. This value and related emergency parameters (e.g., minimum pause duration before recovery can be scheduled, maximum number of consecutive pauses without admin key rotation) are under active review in [Issue #729 — Finalize Oracle & Price Guardrails](https://github.com/akkuea/akkuea/issues/729).
->
-> The **process** documented in this runbook — `emergency_pause → schedule_recovery → execute_recovery` — is stable and will not change. Only the specific duration constant may be adjusted. When Issue #729 closes, verify `TIMELOCK_DURATION` in `roles.rs:4` against the ratified value and update the warning box at the top of this file accordingly.
+> **Note:** Issue #729 (Oracle & Price Guardrails) has been merged. Its scope was limited to oracle consumer logic (`oracle.rs`) and the new `set_oracle_config` / `get_oracle_config` functions. The emergency timelock (`TIMELOCK_DURATION = 86_400`) was **not modified** by that PR and remains 24 hours as a fixed constant.
 
 ---
 

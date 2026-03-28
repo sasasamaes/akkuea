@@ -124,9 +124,31 @@ stellar contract invoke \
 # A panic here signals a deeper initialization problem.
 ```
 
-> **Oracle staleness — current implementation:** The contract currently rejects price data older than **3600 seconds (1 hour)** (`oracle.rs:34`). This value is hardcoded in the current build. The oracle must publish price updates more frequently than this threshold or all borrow operations will fail.
+> **Oracle guardrails (Issue #729 — merged):** The contract rejects price data older than `max_age` seconds. The default is **3600 seconds (1 hour)** (`oracle.rs` — `DEFAULT_MAX_AGE`), but this value is now **configurable per deployment** via `set_oracle_config`. After setting the oracle address, call `set_oracle_config` to tune the staleness threshold and optional price floor for your production environment. See `docs/operations/runbook-oracle-failure.md` for incident response.
 
-> **Stability Note — Issue #729:** The staleness threshold (`3600s`), maximum price deviation limits, and circuit-breaker guardrails are actively being reviewed and finalized in [Issue #729 — Finalize Oracle & Price Guardrails](https://github.com/akkuea/akkuea/issues/729). **Treat the 3600s value as the current default, not as a production-hardened constant.** Once Issue #729 is closed, update this section with the ratified thresholds and re-run the oracle verification step against the updated contract binary. See `docs/operations/runbook-oracle-failure.md` for the incident response procedure.
+After `set_oracle`, configure the guardrail parameters:
+
+```bash
+# max_age: maximum price age in seconds (0 = keep default 3600)
+# min_price: minimum normalized price floor (0 = disabled)
+stellar contract invoke \
+  --contract-id $CONTRACT_ID \
+  --source-account $ADMIN_ADDRESS \
+  --network testnet \
+  --function set_oracle_config \
+  -- \
+  --caller $ADMIN_ADDRESS \
+  --max_age 3600 \
+  --min_price 0
+
+# Verify the active guardrail values
+stellar contract invoke \
+  --contract-id $CONTRACT_ID \
+  --source-account $ADMIN_ADDRESS \
+  --network testnet \
+  --function get_oracle_config
+# Returns: (max_age, min_price) tuple
+```
 
 ---
 
@@ -305,7 +327,9 @@ stellar contract invoke \
 | Error | Cause | Fix |
 |---|---|---|
 | `Oracle address not configured` | Step 3 was skipped | Run `set_oracle` before any `borrow()` |
-| `Price data is stale` | Oracle hasn't published within the staleness threshold (currently 3600s — see Issue #729) | See `docs/operations/runbook-oracle-failure.md` |
+| `Price data is stale` | Oracle hasn't published within `max_age` seconds (default 3600s, configurable via `set_oracle_config`) | See `docs/operations/runbook-oracle-failure.md` |
+| `Invalid price: price must be positive` | Oracle returned a zero or negative price | Investigate oracle feed; consider switching to backup oracle |
+| `Price below minimum threshold` | Normalized price is below the configured `min_price` floor | Review `set_oracle_config` min_price value or investigate price feed anomaly |
 | `pool already exists` | `create_pool` called twice with same `pool_id` | Use a unique `pool_id` per pool |
 | `Authorization failed` | Wrong signing key or `--source-account` mismatch | Verify `STELLAR_ADMIN_SECRET` matches `ADMIN_ADDRESS` |
 | `Insufficient fee` | Account balance too low | Fund account; testnet: `stellar account fund $ADMIN_ADDRESS --network testnet` |
