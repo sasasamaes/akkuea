@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ConnectionStatus } from "@/hooks/useLiveUpdates";
@@ -44,19 +44,21 @@ export function FreshnessIndicator({
   className,
   showLabel = true,
 }: FreshnessIndicatorProps) {
-  const [timeSince, setTimeSince] = useState(() =>
-    getTimeSinceUpdate(lastUpdatedAt),
-  );
+  // Use a tick counter to force periodic recalculation of timeSince
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    setTimeSince(getTimeSinceUpdate(lastUpdatedAt));
-
     const interval = setInterval(() => {
-      setTimeSince(getTimeSinceUpdate(lastUpdatedAt));
+      setTick((t) => t + 1);
     }, 10000);
-
     return () => clearInterval(interval);
-  }, [lastUpdatedAt]);
+  }, []);
+
+  // Derive timeSince from lastUpdatedAt and tick (tick forces recalculation)
+  const timeSince = useMemo(
+    () => getTimeSinceUpdate(lastUpdatedAt),
+    [lastUpdatedAt, tick],
+  );
 
   const config = statusConfig[connectionStatus];
   const StatusIcon =
