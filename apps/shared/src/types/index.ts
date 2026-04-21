@@ -28,8 +28,6 @@ export type {
   OraclePrice,
 } from "../schemas/user.schema";
 
-
-
 // Observability contracts
 export * from "./observability";
 export type ValuationMethodology =

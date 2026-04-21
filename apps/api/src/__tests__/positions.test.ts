@@ -120,18 +120,9 @@ describe('PositionService', () => {
   });
 
   it('returns an empty snapshot when the wallet has no local user record', async () => {
-    const deposits = await service.getUserDeposits(
-      VALID_POOL_ID,
-      VALID_STELLAR_ADDRESS_2,
-    );
-    const borrows = await service.getUserBorrows(
-      VALID_POOL_ID,
-      VALID_STELLAR_ADDRESS_2,
-    );
-    const summary = await service.getPositionSummary(
-      VALID_POOL_ID,
-      VALID_STELLAR_ADDRESS_2,
-    );
+    const deposits = await service.getUserDeposits(VALID_POOL_ID, VALID_STELLAR_ADDRESS_2);
+    const borrows = await service.getUserBorrows(VALID_POOL_ID, VALID_STELLAR_ADDRESS_2);
+    const summary = await service.getPositionSummary(VALID_POOL_ID, VALID_STELLAR_ADDRESS_2);
 
     expect(deposits).toEqual([]);
     expect(borrows).toEqual([]);

@@ -1,5 +1,10 @@
 import { NotificationRepository } from '../repositories/NotificationRepository';
-import type { NewNotification, NotificationEventType, NotificationChannel, Notification } from '../db/schema';
+import type {
+  NewNotification,
+  NotificationEventType,
+  NotificationChannel,
+  Notification,
+} from '../db/schema';
 
 interface CreateNotificationInput {
   userId: string;
@@ -56,7 +61,7 @@ export class NotificationService {
    * Create notifications for multiple users
    */
   async createBulkNotifications(inputs: CreateNotificationInput[]): Promise<Notification[]> {
-    const notifications = inputs.map(input => ({
+    const notifications = inputs.map((input) => ({
       userId: input.userId,
       eventType: input.eventType,
       title: input.title,
@@ -192,7 +197,12 @@ export class NotificationService {
   /**
    * Trigger a system alert notification
    */
-  async sendSystemAlert(userId: string, title: string, message: string, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async sendSystemAlert(
+    userId: string,
+    title: string,
+    message: string,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'SYSTEM_ALERT',
@@ -205,7 +215,10 @@ export class NotificationService {
   /**
    * Notify verification approval
    */
-  async notifyVerificationApproved(userId: string, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyVerificationApproved(
+    userId: string,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'VERIFICATION_APPROVED',
@@ -218,7 +231,11 @@ export class NotificationService {
   /**
    * Notify verification rejection
    */
-  async notifyVerificationRejected(userId: string, reason: string, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyVerificationRejected(
+    userId: string,
+    reason: string,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'VERIFICATION_REJECTED',
@@ -231,7 +248,12 @@ export class NotificationService {
   /**
    * Notify valuation update
    */
-  async notifyValuationUpdated(userId: string, propertyId: string, newValuation: number, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyValuationUpdated(
+    userId: string,
+    propertyId: string,
+    newValuation: number,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'VALUATION_UPDATED',
@@ -247,7 +269,13 @@ export class NotificationService {
   /**
    * Notify repayment reminder
    */
-  async notifyRepaymentReminder(userId: string, loanId: string, amount: number, dueDate: Date, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyRepaymentReminder(
+    userId: string,
+    loanId: string,
+    amount: number,
+    dueDate: Date,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'REPAYMENT_REMINDER',
@@ -263,7 +291,12 @@ export class NotificationService {
   /**
    * Notify overdue repayment
    */
-  async notifyRepaymentOverdue(userId: string, loanId: string, amount: number, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyRepaymentOverdue(
+    userId: string,
+    loanId: string,
+    amount: number,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'REPAYMENT_OVERDUE',
@@ -279,7 +312,12 @@ export class NotificationService {
   /**
    * Notify repayment processed
    */
-  async notifyRepaymentProcessed(userId: string, loanId: string, amount: number, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyRepaymentProcessed(
+    userId: string,
+    loanId: string,
+    amount: number,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'REPAYMENT_PROCESSED',
@@ -295,7 +333,12 @@ export class NotificationService {
   /**
    * Notify risk warning
    */
-  async notifyRiskWarning(userId: string, loanId: string, riskLevel: string, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyRiskWarning(
+    userId: string,
+    loanId: string,
+    riskLevel: string,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'RISK_WARNING',
@@ -311,12 +354,17 @@ export class NotificationService {
   /**
    * Notify liquidation risk
    */
-  async notifyLiquidationRisk(userId: string, loanId: string, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyLiquidationRisk(
+    userId: string,
+    loanId: string,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'LIQUIDATION_RISK',
       title: 'Liquidation Risk Alert',
-      message: 'Your loan is at risk of liquidation. Please take immediate action to prevent loss of collateral.',
+      message:
+        'Your loan is at risk of liquidation. Please take immediate action to prevent loss of collateral.',
       channel,
       relatedEntityType: 'loan',
       relatedEntityId: loanId,
@@ -326,7 +374,12 @@ export class NotificationService {
   /**
    * Notify investment opportunity
    */
-  async notifyInvestmentOpportunity(userId: string, propertyId: string, title: string, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyInvestmentOpportunity(
+    userId: string,
+    propertyId: string,
+    title: string,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'INVESTMENT_OPPORTUNITY',
@@ -341,7 +394,11 @@ export class NotificationService {
   /**
    * Notify portfolio update
    */
-  async notifyPortfolioUpdate(userId: string, summary: string, channel: NotificationChannel = 'IN_APP'): Promise<Notification> {
+  async notifyPortfolioUpdate(
+    userId: string,
+    summary: string,
+    channel: NotificationChannel = 'IN_APP',
+  ): Promise<Notification> {
     return this.createNotification({
       userId,
       eventType: 'PORTFOLIO_UPDATE',

@@ -19,9 +19,18 @@ export class RiskMonitoringController {
         const userId = this.extractUserIdFromPositionId(health.positionId);
         if (userId) {
           if (health.riskLevel === 'critical') {
-            await this.notificationService.notifyLiquidationRisk(userId, health.positionId, 'IN_APP');
+            await this.notificationService.notifyLiquidationRisk(
+              userId,
+              health.positionId,
+              'IN_APP',
+            );
           } else if (health.riskLevel === 'warning') {
-            await this.notificationService.notifyRiskWarning(userId, health.positionId, 'warning', 'IN_APP');
+            await this.notificationService.notifyRiskWarning(
+              userId,
+              health.positionId,
+              'warning',
+              'IN_APP',
+            );
           }
         }
       }
@@ -73,6 +82,6 @@ export class RiskMonitoringController {
 
   private static extractUserIdFromPositionId(positionId: string): string | null {
     const parts = positionId.split('-');
-    return parts.length > 1 ? parts[1] ?? null : null;
+    return parts.length > 1 ? (parts[1] ?? null) : null;
   }
 }

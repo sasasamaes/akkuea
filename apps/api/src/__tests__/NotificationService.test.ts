@@ -10,21 +10,8 @@ describe('NotificationService', () => {
   beforeEach(() => {
     // Mock the repository
     mockRepository = {
-      create: mock(() => Promise.resolve({
-        id: 'notification-1',
-        userId: 'user-1',
-        eventType: 'SYSTEM_ALERT',
-        title: 'Test Alert',
-        message: 'Test message',
-        channel: 'IN_APP',
-        deliveryStatus: 'PENDING',
-        isRead: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Notification)),
-
-      createMany: mock(() => Promise.resolve([
-        {
+      create: mock(() =>
+        Promise.resolve({
           id: 'notification-1',
           userId: 'user-1',
           eventType: 'SYSTEM_ALERT',
@@ -35,28 +22,64 @@ describe('NotificationService', () => {
           isRead: false,
           createdAt: new Date(),
           updatedAt: new Date(),
-        } as Notification,
-      ])),
+        } as Notification),
+      ),
 
-      findByUserId: mock(() => Promise.resolve([
-        {
-          id: 'notification-1',
-          userId: 'user-1',
-          eventType: 'SYSTEM_ALERT',
-          title: 'Test Alert',
-          message: 'Test message',
-          channel: 'IN_APP',
-          deliveryStatus: 'PENDING',
-          isRead: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as Notification,
-      ])),
+      createMany: mock(() =>
+        Promise.resolve([
+          {
+            id: 'notification-1',
+            userId: 'user-1',
+            eventType: 'SYSTEM_ALERT',
+            title: 'Test Alert',
+            message: 'Test message',
+            channel: 'IN_APP',
+            deliveryStatus: 'PENDING',
+            isRead: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } as Notification,
+        ]),
+      ),
+
+      findByUserId: mock(() =>
+        Promise.resolve([
+          {
+            id: 'notification-1',
+            userId: 'user-1',
+            eventType: 'SYSTEM_ALERT',
+            title: 'Test Alert',
+            message: 'Test message',
+            channel: 'IN_APP',
+            deliveryStatus: 'PENDING',
+            isRead: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } as Notification,
+        ]),
+      ),
 
       countUnreadByUserId: mock(() => Promise.resolve(1)),
 
-      findUnreadByUserId: mock(() => Promise.resolve([
-        {
+      findUnreadByUserId: mock(() =>
+        Promise.resolve([
+          {
+            id: 'notification-1',
+            userId: 'user-1',
+            eventType: 'SYSTEM_ALERT',
+            title: 'Test Alert',
+            message: 'Test message',
+            channel: 'IN_APP',
+            deliveryStatus: 'PENDING',
+            isRead: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } as Notification,
+        ]),
+      ),
+
+      findById: mock(() =>
+        Promise.resolve({
           id: 'notification-1',
           userId: 'user-1',
           eventType: 'SYSTEM_ALERT',
@@ -67,51 +90,44 @@ describe('NotificationService', () => {
           isRead: false,
           createdAt: new Date(),
           updatedAt: new Date(),
-        } as Notification,
-      ])),
+        } as Notification),
+      ),
 
-      findById: mock(() => Promise.resolve({
-        id: 'notification-1',
-        userId: 'user-1',
-        eventType: 'SYSTEM_ALERT',
-        title: 'Test Alert',
-        message: 'Test message',
-        channel: 'IN_APP',
-        deliveryStatus: 'PENDING',
-        isRead: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Notification)),
-
-      markAsRead: mock(() => Promise.resolve({
-        id: 'notification-1',
-        userId: 'user-1',
-        eventType: 'SYSTEM_ALERT',
-        title: 'Test Alert',
-        message: 'Test message',
-        channel: 'IN_APP',
-        deliveryStatus: 'PENDING',
-        isRead: true,
-        readAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Notification)),
-
-      markMultipleAsRead: mock(() => Promise.resolve([
-        {
+      markAsRead: mock(() =>
+        Promise.resolve({
           id: 'notification-1',
+          userId: 'user-1',
+          eventType: 'SYSTEM_ALERT',
+          title: 'Test Alert',
+          message: 'Test message',
+          channel: 'IN_APP',
+          deliveryStatus: 'PENDING',
           isRead: true,
           readAt: new Date(),
-        } as Notification,
-      ])),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as Notification),
+      ),
+
+      markMultipleAsRead: mock(() =>
+        Promise.resolve([
+          {
+            id: 'notification-1',
+            isRead: true,
+            readAt: new Date(),
+          } as Notification,
+        ]),
+      ),
 
       markAllAsReadForUser: mock(() => Promise.resolve(1)),
 
-      updateDeliveryStatus: mock(() => Promise.resolve({
-        id: 'notification-1',
-        deliveryStatus: 'SENT',
-        sentAt: new Date(),
-      } as unknown as Notification)),
+      updateDeliveryStatus: mock(() =>
+        Promise.resolve({
+          id: 'notification-1',
+          deliveryStatus: 'SENT',
+          sentAt: new Date(),
+        } as unknown as Notification),
+      ),
 
       findPendingDelivery: mock(() => Promise.resolve([])),
 
@@ -302,7 +318,11 @@ describe('NotificationService', () => {
     });
 
     it('should send investment opportunity notification', async () => {
-      await notificationService.notifyInvestmentOpportunity('user-1', 'property-1', 'New opportunity');
+      await notificationService.notifyInvestmentOpportunity(
+        'user-1',
+        'property-1',
+        'New opportunity',
+      );
 
       expect(mockRepository.create).toHaveBeenCalled();
     });
