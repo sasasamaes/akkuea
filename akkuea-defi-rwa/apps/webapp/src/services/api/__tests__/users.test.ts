@@ -2,10 +2,13 @@ import { describe, it, expect, beforeEach, mock } from "bun:test";
 import { userApi } from "../users";
 import { setupMockFetch, wrapFetchMock } from "./helpers";
 import type { KycDocument, Transaction, User } from "@real-estate-defi/shared";
-
-// Valid Stellar address for tests
-const VALID_STELLAR_ADDRESS =
-  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
+import {
+  VALID_STELLAR_ADDRESS,
+  VALID_UUID,
+  createUser,
+  createTransaction,
+  createKycDocument,
+} from "@real-estate-defi/shared";
 
 describe("User API", () => {
   beforeEach(() => {
@@ -18,17 +21,7 @@ describe("User API", () => {
 
   describe("getByWallet", () => {
     it("fetches user by wallet address", async () => {
-      const mockUser: User = {
-        id: "550e8400-e29b-41d4-a716-446655440001",
-        walletAddress: VALID_STELLAR_ADDRESS,
-        email: "user@example.com",
-        displayName: "Test User",
-        kycStatus: "pending",
-        kycTier: "none",
-        kycDocuments: [],
-        createdAt: "2024-01-01T00:00:00Z",
-        updatedAt: "2024-01-01T00:00:00Z",
-      };
+      const mockUser = createUser({ kycStatus: "pending", kycTier: "none" });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -55,17 +48,7 @@ describe("User API", () => {
 
       const mockResponse: { token: string; user: User } = {
         token: "auth-token-123",
-        user: {
-          id: "550e8400-e29b-41d4-a716-446655440001",
-          walletAddress: VALID_STELLAR_ADDRESS,
-          email: "user@example.com",
-          displayName: "Test User",
-          kycStatus: "pending",
-          kycTier: "none",
-          kycDocuments: [],
-          createdAt: "2024-01-01T00:00:00Z",
-          updatedAt: "2024-01-01T00:00:00Z",
-        },
+        user: createUser({ kycStatus: "pending", kycTier: "none" }),
       };
 
       const { fetchMock, calls } = setupMockFetch({
@@ -93,28 +76,8 @@ describe("User API", () => {
   describe("getTransactions", () => {
     it("fetches user transactions", async () => {
       const mockTransactions: Transaction[] = [
-        {
-          id: "550e8400-e29b-41d4-a716-446655440010",
-          type: "deposit",
-          hash: "abc123def456abc123def456abc123def456abc123def456abc123def456abcd",
-          from: VALID_STELLAR_ADDRESS,
-          to: VALID_STELLAR_ADDRESS,
-          amount: "1000",
-          asset: "USDC",
-          status: "confirmed",
-          timestamp: "2024-01-15T10:00:00Z",
-        },
-        {
-          id: "550e8400-e29b-41d4-a716-446655440011",
-          type: "borrow",
-          hash: "def456abc123def456abc123def456abc123def456abc123def456abc123defg",
-          from: VALID_STELLAR_ADDRESS,
-          to: VALID_STELLAR_ADDRESS,
-          amount: "500",
-          asset: "USDC",
-          status: "pending",
-          timestamp: "2024-01-15T12:00:00Z",
-        },
+        createTransaction({ type: "deposit", amount: "1000" }),
+        createTransaction({ type: "borrow", amount: "500", status: "pending" }),
       ];
 
       const { fetchMock, calls } = setupMockFetch({
@@ -137,7 +100,7 @@ describe("User API", () => {
     it("fetches user portfolio", async () => {
       const mockPortfolio = {
         properties: [
-          { propertyId: "550e8400-e29b-41d4-a716-446655440001", shares: 10 },
+          { propertyId: VALID_UUID, shares: 10 },
           { propertyId: "550e8400-e29b-41d4-a716-446655440002", shares: 5 },
         ],
         deposits: [
@@ -178,7 +141,7 @@ describe("User API", () => {
       global.fetch = fetchMock;
 
       const result = await userApi.getKycStatus(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
       );
 
       expect(result).toEqual(mockKycStatus);
@@ -192,7 +155,7 @@ describe("User API", () => {
   describe("submitKyc", () => {
     it("submits KYC for verification", async () => {
       const submitPayload = {
-        userId: "550e8400-e29b-41d4-a716-446655440001",
+        userId: VALID_UUID,
         documents: [
           {
             type: "passport" as const,
@@ -226,16 +189,7 @@ describe("User API", () => {
   describe("getKycDocuments", () => {
     it("fetches user KYC documents", async () => {
       const mockDocuments: KycDocument[] = [
-        {
-          id: "550e8400-e29b-41d4-a716-446655440020",
-          userId: "550e8400-e29b-41d4-a716-446655440001",
-          type: "passport",
-          fileName: "passport.pdf",
-          fileUrl: "https://example.com/doc.pdf",
-          status: "approved",
-          uploadedAt: "2024-01-10T08:00:00Z",
-          reviewedAt: "2024-01-12T10:00:00Z",
-        },
+        createKycDocument(),
       ];
 
       const { fetchMock, calls } = setupMockFetch({
@@ -245,7 +199,7 @@ describe("User API", () => {
       global.fetch = fetchMock;
 
       const result = await userApi.getKycDocuments(
-        "550e8400-e29b-41d4-a716-446655440001",
+        VALID_UUID,
       );
 
       expect(result).toEqual(mockDocuments);

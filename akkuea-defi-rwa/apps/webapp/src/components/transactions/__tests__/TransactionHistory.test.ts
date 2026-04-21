@@ -1,33 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
-import type {
-  Transaction,
-  PaginatedTransactionResponse,
+import type { PaginatedTransactionResponse } from "@real-estate-defi/shared";
+import {
+  VALID_TX_HASH,
+  createTransaction,
 } from "@real-estate-defi/shared";
 import { transactionsApi } from "@/services/api";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const VALID_STELLAR_ADDRESS =
-  "GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU";
-
-const VALID_TX_HASH =
-  "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
-
-function makeTx(overrides: Partial<Transaction> = {}): Transaction {
-  return {
-    id: "550e8400-e29b-41d4-a716-446655440001",
-    type: "deposit",
-    hash: VALID_TX_HASH,
-    from: VALID_STELLAR_ADDRESS,
-    amount: "10000",
-    asset: "USDC",
-    status: "confirmed",
-    timestamp: "2024-01-15T10:00:00Z",
-    ...overrides,
-  };
-}
 
 const STELLAR_EXPERT_BASE = "https://stellar.expert/explorer/testnet/tx";
 
@@ -38,8 +15,8 @@ const STELLAR_EXPERT_BASE = "https://stellar.expert/explorer/testnet/tx";
 const mockGetTransactions = mock(
   async (): Promise<PaginatedTransactionResponse> => ({
     items: [
-      makeTx(),
-      makeTx({ id: "550e8400-e29b-41d4-a716-446655440002", type: "borrow" }),
+      createTransaction(),
+      createTransaction({ id: "550e8400-e29b-41d4-a716-446655440002", type: "borrow" }),
     ],
     nextCursor: undefined,
     total: 2,
@@ -80,7 +57,7 @@ describe("TransactionHistory — service integration", () => {
     // Simulate slow API
     mockGetTransactions.mockImplementationOnce(async () => {
       await new Promise((r) => setTimeout(r, 50));
-      return { items: [makeTx()], nextCursor: undefined, total: 1 };
+      return { items: [createTransaction()], nextCursor: undefined, total: 1 };
     });
 
     const result = await transactionsApi.getTransactions({});
@@ -122,7 +99,7 @@ describe("TransactionHistory — service integration", () => {
   it("load more fetches next page with cursor", async () => {
     // Page 1 — has nextCursor
     mockGetTransactions.mockImplementationOnce(async () => ({
-      items: [makeTx({ id: "page1-001" })],
+      items: [createTransaction({ id: "page1-001" })],
       nextCursor: "cursor_after_page1",
       total: 3,
     }));
@@ -133,7 +110,7 @@ describe("TransactionHistory — service integration", () => {
 
     // Page 2 — uses cursor from page 1
     mockGetTransactions.mockImplementationOnce(async () => ({
-      items: [makeTx({ id: "page2-001" }), makeTx({ id: "page2-002" })],
+      items: [createTransaction({ id: "page2-001" }), createTransaction({ id: "page2-002" })],
       nextCursor: undefined,
       total: 3,
     }));
@@ -162,7 +139,7 @@ describe("TransactionHistory — service integration", () => {
       "dividend",
     ] as const;
     for (const type of types) {
-      const tx = makeTx({ type });
+      const tx = createTransaction({ type });
       expect(tx.type).toBe(type);
     }
   });
@@ -176,7 +153,7 @@ describe("TransactionHistory — service integration", () => {
       "not_found",
     ] as const;
     for (const status of statuses) {
-      const tx = makeTx({ status });
+      const tx = createTransaction({ status });
       expect(tx.status).toBe(status);
     }
   });
