@@ -3,10 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PropertyInfo } from "@real-estate-defi/shared";
 import { propertyApi } from "@/services/api/properties";
-import {
-  useLiveUpdates,
-  type ConnectionStatus,
-} from "@/hooks/useLiveUpdates";
+import { useLiveUpdates, type ConnectionStatus } from "@/hooks/useLiveUpdates";
 
 interface UsePropertiesOptions {
   enableLiveUpdates?: boolean;

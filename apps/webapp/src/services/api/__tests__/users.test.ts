@@ -140,9 +140,7 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getKycStatus(
-        VALID_UUID,
-      );
+      const result = await userApi.getKycStatus(VALID_UUID);
 
       expect(result).toEqual(mockKycStatus);
       expect(calls[0].url).toBe(
@@ -188,9 +186,7 @@ describe("User API", () => {
 
   describe("getKycDocuments", () => {
     it("fetches user KYC documents", async () => {
-      const mockDocuments: KycDocument[] = [
-        createKycDocument(),
-      ];
+      const mockDocuments: KycDocument[] = [createKycDocument()];
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -198,9 +194,7 @@ describe("User API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await userApi.getKycDocuments(
-        VALID_UUID,
-      );
+      const result = await userApi.getKycDocuments(VALID_UUID);
 
       expect(result).toEqual(mockDocuments);
       expect(calls[0].url).toBe(

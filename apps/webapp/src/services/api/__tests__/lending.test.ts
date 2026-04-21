@@ -85,9 +85,7 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.getPool(
-        VALID_UUID,
-      );
+      const result = await lendingApi.getPool(VALID_UUID);
 
       expect(result).toEqual(mockPool);
       expect(calls[0].url).toBe(
@@ -112,10 +110,7 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.deposit(
-        VALID_UUID,
-        depositPayload,
-      );
+      const result = await lendingApi.deposit(VALID_UUID, depositPayload);
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -152,10 +147,7 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.borrow(
-        VALID_UUID,
-        borrowPayload,
-      );
+      const result = await lendingApi.borrow(VALID_UUID, borrowPayload);
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -175,7 +167,11 @@ describe("Lending API", () => {
 
   describe("withdraw", () => {
     it("withdraws from pool", async () => {
-      const mockResponse = createDepositPosition({ amount: "500", shares: "500", accruedInterest: "12.5" });
+      const mockResponse = createDepositPosition({
+        amount: "500",
+        shares: "500",
+        accruedInterest: "12.5",
+      });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -183,13 +179,10 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.withdraw(
-        VALID_UUID,
-        {
-          userAddress: VALID_STELLAR_ADDRESS,
-          amount: 500,
-        },
-      );
+      const result = await lendingApi.withdraw(VALID_UUID, {
+        userAddress: VALID_STELLAR_ADDRESS,
+        amount: 500,
+      });
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -219,13 +212,10 @@ describe("Lending API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await lendingApi.repay(
-        VALID_UUID,
-        {
-          userAddress: VALID_STELLAR_ADDRESS,
-          amount: 500,
-        },
-      );
+      const result = await lendingApi.repay(VALID_UUID, {
+        userAddress: VALID_STELLAR_ADDRESS,
+        amount: 500,
+      });
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
@@ -244,7 +234,11 @@ describe("Lending API", () => {
     it("gets user deposit positions", async () => {
       const mockDeposits: DepositPosition[] = [
         createDepositPosition({ accruedInterest: "5.2" }),
-        createDepositPosition({ amount: "2000", shares: "2000", accruedInterest: "8.1" }),
+        createDepositPosition({
+          amount: "2000",
+          shares: "2000",
+          accruedInterest: "8.1",
+        }),
       ];
 
       const { fetchMock, calls } = setupMockFetch({

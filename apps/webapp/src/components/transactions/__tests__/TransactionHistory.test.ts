@@ -1,9 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { PaginatedTransactionResponse } from "@real-estate-defi/shared";
-import {
-  VALID_TX_HASH,
-  createTransaction,
-} from "@real-estate-defi/shared";
+import { VALID_TX_HASH, createTransaction } from "@real-estate-defi/shared";
 import { transactionsApi } from "@/services/api";
 
 const STELLAR_EXPERT_BASE = "https://stellar.expert/explorer/testnet/tx";
@@ -16,7 +13,10 @@ const mockGetTransactions = mock(
   async (): Promise<PaginatedTransactionResponse> => ({
     items: [
       createTransaction(),
-      createTransaction({ id: "550e8400-e29b-41d4-a716-446655440002", type: "borrow" }),
+      createTransaction({
+        id: "550e8400-e29b-41d4-a716-446655440002",
+        type: "borrow",
+      }),
     ],
     nextCursor: undefined,
     total: 2,
@@ -110,7 +110,10 @@ describe("TransactionHistory — service integration", () => {
 
     // Page 2 — uses cursor from page 1
     mockGetTransactions.mockImplementationOnce(async () => ({
-      items: [createTransaction({ id: "page2-001" }), createTransaction({ id: "page2-002" })],
+      items: [
+        createTransaction({ id: "page2-001" }),
+        createTransaction({ id: "page2-002" }),
+      ],
       nextCursor: undefined,
       total: 3,
     }));
