@@ -14,7 +14,12 @@
  *   );
  */
 
-import type { MetricName, MetricPayload, TimingMetric, OperationStatus } from "../types/observability";
+import type {
+  MetricName,
+  MetricPayload,
+  TimingMetric,
+  OperationStatus,
+} from "../types/observability";
 
 // ---------------------------------------------------------------------------
 // Timer primitive

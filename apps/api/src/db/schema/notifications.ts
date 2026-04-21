@@ -16,11 +16,7 @@ export const notificationEventTypeEnum = pgEnum('notification_event_type', [
   'PORTFOLIO_UPDATE',
 ]);
 
-export const notificationChannelEnum = pgEnum('notification_channel', [
-  'IN_APP',
-  'EMAIL',
-  'SMS',
-]);
+export const notificationChannelEnum = pgEnum('notification_channel', ['IN_APP', 'EMAIL', 'SMS']);
 
 export const notificationDeliveryStatusEnum = pgEnum('notification_delivery_status', [
   'PENDING',
@@ -66,6 +62,6 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 // Type exports
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
-export type NotificationEventType = typeof notificationEventTypeEnum.enumValues[number];
-export type NotificationChannel = typeof notificationChannelEnum.enumValues[number];
-export type NotificationDeliveryStatus = typeof notificationDeliveryStatusEnum.enumValues[number];
+export type NotificationEventType = (typeof notificationEventTypeEnum.enumValues)[number];
+export type NotificationChannel = (typeof notificationChannelEnum.enumValues)[number];
+export type NotificationDeliveryStatus = (typeof notificationDeliveryStatusEnum.enumValues)[number];

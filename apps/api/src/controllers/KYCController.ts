@@ -200,7 +200,8 @@ export class KYCController {
         // Send verification rejected notification
         await notificationService.notifyVerificationRejected(
           doc.userId,
-          data.notes || 'Your verification documents were rejected. Please resubmit with correct information.',
+          data.notes ||
+            'Your verification documents were rejected. Please resubmit with correct information.',
           'IN_APP',
         );
       } else if (allApproved) {

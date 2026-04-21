@@ -1,6 +1,12 @@
 import { eq, and, desc, sql, gte } from 'drizzle-orm';
 import { db } from '../db';
-import { notifications, type Notification, type NewNotification, type NotificationEventType, type NotificationDeliveryStatus } from '../db/schema';
+import {
+  notifications,
+  type Notification,
+  type NewNotification,
+  type NotificationEventType,
+  type NotificationDeliveryStatus,
+} from '../db/schema';
 import { BaseRepository } from './BaseRepository';
 
 interface PaginationOptions {
@@ -8,7 +14,11 @@ interface PaginationOptions {
   offset?: number;
 }
 
-export class NotificationRepository extends BaseRepository<typeof notifications, Notification, NewNotification> {
+export class NotificationRepository extends BaseRepository<
+  typeof notifications,
+  Notification,
+  NewNotification
+> {
   constructor() {
     super(notifications);
   }
@@ -71,7 +81,10 @@ export class NotificationRepository extends BaseRepository<typeof notifications,
   /**
    * Find notifications by event type
    */
-  async findByEventType(eventType: NotificationEventType, options?: PaginationOptions): Promise<Notification[]> {
+  async findByEventType(
+    eventType: NotificationEventType,
+    options?: PaginationOptions,
+  ): Promise<Notification[]> {
     let query = db
       .select()
       .from(notifications)
@@ -91,7 +104,10 @@ export class NotificationRepository extends BaseRepository<typeof notifications,
   /**
    * Find notifications by user ID and event type
    */
-  async findByUserIdAndEventType(userId: string, eventType: NotificationEventType): Promise<Notification[]> {
+  async findByUserIdAndEventType(
+    userId: string,
+    eventType: NotificationEventType,
+  ): Promise<Notification[]> {
     return db
       .select()
       .from(notifications)
@@ -118,12 +134,7 @@ export class NotificationRepository extends BaseRepository<typeof notifications,
     return db
       .select()
       .from(notifications)
-      .where(
-        and(
-          eq(notifications.deliveryStatus, 'FAILED'),
-          gte(notifications.nextRetryAt, now)
-        )
-      )
+      .where(and(eq(notifications.deliveryStatus, 'FAILED'), gte(notifications.nextRetryAt, now)))
       .orderBy(notifications.nextRetryAt);
   }
 
@@ -137,8 +148,8 @@ export class NotificationRepository extends BaseRepository<typeof notifications,
       .where(
         and(
           eq(notifications.relatedEntityType, entityType),
-          eq(notifications.relatedEntityId, entityId)
-        )
+          eq(notifications.relatedEntityId, entityId),
+        ),
       )
       .orderBy(desc(notifications.createdAt));
   }
@@ -197,7 +208,7 @@ export class NotificationRepository extends BaseRepository<typeof notifications,
       deliveredAt?: Date;
       nextRetryAt?: Date;
       retryCount?: number;
-    }
+    },
   ): Promise<Notification | undefined> {
     const updateData: Record<string, unknown> = {
       deliveryStatus: status,

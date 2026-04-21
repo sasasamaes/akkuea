@@ -215,7 +215,12 @@ export class LendingController {
 
     // Send repayment processed notification
     const notificationService = new NotificationService();
-    await notificationService.notifyRepaymentProcessed(user.id, poolId, parseFloat(amount), 'IN_APP');
+    await notificationService.notifyRepaymentProcessed(
+      user.id,
+      poolId,
+      parseFloat(amount),
+      'IN_APP',
+    );
 
     return this.jsonResponse(position);
   }

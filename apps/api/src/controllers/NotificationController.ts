@@ -3,11 +3,11 @@ import { NotificationService } from '../services/NotificationService';
 import { ApiError } from '../errors/ApiError';
 
 type NotificationBody = {
-  email?: string
-  wallet?: string
-  message?: string
-  notificationIds?: string[]
-}
+  email?: string;
+  wallet?: string;
+  message?: string;
+  notificationIds?: string[];
+};
 
 export class NotificationController {
   private static notificationService = new NotificationService();
@@ -25,7 +25,9 @@ export class NotificationController {
   /**
    * Get notifications for authenticated user
    */
-  static async getUserNotifications(ctx: Context<{ query: { limit?: string; offset?: string } }>): Promise<Response> {
+  static async getUserNotifications(
+    ctx: Context<{ query: { limit?: string; offset?: string } }>,
+  ): Promise<Response> {
     const userId = ctx.headers['x-user-id'];
 
     if (!userId) {
@@ -44,7 +46,11 @@ export class NotificationController {
     }
 
     try {
-      const notifications = await this.notificationService.getUserNotifications(userId, limit, offset);
+      const notifications = await this.notificationService.getUserNotifications(
+        userId,
+        limit,
+        offset,
+      );
       return this.jsonResponse({
         data: notifications,
         pagination: { limit, offset },
@@ -96,7 +102,11 @@ export class NotificationController {
 
       // Verify ownership
       if (notification.userId !== userId) {
-        throw new ApiError(403, 'FORBIDDEN', 'You do not have permission to view this notification');
+        throw new ApiError(
+          403,
+          'FORBIDDEN',
+          'You do not have permission to view this notification',
+        );
       }
 
       return this.jsonResponse(notification);
@@ -128,7 +138,11 @@ export class NotificationController {
 
       // Verify ownership
       if (notification.userId !== userId) {
-        throw new ApiError(403, 'FORBIDDEN', 'You do not have permission to update this notification');
+        throw new ApiError(
+          403,
+          'FORBIDDEN',
+          'You do not have permission to update this notification',
+        );
       }
 
       const updated = await this.notificationService.markAsRead(id);
@@ -153,7 +167,7 @@ export class NotificationController {
 
     let body: NotificationBody;
     try {
-      body = await ctx.request.json() as NotificationBody;
+      body = (await ctx.request.json()) as NotificationBody;
     } catch {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid request body');
     }
@@ -167,7 +181,11 @@ export class NotificationController {
       for (const id of body.notificationIds) {
         const notification = await this.notificationService.getNotificationById(id);
         if (!notification || notification.userId !== userId) {
-          throw new ApiError(403, 'FORBIDDEN', 'You do not have permission to update these notifications');
+          throw new ApiError(
+            403,
+            'FORBIDDEN',
+            'You do not have permission to update these notifications',
+          );
         }
       }
 
@@ -227,7 +245,11 @@ export class NotificationController {
 
       // Verify ownership
       if (notification.userId !== userId) {
-        throw new ApiError(403, 'FORBIDDEN', 'You do not have permission to delete this notification');
+        throw new ApiError(
+          403,
+          'FORBIDDEN',
+          'You do not have permission to delete this notification',
+        );
       }
 
       const deleted = await this.notificationService.deleteNotification(id);
