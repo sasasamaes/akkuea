@@ -4,12 +4,12 @@ on:
   push:
     branches: [ main, develop ]
     paths:
-      - 'akkuea-defi-rwa/apps/api/**'
+      - 'apps/api/**'
       - '.github/workflows/api-ci.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
-      - 'akkuea-defi-rwa/apps/api/**'
+      - 'apps/api/**'
       - '.github/workflows/api-ci.yml'
 
 env:
@@ -32,7 +32,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        cd akkuea-defi-rwa
+
         if bun install --frozen-lockfile; then
           echo "Dependencies installed successfully with frozen lockfile"
         else
@@ -49,22 +49,22 @@ jobs:
 
     - name: Type checking
       run: |
-        cd akkuea-defi-rwa/apps/api
+        cd apps/api
         bun run type-check || true
         
     - name: Linting with ESLint
       run: |
-        cd akkuea-defi-rwa/apps/api
+        cd apps/api
         bun run lint
         
     - name: Format checking with Prettier
       run: |
-        cd akkuea-defi-rwa/apps/api
+        cd apps/api
         bun run format
         
     - name: Build application
       run: |
-        cd akkuea-defi-rwa/apps/api
+        cd apps/api
         bun run build
 
   security-audit:
@@ -80,12 +80,12 @@ jobs:
       
     - name: Install dependencies
       run: |
-        cd akkuea-defi-rwa
+
         bun install
 
     - name: Audit dependencies
       run: |
-        cd akkuea-defi-rwa/apps/api
+        cd apps/api
 
         # Check for high/critical vulnerabilities in dependencies
         # Note: Known transitive vulnerabilities in minimatch (via eslint) and axios
@@ -106,12 +106,12 @@ jobs:
       
     - name: Install dependencies
       run: |
-        cd akkuea-defi-rwa
+
         bun install
 
     - name: Complexity analysis
       run: |
-        cd akkuea-defi-rwa/apps/api
+        cd apps/api
         
         # Install complexity analyzer
         bun add -D complexity-report

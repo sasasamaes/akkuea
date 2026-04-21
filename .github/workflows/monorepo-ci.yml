@@ -4,12 +4,12 @@ on:
   push:
     branches: [ main, develop ]
     paths:
-      - 'akkuea-defi-rwa/**'
+      - 'apps/**'
       - '.github/workflows/monorepo-ci.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
-      - 'akkuea-defi-rwa/**'
+      - 'apps/**'
       - '.github/workflows/monorepo-ci.yml'
 
 env:
@@ -37,7 +37,7 @@ jobs:
         
     - name: Check workspace consistency
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         # Verify all workspaces are properly configured
         echo "Checking workspace configuration..."
@@ -57,7 +57,7 @@ jobs:
         
     - name: Check dependency consistency
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         # Check for shared package references
         echo "Checking cross-workspace dependencies..."
@@ -74,7 +74,7 @@ jobs:
         
     - name: Validate TypeScript configuration
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         # Check TypeScript configurations are consistent
         echo "Validating TypeScript configurations..."
@@ -105,7 +105,7 @@ jobs:
         
     - name: Audit all dependencies
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         # Install root dependencies
         bun install
@@ -120,7 +120,7 @@ jobs:
         
     - name: Check for license conflicts
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         # Install license checker
         bun add -g license-checker
@@ -157,7 +157,7 @@ jobs:
         
     - name: Build performance test
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         echo "Testing build performance..."
         
@@ -201,7 +201,7 @@ jobs:
         
     - name: Bundle size analysis
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         echo "Analyzing bundle sizes..."
         
@@ -243,7 +243,7 @@ jobs:
         
     - name: Integration tests
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         echo "Running cross-workspace integration tests..."
         
@@ -273,7 +273,7 @@ jobs:
         
     - name: Type compatibility test
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         echo "Testing type compatibility across workspaces..."
         
@@ -296,7 +296,7 @@ jobs:
       
     - name: Check for common security issues
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         echo "Running security compliance checks..."
         
@@ -317,7 +317,7 @@ jobs:
         
     - name: Check file permissions
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         echo "Checking file permissions..."
         
@@ -331,7 +331,7 @@ jobs:
         
     - name: Validate package.json security
       run: |
-        cd akkuea-defi-rwa
+        cd .
         
         echo "Checking package.json security..."
         
