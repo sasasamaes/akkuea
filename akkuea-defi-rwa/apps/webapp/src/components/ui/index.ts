@@ -6,6 +6,7 @@ export * from "./Badge";
 export * from "./Loader";
 export * from "./Toggle";
 export * from "./Stepper";
+export * from "./FreshnessIndicator";
 export {
   Skeleton,
   SkeletonText,
