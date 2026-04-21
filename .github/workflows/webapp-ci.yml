@@ -4,12 +4,12 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "akkuea-defi-rwa/apps/webapp/**"
+      - "apps/webapp/**"
       - ".github/workflows/webapp-ci.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - "akkuea-defi-rwa/apps/webapp/**"
+      - "apps/webapp/**"
       - ".github/workflows/webapp-ci.yml"
 
 env:
@@ -39,39 +39,39 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd akkuea-defi-rwa
+
           bun install --frozen-lockfile
 
       - name: Type checking
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
           bun run type-check
 
       - name: ESLint checking
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
           bun run lint
 
       - name: Format checking with Prettier
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
           bunx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css}"
 
       - name: Build application
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
           bun run build
 
       # - name: Run unit tests
       #   run: |
-      #     cd akkuea-defi-rwa/apps/webapp
+      #     cd apps/webapp
 
       #     # Run tests with coverage
       #     bun test --coverage --watchAll=false
 
       # - name: E2E tests
       #   run: |
-      #     cd akkuea-defi-rwa/apps/webapp
+      #     cd apps/webapp
 
       #     # Install Playwright
       #     bunx playwright install
@@ -81,7 +81,7 @@ jobs:
 
       - name: Analyze bundle size
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
 
           # Check if .next directory exists and size is reasonable
           if [ -d ".next" ]; then
@@ -98,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: webapp-build
-          path: akkuea-defi-rwa/apps/webapp/.next/
+          path: apps/webapp/.next/
           retention-days: 4
 
   security-audit:
@@ -121,12 +121,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd akkuea-defi-rwa
+
           bun install --frozen-lockfile
 
       - name: Audit dependencies
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
 
           # Check for known vulnerabilities
           bun audit --audit-level=moderate || true
@@ -136,7 +136,7 @@ jobs:
 
       - name: Check for secrets in code
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
 
           # Scan for potential secrets
           echo "Scanning for potential secrets..."
@@ -154,7 +154,7 @@ jobs:
 
       - name: Security linting
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
 
           # Install security-focused ESLint plugins
           bun add --dev eslint-plugin-security eslint-plugin-xss
@@ -164,7 +164,7 @@ jobs:
 
       - name: Check CSP headers
         run: |
-          cd akkuea-defi-rwa/apps/webapp
+          cd apps/webapp
 
           # Build app first
           bun run build
