@@ -7,10 +7,7 @@ import type {
   BorrowPosition,
 } from "@real-estate-defi/shared";
 import { lendingApi } from "@/services/api";
-import {
-  useLiveUpdates,
-  type ConnectionStatus,
-} from "@/hooks/useLiveUpdates";
+import { useLiveUpdates, type ConnectionStatus } from "@/hooks/useLiveUpdates";
 
 export interface UserPositions {
   deposits: DepositPosition[];
@@ -77,18 +74,20 @@ export function useLendingPools(
     return fetchedPools;
   }, []);
 
-  const { connectionStatus, isPolling, data: livePoolData, refresh } = useLiveUpdates(
-    fetchPoolsOnly,
-    {
-      endpoint: SSE_ENDPOINT,
-      pollingInterval,
-      enabled: enableLiveUpdates && !isLoading,
-      onUpdate: (updatedPools) => {
-        setPools(updatedPools);
-        setLastUpdatedAt(new Date());
-      },
+  const {
+    connectionStatus,
+    isPolling,
+    data: livePoolData,
+    refresh,
+  } = useLiveUpdates(fetchPoolsOnly, {
+    endpoint: SSE_ENDPOINT,
+    pollingInterval,
+    enabled: enableLiveUpdates && !isLoading,
+    onUpdate: (updatedPools) => {
+      setPools(updatedPools);
+      setLastUpdatedAt(new Date());
     },
-  );
+  });
 
   useEffect(() => {
     let cancelled = false;

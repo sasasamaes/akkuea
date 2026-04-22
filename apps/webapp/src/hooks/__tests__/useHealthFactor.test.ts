@@ -49,7 +49,12 @@ function computeHealthFactor(borrows: BorrowPosition[]) {
 }
 
 function makeBorrow(overrides: Partial<BorrowPosition> = {}): BorrowPosition {
-  return createBorrowPosition({ principal: "10000", accruedInterest: "0", healthFactor: 2.0, ...overrides });
+  return createBorrowPosition({
+    principal: "10000",
+    accruedInterest: "0",
+    healthFactor: 2.0,
+    ...overrides,
+  });
 }
 
 // ---------------------------------------------------------------------------

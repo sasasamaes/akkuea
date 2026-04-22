@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, mock } from "bun:test";
 import { propertyApi } from "../properties";
 import { setupMockFetch, wrapFetchMock } from "./helpers";
 import type { PropertyInfo, ShareOwnership } from "@real-estate-defi/shared";
-import { VALID_STELLAR_ADDRESS, VALID_UUID, createProperty } from "@real-estate-defi/shared";
+import {
+  VALID_STELLAR_ADDRESS,
+  VALID_UUID,
+  createProperty,
+} from "@real-estate-defi/shared";
 
 describe("Property API", () => {
   beforeEach(() => {
@@ -93,7 +97,10 @@ describe("Property API", () => {
 
   describe("getById", () => {
     it("fetches property by ID", async () => {
-      const mockProperty = createProperty({ name: "Test Property", availableShares: 800 });
+      const mockProperty = createProperty({
+        name: "Test Property",
+        availableShares: 800,
+      });
 
       const { fetchMock, calls } = setupMockFetch({
         status: 200,
@@ -171,9 +178,7 @@ describe("Property API", () => {
       });
       global.fetch = fetchMock;
 
-      const result = await propertyApi.tokenize(
-        VALID_UUID,
-      );
+      const result = await propertyApi.tokenize(VALID_UUID);
 
       expect(result).toEqual(mockResponse);
       expect(calls[0].url).toBe(
