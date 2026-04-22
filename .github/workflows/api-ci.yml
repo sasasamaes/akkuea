@@ -113,7 +113,7 @@ jobs:
       run: |
         cd apps/api
 
-        # Run complexity analysis (bunx auto-downloads the package)
+        # bunx auto-downloads complexity-report without modifying workspace dependencies
         bunx complexity-report src/ --format json --output complexity.json || true
 
         # Check for overly complex functions
@@ -121,4 +121,3 @@ jobs:
           echo "Complexity analysis completed"
           cat complexity.json
         fi
-        
