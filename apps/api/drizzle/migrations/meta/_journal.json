@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1769110547236,
+      "tag": "0000_opposite_elektra",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1742832000000,
+      "tag": "0002_property_review_operations",
+      "breakpoints": true
+    }
+  ]
+}
