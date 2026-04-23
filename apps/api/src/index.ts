@@ -8,6 +8,7 @@ import { kycRoutes } from './routes/kyc';
 import { oracleRoutes } from './routes/oracle';
 import { riskMonitoringRoutes } from './routes/riskMonitoring';
 import { errorHandler } from './middleware/errorHandler';
+import { cacheService } from './services/CacheService';
 
 app
   .use(
@@ -54,11 +55,14 @@ app
 console.log(`🚀 Real Estate DeFi API is running on port ${process.env.PORT || 3001}`);
 console.log(`📚 Swagger docs available at http://localhost:${process.env.PORT || 3001}/swagger`);
 
-const shutdown = async (signal: string) => {
-  console.log(`\n${signal} received, closing database connections...`);
-  await closeDatabaseConnection();
+// Connect to Redis (non-blocking — app works without it)
+cacheService.connect();
 
-  console.log('Database connections closed. Exiting...');
+const shutdown = async (signal: string) => {
+  console.log(`\n${signal} received, closing connections...`);
+  await Promise.all([closeDatabaseConnection(), cacheService.disconnect()]);
+
+  console.log('Connections closed. Exiting...');
   process.exit(0);
 };
 
