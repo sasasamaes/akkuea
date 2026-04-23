@@ -5,6 +5,10 @@ import { userRepository } from '../repositories/UserRepository';
 import { CreatePoolDto, DepositDto, WithdrawDto, BorrowDto, RepayDto } from '../dto/lending.dto';
 import { positionService } from '../services/PositionService';
 import { NotificationService } from '../services/NotificationService';
+import { cacheService } from '../services/CacheService';
+
+const POOLS_CACHE_TTL = 10; // seconds
+const POOLS_CACHE_PREFIX = 'lending:pools:';
 
 export class LendingController {
   private static async resolveAuthenticatedUser(
@@ -36,7 +40,7 @@ export class LendingController {
   }
 
   /**
-   * Get paginated list of lending pools
+   * Get paginated list of lending pools (cached for 10 seconds)
    */
   static async getPools(ctx: Context): Promise<Response> {
     const query = ctx.query as Record<string, string | undefined>;
@@ -45,9 +49,14 @@ export class LendingController {
     const asset = query.asset;
     const isActive = query.isActive !== undefined ? query.isActive === 'true' : undefined;
 
+    const cacheKey = `${POOLS_CACHE_PREFIX}${page}:${limit}:${asset ?? ''}:${isActive ?? ''}`;
+    const cached = await cacheService.get(cacheKey);
+    if (cached) return this.jsonResponse(cached);
+
     const filter = asset || isActive !== undefined ? { asset, isActive } : undefined;
     const result = await lendingRepository.findPaginated({ page, limit }, filter);
 
+    await cacheService.set(cacheKey, result, POOLS_CACHE_TTL);
     return this.jsonResponse(result);
   }
 
@@ -91,6 +100,7 @@ export class LendingController {
       reserveFactor: data.reserveFactor,
     });
 
+    await cacheService.invalidate(`${POOLS_CACHE_PREFIX}*`);
     return this.jsonResponse(pool, 201);
   }
 
@@ -117,6 +127,7 @@ export class LendingController {
 
     const position = await lendingRepository.deposit(poolId, user.id, amount, amount);
 
+    await cacheService.invalidate(`${POOLS_CACHE_PREFIX}*`);
     return this.jsonResponse(position);
   }
 
@@ -150,6 +161,7 @@ export class LendingController {
       throw new ApiError(404, 'NOT_FOUND', 'No deposit position found for this user in this pool');
     }
 
+    await cacheService.invalidate(`${POOLS_CACHE_PREFIX}*`);
     return this.jsonResponse(position);
   }
 
@@ -184,6 +196,7 @@ export class LendingController {
       collateralAsset,
     });
 
+    await cacheService.invalidate(`${POOLS_CACHE_PREFIX}*`);
     return this.jsonResponse(position);
   }
 
@@ -212,6 +225,8 @@ export class LendingController {
     if (!position) {
       throw new ApiError(404, 'NOT_FOUND', 'No borrow position found for this user in this pool');
     }
+
+    await cacheService.invalidate(`${POOLS_CACHE_PREFIX}*`);
 
     // Send repayment processed notification
     const notificationService = new NotificationService();

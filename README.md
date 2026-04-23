@@ -97,6 +97,7 @@ bun run typecheck
 - **Stellar Native**: Built specifically for Stellar's features and capabilities
 - **Institutional Focus**: Privacy and compliance features for institutional adoption
 - **Scalable Design**: Modular architecture for easy feature additions
+- **Redis Caching Layer**: Optional Redis cache (via `REDIS_URL`) reduces database load on hot read endpoints. `GET /properties` responses are cached for 30 seconds and `GET /lending/pools` for 10 seconds, keyed by pagination and filter params. Cache is invalidated on every write operation. The app falls back to direct PostgreSQL queries when Redis is unavailable.
 
 ## Technology Stack
 
